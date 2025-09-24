@@ -2,21 +2,151 @@
 <html lang="es">
 <head>
   <meta charset="utf-8" />
-  <title>MESBG – Misiones</title>
-  <!-- Evitar caché para que siempre veas la última versión -->
+  <title>MESBG – Selector de Misiones</title>
+  <!-- Evitar caché: que el link siempre muestre la última versión -->
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    body { margin:0; min-height:100vh; display:grid; place-items:center; font-family:system-ui, Arial; background:#111; color:#fff; }
-    .card { padding:24px 28px; border-radius:16px; background:#1b1b1b; border:1px solid #333; }
+    :root{
+      --gold:#d6b36b; --gold-2:#f1d79b; --ink:#1a1712;
+      --parch:#fbf7ef; --parch-2:#f3ebd8;
+    }
+    *{box-sizing:border-box}
+    body{margin:0; min-height:100vh; background:linear-gradient(160deg,#0b0a09,#2a241a); color:#fff; font-family:system-ui,Segoe UI,Arial;}
+    .wrap{max-width:1100px; margin:0 auto; padding:16px 16px 40px;}
+    .top{display:flex; justify-content:center; padding-top:16px;}
+    .btn{cursor:pointer; border-radius:9999px; border:1px solid #b28b4a;
+         background:linear-gradient(180deg,var(--gold-2),var(--gold)); color:#1a1712;
+         padding:12px 20px; font-weight:700}
+    .btn:hover{filter:brightness(1.06)} .btn:active{transform:scale(.98)}
+    .panel{margin-top:12px; padding:16px; border-radius:20px;
+           background:rgba(0,0,0,.10); border:1px solid rgba(255,255,255,.15);
+           box-shadow:0 10px 40px rgba(0,0,0,.45); backdrop-filter:saturate(140%) blur(4px);}
+    .grid{display:grid; gap:16px}
+    @media (min-width: 880px){ .grid{grid-template-columns: repeat(3, 1fr);} }
+    .card{background:linear-gradient(180deg,var(--parch),var(--parch-2));
+          color:#3a2b14; border:1px solid #e2d3b4; border-radius:18px; padding:14px;
+          box-shadow:0 8px 28px rgba(0,0,0,.22)}
+    .card h3{margin:2px 0 8px; text-align:center; font-weight:800}
+    ul{list-style:none; padding:0; margin:0}
+    .item{width:100%; text-align:left; padding:.55rem .8rem; margin-top:8px;
+          background:#fffaf1; color:#1a1712; border:1px solid #e5d8bd; border-radius:12px;
+          cursor:pointer}
+    .item:hover{background:#fff3da}
+    .selected{border-color:#caa24f; box-shadow:0 0 0 2px #caa24f55 inset, 0 0 24px #caa24f55}
+    @keyframes glow{0%{box-shadow:0 0 0 2px #caa24f55 inset,0 0 0 #caa24f00}
+                    50%{box-shadow:0 0 0 2px #caa24faa inset,0 0 24px #caa24f66}
+                    100%{box-shadow:0 0 0 2px #caa24f55 inset,0 0 0 #caa24f00}}
+    .pulse{animation:glow 1300ms ease-in-out}
+    .hint{margin-top:10px; text-align:center; opacity:.9; font-size:13px}
   </style>
 </head>
 <body>
-  <div class="card">
-    <h1>MESBG – Publicación de prueba</h1>
-    <p>Si ves esta página, GitHub Pages funciona. Luego la reemplazamos por la app.</p>
+  <div class="wrap">
+    <div class="top">
+      <button id="btnRandom" class="btn">Elegir Random</button>
+    </div>
+
+    <div class="panel">
+      <div id="grid" class="grid"></div>
+      <div id="hint" class="hint">Toca una misión o usa «Elegir Random».</div>
+    </div>
   </div>
+
+  <script>
+    // ======= Datos =======
+    const POOLS = [
+      { title: "POOL 1 — HOLD OBJECTIVE", items: [
+        "Domination", "Capture & Control", "Breakthrough", "Stake a Claim",
+      ]},
+      { title: "POOL 2 — KILL THE ENEMY", items: [
+        "To the Death!", "Lords of Battle", "Assassination", "Contest of Champions",
+      ]},
+      { title: "POOL 3 — MAELSTROM OF BATTLE", items: [
+        "Hold Ground", "Heirloom of Ages Past", "Sites of Power", "Command the Battlefield",
+      ]},
+      { title: "POOL 4 — OBJECT", items: [
+        "Destroy the Supplies", "Retrieval", "Seize the Prizes", "Treasure Hoard",
+      ]},
+      { title: "POOL 5 — MANOEUVRING", items: [
+        "Reconnoitre", "Storm the Camp", "Divide & Conquer", "Escort the Wounded",
+      ]},
+      { title: "POOL 6 — UNIQUE", items: [
+        "Fog of War", "Clash by Moonlight", "Lead from the Front", "Convergence",
+      ]},
+    ];
+
+    // Mapeo: misión -> enlace. Solo Domination con PDF preview (el resto "En construcción")
+    const LINKS = {
+      "Domination": "https://drive.google.com/file/d/1h3OUvVS59GOClhn5Qcj-FscDpZobNo6h/preview"
+    };
+
+    // ======= Lógica =======
+    const missions = POOLS.flatMap(p => p.items);
+    const grid = document.getElementById('grid');
+    const hint = document.getElementById('hint');
+
+    // Render
+    POOLS.forEach(pool => {
+      const sec = document.createElement('section');
+      sec.className = 'card';
+      sec.innerHTML = `<h3>${pool.title}</h3><ul></ul>`;
+      const ul = sec.querySelector('ul');
+
+      pool.items.forEach(name => {
+        const li = document.createElement('li');
+        const btn = document.createElement('button');
+        btn.className = 'item';
+        btn.textContent = name;
+        btn.addEventListener('click', () => onClickMission(name, btn));
+        li.appendChild(btn);
+        ul.appendChild(li);
+      });
+
+      grid.appendChild(sec);
+    });
+
+    let selectedBtn = null;
+    function choose(name, btn){
+      if (selectedBtn) selectedBtn.classList.remove('selected','pulse');
+      selectedBtn = btn;
+      if (btn){
+        btn.classList.add('selected','pulse');
+        // scroll suave
+        btn.scrollIntoView({behavior:'smooth', block:'center'});
+      }
+      hint.innerHTML = `Selección actual: <b>${name}</b>`;
+    }
+
+    function openPlaceholder(title){
+      const html = `<!doctype html><meta charset="utf-8"><title>${title}</title>
+      <style>html,body{height:100%;margin:0;font-family:system-ui,Segoe UI,Roboto,Inter}
+      .wrap{display:flex;align-items:center;justify-content:center;height:100%;background:#0c0b09;color:#f3e9d2}
+      .card{padding:36px 28px;border:1px solid #8a6a2f;border-radius:18px;background:linear-gradient(180deg,#1b1a17,#12110f);box-shadow:0 12px 40px rgba(0,0,0,.55);text-align:center}
+      h1{margin:0 0 10px;font-size:22px;letter-spacing:.2px}p{margin:0;opacity:.9}</style>
+      <div class="wrap"><div class="card"><h1>${title}</h1><p>En construcción</p></div></div>`;
+      const blob = new Blob([html], { type: "text/html" });
+      const url = URL.createObjectURL(blob);
+      window.open(url, "_blank", "noopener,noreferrer");
+    }
+
+    function onClickMission(name, btn){
+      choose(name, btn);
+      const url = LINKS[name];
+      if (url){ window.open(url, "_blank"); } // abre el PDF preview
+      else { openPlaceholder(name); }          // resto: "En construcción"
+    }
+
+    // Random: solo resalta + scroll (NO abre)
+    document.getElementById('btnRandom').addEventListener('click', () => {
+      const i = Math.floor(Math.random()*missions.length);
+      // encontrar el botón visible con ese nombre
+      const allBtns = [...document.querySelectorAll('.item')];
+      const btn = allBtns.find(b => b.textContent.trim() === missions[i]);
+      choose(missions[i], btn);
+    });
+  </script>
 </body>
 </html>
