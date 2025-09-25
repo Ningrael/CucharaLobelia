@@ -1,152 +1,286 @@
-<!doctype html>
-<html lang="es">
-<head>
-  <meta charset="utf-8" />
-  <title>MESBG – Selector de Misiones</title>
-  <!-- Evitar caché: que el link siempre muestre la última versión -->
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-  <meta http-equiv="Pragma" content="no-cache" />
-  <meta http-equiv="Expires" content="0" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    :root{
-      --gold:#d6b36b; --gold-2:#f1d79b; --ink:#1a1712;
-      --parch:#fbf7ef; --parch-2:#f3ebd8;
+import React, { useMemo, useRef, useState, useEffect } from "react";
+
+// === MESBG – Selector de Misiones (single-file) ===
+// CHECK POINT restaurado (estable):
+// - Random: resalta (glow) y muestra toast.
+// - Click en misión: Domination -> preview PDF; resto -> placeholder.
+// - Layout: 1 columna en móvil, 2 en móvil apaisado/pequeña tablet, 3 en md+.
+// - Torneo: input de rondas (1..6) con validación natural (permite vacío), botón Generar, badges R1..Rn.
+
+const IMAGE_BG = ""; // fondo opcional (data URL). Vacío = sin imagen.
+
+const POOLS = [
+  { title: "POOL 1 — HOLD OBJECTIVE", items: [
+    "Domination", "Capture & Control", "Breakthrough", "Stake a Claim",
+  ]},
+  { title: "POOL 2 — KILL THE ENEMY", items: [
+    "To the Death!", "Lords of Battle", "Assassination", "Contest of Champions",
+  ]},
+  { title: "POOL 3 — MAELSTROM OF BATTLE", items: [
+    "Hold Ground", "Heirloom of Ages Past", "Sites of Power", "Command the Battlefield",
+  ]},
+  { title: "POOL 4 — OBJECT", items: [
+    "Destroy the Supplies", "Retrieval", "Seize the Prizes", "Treasure Hoard",
+  ]},
+  { title: "POOL 5 — MANOEUVRING", items: [
+    "Reconnoitre", "Storm the Camp", "Divide & Conquer", "Escort the Wounded",
+  ]},
+  { title: "POOL 6 — UNIQUE", items: [
+    "Fog of War", "Clash by Moonlight", "Lead from the Front", "Convergence",
+  ]},
+];
+
+// Domination abre PDF en preview (resto aún en construcción)
+const PAGES_BY_MISSION = {
+  "Domination": "https://drive.google.com/file/d/1h3OUvVS59GOClhn5Qcj-FscDpZobNo6h/preview",
+  ...Object.fromEntries(
+    POOLS.flatMap(p => p.items.filter(n=>n!=="Domination").map(n => [n, "1"]))
+  )
+};
+
+const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+
+function openPlaceholder(missionName) {
+  const html = `<!doctype html><meta charset="utf-8"><title>${missionName}</title>
+  <style>html,body{height:100%;margin:0;font-family:system-ui,Segoe UI,Roboto,Inter}
+  .wrap{display:flex;align-items:center;justify-content:center;height:100%;background:#0c0b09;color:#f3e9d2}
+  .card{padding:36px 28px;border:1px solid #8a6a2f;border-radius:18px;background:linear-gradient(180deg,#1b1a17,#12110f);box-shadow:0 12px 40px rgba(0,0,0,.55);text-align:center}
+  h1{margin:0 0 10px;font-size:22px;letter-spacing:.2px}
+  p{margin:0;opacity:.9}</style>
+  <div class="wrap"><div class="card"><h1>${missionName}</h1><p>En construcción</p></div></div>`;
+  const blob = new Blob([html], { type: "text/html" });
+  const url = URL.createObjectURL(blob);
+  window.open(url, "_blank", "noopener,noreferrer");
+}
+
+export default function App(){
+  // ======= Estado base =======
+  const missions = useMemo(()=> POOLS.flatMap(p=>p.items), []);
+  const [selected, setSelected] = useState("");
+  const [pulseKey, setPulseKey] = useState(0);
+  const [toast, setToast] = useState("");
+  const toastTimer = useRef(null);
+  const refs = useRef({});
+
+  // ======= Estado de Torneo =======
+  const [roundsInput, setRoundsInput] = useState("3"); // string para permitir vacío
+  const [badges, setBadges] = useState({}); // { missionName: roundNumber }
+
+  useEffect(()=> {
+    if (!selected) return;
+    const el = refs.current[selected];
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [selected]);
+
+  const showToast = (msg) => {
+    setToast(msg);
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(()=> setToast(""), 1600);
+  };
+
+  const choose = (name) => {
+    setSelected(name);
+    setPulseKey(x=>x+1);
+  };
+
+  const pickRandom = () => {
+    if (!missions.length) return;
+    const i = Math.floor(Math.random()*missions.length);
+    const name = missions[i];
+    choose(name); // sólo resalta y hace scroll
+    showToast(`🎲 ${name}`);
+  };
+
+  const handleClickMission = (name) => {
+    choose(name);
+    const url = PAGES_BY_MISSION[name];
+    if (url && url !== "1") {
+      window.open(url, "_blank");
+    } else {
+      openPlaceholder(name);
     }
-    *{box-sizing:border-box}
-    body{margin:0; min-height:100vh; background:linear-gradient(160deg,#0b0a09,#2a241a); color:#fff; font-family:system-ui,Segoe UI,Arial;}
-    .wrap{max-width:1100px; margin:0 auto; padding:16px 16px 40px;}
-    .top{display:flex; justify-content:center; padding-top:16px;}
-    .btn{cursor:pointer; border-radius:9999px; border:1px solid #b28b4a;
-         background:linear-gradient(180deg,var(--gold-2),var(--gold)); color:#1a1712;
-         padding:12px 20px; font-weight:700}
-    .btn:hover{filter:brightness(1.06)} .btn:active{transform:scale(.98)}
-    .panel{margin-top:12px; padding:16px; border-radius:20px;
-           background:rgba(0,0,0,.10); border:1px solid rgba(255,255,255,.15);
-           box-shadow:0 10px 40px rgba(0,0,0,.45); backdrop-filter:saturate(140%) blur(4px);}
-    .grid{display:grid; gap:16px}
-    @media (min-width: 880px){ .grid{grid-template-columns: repeat(3, 1fr);} }
-    .card{background:linear-gradient(180deg,var(--parch),var(--parch-2));
-          color:#3a2b14; border:1px solid #e2d3b4; border-radius:18px; padding:14px;
-          box-shadow:0 8px 28px rgba(0,0,0,.22)}
-    .card h3{margin:2px 0 8px; text-align:center; font-weight:800}
-    ul{list-style:none; padding:0; margin:0}
-    .item{width:100%; text-align:left; padding:.55rem .8rem; margin-top:8px;
-          background:#fffaf1; color:#1a1712; border:1px solid #e5d8bd; border-radius:12px;
-          cursor:pointer}
-    .item:hover{background:#fff3da}
-    .selected{border-color:#caa24f; box-shadow:0 0 0 2px #caa24f55 inset, 0 0 24px #caa24f55}
-    @keyframes glow{0%{box-shadow:0 0 0 2px #caa24f55 inset,0 0 0 #caa24f00}
-                    50%{box-shadow:0 0 0 2px #caa24faa inset,0 0 24px #caa24f66}
-                    100%{box-shadow:0 0 0 2px #caa24f55 inset,0 0 0 #caa24f00}}
-    .pulse{animation:glow 1300ms ease-in-out}
-    .hint{margin-top:10px; text-align:center; opacity:.9; font-size:13px}
-  </style>
-</head>
-<body>
-  <div class="wrap">
-    <div class="top">
-      <button id="btnRandom" class="btn">Elegir Random</button>
-    </div>
+  };
 
-    <div class="panel">
-      <div id="grid" class="grid"></div>
-      <div id="hint" class="hint">Toca una misión o usa «Elegir Random».</div>
-    </div>
-  </div>
+  // ======= Generar Rondas de Torneo =======
+  const genTournament = () => {
+    const raw = roundsInput === "" ? "3" : roundsInput;
+    let n = parseInt(raw, 10);
+    if (Number.isNaN(n)) n = 3;
+    const count = Math.max(1, Math.min(6, n));
 
-  <script>
-    // ======= Datos =======
-    const POOLS = [
-      { title: "POOL 1 — HOLD OBJECTIVE", items: [
-        "Domination", "Capture & Control", "Breakthrough", "Stake a Claim",
-      ]},
-      { title: "POOL 2 — KILL THE ENEMY", items: [
-        "To the Death!", "Lords of Battle", "Assassination", "Contest of Champions",
-      ]},
-      { title: "POOL 3 — MAELSTROM OF BATTLE", items: [
-        "Hold Ground", "Heirloom of Ages Past", "Sites of Power", "Command the Battlefield",
-      ]},
-      { title: "POOL 4 — OBJECT", items: [
-        "Destroy the Supplies", "Retrieval", "Seize the Prizes", "Treasure Hoard",
-      ]},
-      { title: "POOL 5 — MANOEUVRING", items: [
-        "Reconnoitre", "Storm the Camp", "Divide & Conquer", "Escort the Wounded",
-      ]},
-      { title: "POOL 6 — UNIQUE", items: [
-        "Fog of War", "Clash by Moonlight", "Lead from the Front", "Convergence",
-      ]},
-    ];
+    // índices de pools 0..5 y shuffle Fisher-Yates
+    const idxs = Array.from({length: POOLS.length}, (_,i)=>i);
+    for (let i=idxs.length-1; i>0; i--) {
+      const j = Math.floor(Math.random()*(i+1));
+      [idxs[i], idxs[j]] = [idxs[j], idxs[i]];
+    }
+    const chosenPools = idxs.slice(0, count);
 
-    // Mapeo: misión -> enlace. Solo Domination con PDF preview (el resto "En construcción")
-    const LINKS = {
-      "Domination": "https://drive.google.com/file/d/1h3OUvVS59GOClhn5Qcj-FscDpZobNo6h/preview"
-    };
-
-    // ======= Lógica =======
-    const missions = POOLS.flatMap(p => p.items);
-    const grid = document.getElementById('grid');
-    const hint = document.getElementById('hint');
-
-    // Render
-    POOLS.forEach(pool => {
-      const sec = document.createElement('section');
-      sec.className = 'card';
-      sec.innerHTML = `<h3>${pool.title}</h3><ul></ul>`;
-      const ul = sec.querySelector('ul');
-
-      pool.items.forEach(name => {
-        const li = document.createElement('li');
-        const btn = document.createElement('button');
-        btn.className = 'item';
-        btn.textContent = name;
-        btn.addEventListener('click', () => onClickMission(name, btn));
-        li.appendChild(btn);
-        ul.appendChild(li);
-      });
-
-      grid.appendChild(sec);
+    const newBadges = {};
+    const selections = [];
+    chosenPools.forEach((pi, k)=>{
+      const pool = POOLS[pi];
+      const m = pool.items[Math.floor(Math.random()*pool.items.length)];
+      newBadges[m] = k+1; // Ronda 1..N
+      selections.push({round:k+1, pool:pool.title, mission:m});
     });
+    setBadges(newBadges);
 
-    let selectedBtn = null;
-    function choose(name, btn){
-      if (selectedBtn) selectedBtn.classList.remove('selected','pulse');
-      selectedBtn = btn;
-      if (btn){
-        btn.classList.add('selected','pulse');
-        // scroll suave
-        btn.scrollIntoView({behavior:'smooth', block:'center'});
-      }
-      hint.innerHTML = `Selección actual: <b>${name}</b>`;
-    }
+    const last = selections[selections.length-1];
+    if (last) choose(last.mission);
 
-    function openPlaceholder(title){
-      const html = `<!doctype html><meta charset="utf-8"><title>${title}</title>
-      <style>html,body{height:100%;margin:0;font-family:system-ui,Segoe UI,Roboto,Inter}
-      .wrap{display:flex;align-items:center;justify-content:center;height:100%;background:#0c0b09;color:#f3e9d2}
-      .card{padding:36px 28px;border:1px solid #8a6a2f;border-radius:18px;background:linear-gradient(180deg,#1b1a17,#12110f);box-shadow:0 12px 40px rgba(0,0,0,.55);text-align:center}
-      h1{margin:0 0 10px;font-size:22px;letter-spacing:.2px}p{margin:0;opacity:.9}</style>
-      <div class="wrap"><div class="card"><h1>${title}</h1><p>En construcción</p></div></div>`;
-      const blob = new Blob([html], { type: "text/html" });
-      const url = URL.createObjectURL(blob);
-      window.open(url, "_blank", "noopener,noreferrer");
-    }
-
-    function onClickMission(name, btn){
-      choose(name, btn);
-      const url = LINKS[name];
-      if (url){ window.open(url, "_blank"); } // abre el PDF preview
-      else { openPlaceholder(name); }          // resto: "En construcción"
-    }
-
-    // Random: solo resalta + scroll (NO abre)
-    document.getElementById('btnRandom').addEventListener('click', () => {
-      const i = Math.floor(Math.random()*missions.length);
-      // encontrar el botón visible con ese nombre
-      const allBtns = [...document.querySelectorAll('.item')];
-      const btn = allBtns.find(b => b.textContent.trim() === missions[i]);
-      choose(missions[i], btn);
+    selections.forEach((s, k)=>{
+      setTimeout(()=> showToast(`🏆 Ronda ${s.round}: ${s.mission}`), 500 + k*900);
     });
-  </script>
-</body>
-</html>
+  };
+
+  // === Botones +/- para rounds ===
+  const incRounds = () => {
+    let n = parseInt(roundsInput || "3", 10);
+    if (Number.isNaN(n)) n = 3;
+    if (n < 6) setRoundsInput(String(n+1));
+  };
+  const decRounds = () => {
+    let n = parseInt(roundsInput || "3", 10);
+    if (Number.isNaN(n)) n = 3;
+    if (n > 1) setRoundsInput(String(n-1));
+  };
+
+  const bgImage = IMAGE_BG
+    ? `linear-gradient(rgba(12,11,9,.25),rgba(12,11,9,.55)), url(${IMAGE_BG})`
+    : "linear-gradient(160deg,#0b0a09,#2a241a)";
+
+  return (
+    <div className="min-h-screen p-0 m-0" style={{backgroundImage:bgImage, backgroundSize:"cover", backgroundPosition:"center"}}>
+      <style>{`
+        /* ====== Paleta y tipografía (jerarquía limpia) ====== */
+        :root{
+          --ink:#161412; --ink-soft:#4b4136;
+          --bg-deep:#0b0a09; --bg-card:#fbf7ef; --bg-card-2:#f5ecd8;
+          --line:#e6dcc7; --line-soft:#efe6d3;
+          --accent:#caa24f; --accent-2:#ead39a;
+          --shadow:0 8px 28px rgba(0,0,0,.18);
+          --fs-title:clamp(18px,2.6vw,22px);
+          --fs-button:clamp(16px,2.2vw,18px);
+          --fs-pool:clamp(13px,1.9vw,15px);
+          --fs-mission:clamp(15px,2.1vw,17px);
+        }
+        *{box-sizing:border-box}
+        .title{font-family:Georgia,serif;letter-spacing:.3px;text-shadow:0 1px 0 #0005,0 2px 6px #0007}
+        .btn-gold{background:linear-gradient(180deg,var(--accent-2),var(--accent));border:1px solid #b79045;border-radius:9999px;color:var(--ink)}
+        .btn-gold:hover{filter:brightness(1.06)}
+        .btn-gold:active{transform:scale(.98)}
+        /* Header sticky */
+        .app-header{position:sticky;top:0;z-index:20;backdrop-filter:saturate(140%) blur(6px);background:rgba(0,0,0,.22);border-bottom:1px solid rgba(255,255,255,.12);box-shadow:0 6px 20px rgba(0,0,0,.35)}
+        .header-inner{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;padding:10px 12px}
+        .header-title{font-weight:800;color:#f4e9d2;font-size:var(--fs-title)}
+        .header-spacer{flex:1}
+        .header-btn{font-size:var(--fs-button); padding:10px 16px}
+        .header-group{display:flex; align-items:center; gap:8px}
+        .center-wrap{justify-self:center}
+        .right-wrap{justify-self:end; display:flex; align-items:center; gap:8px}
+        .btn-circle{width:28px;height:28px;border-radius:9999px;display:inline-flex;align-items:center;justify-content:center;border:1px solid #b79045;background:linear-gradient(180deg,var(--accent-2),var(--accent));color:var(--ink);font-weight:900;box-shadow:var(--shadow)}
+        .btn-circle:hover{filter:brightness(1.06)}
+        .btn-circle:active{transform:scale(.98)}
+        .rounds-input{appearance:none; -moz-appearance:textfield; width:64px; padding:8px 10px; border-radius:12px; border:1px solid rgba(255,255,255,.25); background:rgba(0,0,0,.25); color:#f4e9d2; font-weight:700; text-align:center}
+        .rounds-input:focus{outline:2px solid var(--accent); outline-offset:2px}
+        .btn-secondary{border-radius:9999px; border:1px solid rgba(234,211,154,.5); background:rgba(12,11,9,.45); color:#f4e9d2; padding:10px 14px; font-weight:700}
+        .btn-secondary:hover{filter:brightness(1.07)}
+        .btn-secondary:active{transform:scale(.98)}
+        /* Panel contenedor */
+        .panel{backdrop-filter:saturate(140%) blur(4px);background:rgba(0,0,0,.10);border:1px solid rgba(255,255,255,.12);border-radius:20px;box-shadow:0 10px 40px rgba(0,0,0,.45)}
+        /* Tarjeta Pool (más sobria) */
+        .card{background:linear-gradient(180deg,var(--bg-card),var(--bg-card-2));border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:14px;transition:transform .18s ease, box-shadow .18s ease}
+        .card:hover{transform:translateY(-2px); box-shadow:0 12px 32px rgba(0,0,0,.22)}
+        .pool-title{font-family:Georgia,serif;color:var(--ink-soft);font-weight:700;font-size:var(--fs-pool);letter-spacing:.6px;text-transform:uppercase;opacity:.85;margin:0 0 8px}
+        .divider{height:1px;background:var(--line-soft);margin:6px 0 8px;border-radius:1px}
+        /* Botón de misión (elemento principal) */
+        .item{border:1px solid var(--line);border-radius:12px;background:#fffaf1;padding:.72rem .9rem;text-align:left;width:100%;min-height:44px;font-size:var(--fs-mission);color:var(--ink);line-height:1.15;transition:background .15s ease, border-color .15s ease, box-shadow .15s ease; position:relative}
+        .item:hover{background:#fff3da}
+        .item:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+        .item.selected{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb, var(--accent) 55%, transparent) inset, 0 0 20px color-mix(in srgb, var(--accent) 40%, transparent)}
+        @keyframes glow{0%{box-shadow:0 0 0 2px color-mix(in srgb, var(--accent) 40%, transparent) inset,0 0 0 transparent}50%{box-shadow:0 0 0 2px color-mix(in srgb, var(--accent) 80%, transparent) inset,0 0 22px color-mix(in srgb, var(--accent) 55%, transparent)}100%{box-shadow:0 0 0 2px color-mix(in srgb, var(--accent) 40%, transparent) inset,0 0 0 transparent}}
+        .pulse{animation:glow 1200ms ease-in-out}
+        /* Rejilla responsiva 1/2/3 columnas con gaps consistentes */
+        .grid-resp{display:grid;grid-template-columns:1fr;gap:16px}
+        @media (min-width: 480px){.grid-resp{grid-template-columns:repeat(2,1fr)}}
+        @media (min-width: 768px){.grid-resp{grid-template-columns:repeat(3,1fr)}}
+        /* Badge de ronda */
+        .badge{position:absolute; right:8px; top:50%; transform:translateY(-50%); padding:2px 8px; border-radius:9999px; background:rgba(12,11,9,.8); border:1px solid rgba(234,211,154,.5); color:#f2e6c6; font-size:12px; font-weight:800}
+        /* Toast superior */
+        .toast{position:fixed;top:64px;left:50%;transform:translateX(-50%) translateY(-8px);opacity:0;pointer-events:none; background:rgba(12,11,9,.85);color:#f4e9d2;border:1px solid rgba(234,211,154,.5);padding:10px 14px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.45);font-weight:700}
+        .toast.show{opacity:1; transform:translateX(-50%) translateY(0); transition:opacity .18s ease, transform .18s ease}
+        @media (max-width:480px){ .toast{top:56px} }
+        @media (prefers-reduced-motion: reduce){ .pulse{animation:none} .toast, .toast.show{transition:none} }
+      `}</style>
+
+      {/* Header sticky con título + Torneo + Random */}
+      <header className="app-header">
+        <div className="header-inner">
+          <div className="header-title title">MESBG – Misiones</div>
+          <div className="center-wrap">
+            <button onClick={pickRandom} className="btn-gold header-btn title" title="Elegir una misión al azar">Elegir Random</button>
+          </div>
+          <div className="right-wrap">
+            <label className="header-title" style={{fontSize:'var(--fs-pool)', opacity:.85}}>Rondas</label>
+            <button className="btn-circle" onClick={incRounds}>+</button>
+            <input
+              className="rounds-input"
+              type="text"
+              inputMode="numeric"
+              aria-label="Número de rondas"
+              placeholder="3"
+              value={roundsInput}
+              onChange={(e)=>{
+                const v = e.target.value.trim();
+                if (v === "") { setRoundsInput(""); return; }
+                if (/^[1-6]$/.test(v)) { setRoundsInput(v); }
+              }}
+              onBlur={()=>{ if (roundsInput === "") setRoundsInput("3"); }}
+            />
+            <button className="btn-circle" onClick={decRounds}>-</button>
+            <button onClick={genTournament} className="btn-secondary" title="Generar rondas de torneo">Generar rondas</button>
+          </div>
+        </div>
+      </header>
+
+      {/* Toast */}
+      <div className={"toast" + (toast?" show":"")}>{toast}</div>
+
+      {/* Contenido: 6 pools x 4 misiones */}
+      <div className="max-w-5xl mx-auto px-4 pb-10" style={{paddingTop:"12px"}}>
+        <div className="panel p-4 md:p-6">
+          <div className="grid-resp">
+            {POOLS.map((pool, pi)=> (
+              <section key={pi} className="card p-3 md:p-4">
+                <h3 className="pool-title">{pool.title}</h3><div className="divider" />
+                <ul style={{listStyle:"none", padding:0, margin:"8px 0 0 0"}}>
+                  {pool.items.map((name)=> {
+                    const isSel = selected === name;
+                    return (
+                      <li key={name} style={{marginTop:"8px"}}>
+                        <button
+                          ref={el=>{ if(el) refs.current[name]=el; }}
+                          id={slug(name)}
+                          onClick={()=> handleClickMission(name)}
+                          className={"item" + (isSel?" selected pulse":"")}
+                          title={name}
+                        >{name}
+                          {badges[name] ? <span className="badge">R{badges[name]}</span> : null}
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </section>
+            ))}
+          </div>
+
+          <div className="text-center" style={{marginTop:"10px", color:"#fff", opacity:.9, fontSize:"13px"}}>
+            {selected ? (<span>Selección actual: <b>{selected}</b></span>) : (<span>Toca una misión o usa «Elegir Random».</span>)}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
