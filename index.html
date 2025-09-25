@@ -85,6 +85,8 @@ export default function App(){
 
   const pickRandom = () => {
     if (!missions.length) return;
+    // Limpia badges de torneo cuando se usa Random
+    setBadges({});
     const i = Math.floor(Math.random()*missions.length);
     const name = missions[i];
     choose(name); // sólo resalta y hace scroll
@@ -223,7 +225,7 @@ export default function App(){
           </div>
           <div className="right-wrap">
             <label className="header-title" style={{fontSize:'var(--fs-pool)', opacity:.85}}>Rondas</label>
-            <button className="btn-circle" onClick={incRounds}>+</button>
+            <button className="btn-circle" onClick={decRounds}>-</button>
             <input
               className="rounds-input"
               type="text"
@@ -238,7 +240,7 @@ export default function App(){
               }}
               onBlur={()=>{ if (roundsInput === "") setRoundsInput("3"); }}
             />
-            <button className="btn-circle" onClick={decRounds}>-</button>
+            <button className="btn-circle" onClick={incRounds}>+</button>
             <button onClick={genTournament} className="btn-secondary" title="Generar rondas de torneo">Generar rondas</button>
           </div>
         </div>
