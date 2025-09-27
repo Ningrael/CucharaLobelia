@@ -1,104 +1,14 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>La Cuchara de Lobelia · Inicio</title>
-  <meta name="theme-color" content="#1c140d" />
-  <style>
-    /* Reset mínimo */
-    html, body { height: 100%; margin: 0; }
-    * { box-sizing: border-box; }
-
-    /* Lienzo 9:16 centrado y a pantalla completa */
-    body {
-      background: #1c140d; /* tono madera oscuro de fondo */
-      display: grid;
-      place-items: center;
-      height: 100dvh; /* mejor para móviles */
-      overflow: hidden;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-    }
-
-    .app {
-      width: 100vw;              /* ocupa todo el ancho */
-      height: 100dvh;            /* ocupa todo el alto */
-      max-width: 56.25vh;        /* 9:16 => ancho = 9/16 del alto (vh * 9/16 = 56.25vh) */
-      aspect-ratio: 9 / 16;      /* mantiene 9:16 si el navegador lo soporta */
-      position: relative;
-      border-radius: 16px;       /* leve curvatura agradable */
-      overflow: hidden;
-      box-shadow: 0 10px 30px rgba(0,0,0,.35);
-      background: #000;          /* fallback mientras carga la imagen */
-      touch-action: manipulation;
-    }
-
-    /* Imagen de inicio: centrada y recortada como cover */
-    .app picture,
-    .app picture > img {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      object-position: center;
-      display: block;
-      user-select: none;
-      -webkit-user-drag: none;
-      pointer-events: none;
-    }
-
-
-    /* Capa para futuros botones / HUD */
-    .ui-overlay {
-      position: absolute;
-      inset: 0;
-      display: grid;
-      grid-template-rows: 1fr auto; /* deja sitio al pie si queremos poner botones */
-      padding: 16px;
-      pointer-events: none; /* por defecto desactivado, se activará cuando añadamos botones */
-    }
-
-    .button-bar {
-      display: flex;
-      gap: 12px;
-      justify-content: center;
-      margin-bottom: 8px;
-      pointer-events: auto; /* habilita interacción solo en la barra */
-    }
-
-    .btn {
-      appearance: none;
-      border: none;
-      padding: 12px 16px;
-      border-radius: 999px;
-      background: rgba(0,0,0,.55);
-      color: #f4f1ea;
-      font-weight: 600;
-      letter-spacing: .2px;
-      backdrop-filter: blur(4px);
-      -webkit-backdrop-filter: blur(4px);
-      transform: translateZ(0);
-      touch-action: manipulation;
-    }
-
-    .btn:active { transform: scale(.98); }
-
-    /* Oculto por ahora: deja la barra preparada para el futuro */
-    .button-bar { display: none; }
-
-    @media (hover:hover) and (pointer:fine) {
-      .btn:hover { filter: brightness(1.05); }
-    }
-  </style>
-</head>
-<body>
-  <main class="app" role="main" aria-label="Pantalla de inicio de La Cuchara de Lobelia">
-    <!-- Coloca el archivo en la raíz del repositorio como Inicio.png (o .jpg/.webp). -->
-    <picture>
-      <source srcset="Inicio.webp" type="image/webp" />
-      <source srcset="Inicio.jpg" type="image/jpeg" />
-      <img src="Inicio.png" alt="La Cuchara de Lobelia - pantalla de inicio" />
+  <!--
+    CHECKLIST 9 PASOS (registro de edición)
+    1) LEER código actual ✓  2) ENTENDER comportamiento ✓
+    3) RECORDAR pedido: mostrar Inicio.* y evitar rutas mal resueltas ✓
+    4) PLAN: cambio mínimo → rutas relativas con ./, preload y mantener <picture>
+      <source srcset="./Inicio.webp" type="image/webp" />
+      <source srcset="./Inicio.jpg" type="image/jpeg" />
+      <img src="./Inicio.png" alt="La Cuchara de Lobelia - pantalla de inicio" loading="eager" decoding="async" />
     </picture>
 
     <!-- Capa preparada para futuros botones (oculta por defecto) -->
