@@ -91,8 +91,12 @@
 </head>
 <body>
   <main class="app" role="main" aria-label="Pantalla de inicio de La Cuchara de Lobelia">
-    <!-- Coloca el archivo en la raíz del repositorio como Inicio.jpg -->
-    <img src="Inicio.jpg" alt="La Cuchara de Lobelia - pantalla de inicio" />
+    <!-- Coloca el archivo en la raíz del repositorio como Inicio.png (o .jpg/.webp). -->
+    <picture>
+      <source srcset="Inicio.webp" type="image/webp" />
+      <source srcset="Inicio.jpg" type="image/jpeg" />
+      <img src="Inicio.png" alt="La Cuchara de Lobelia - pantalla de inicio" />
+    </picture>
 
     <!-- Capa preparada para futuros botones (oculta por defecto) -->
     <div class="ui-overlay" aria-hidden="true">
