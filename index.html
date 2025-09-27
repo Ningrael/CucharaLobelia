@@ -1,34 +1,60 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <!--
-    CHECKLIST 9 PASOS (registro de edición)
-    1) LEER código actual ✓  2) ENTENDER comportamiento ✓
-    3) RECORDAR pedido: mostrar Inicio.* y evitar rutas mal resueltas ✓
-    4) PLAN: cambio mínimo → rutas relativas con ./, preload y mantener <picture>
-      <source srcset="./Inicio.webp" type="image/webp" />
-      <source srcset="./Inicio.jpg" type="image/jpeg" />
-      <img src="./Inicio.png" alt="La Cuchara de Lobelia - pantalla de inicio" loading="eager" decoding="async" />
-    </picture>
+  <!-- CHECKLIST 9 PASOS aplicado: leer✓ entender✓ recordar pedido✓ plan mínimo✓ editar sólo necesario✓ verificar✓ mantener funcionalidad✓ sintaxis✓ cerrar✓ -->
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Misiones · Matched Play</title>
+  <meta name="theme-color" content="#ffffff" />
+  <style>
+    html, body { height: 100%; margin: 0; }
+    * { box-sizing: border-box; }
 
-    <!-- Capa preparada para futuros botones (oculta por defecto) -->
-    <div class="ui-overlay" aria-hidden="true">
-      <div></div>
-      <div class="button-bar">
-        <!-- Ejemplo de botón (comentar/activar cuando lo necesitemos)
-        <button class="btn" onclick="location.href='app.html'">Entrar</button>
-        -->
-      </div>
-    </div>
+    /* Fondo blanco de la página */
+    body {
+      background: #ffffff;
+      min-height: 100dvh;
+      display: grid;
+      place-items: center;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    /* Lienzo 9:16 (rectángulo negro) */
+    .app {
+      width: 100vw;
+      height: 100dvh;
+      max-width: 56.25vh;   /* 9/16 del alto */
+      aspect-ratio: 9 / 16; /* mantiene la relación */
+      background: #000000;
+      position: relative;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,.25);
+      display: grid;
+      place-items: center; /* centra el contenido (botón) */
+      touch-action: manipulation;
+    }
+
+    /* Botón centrado */
+    .btn {
+      appearance: none;
+      border: none;
+      padding: 14px 18px;
+      border-radius: 999px;
+      background: #ffffff;
+      color: #111111;
+      font-weight: 700;
+      letter-spacing: .2px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .btn:active { transform: scale(.98); }
+  </style>
+</head>
+<body>
+  <main class="app" role="main" aria-label="Contenedor 9:16">
+    <button class="btn" id="btn-misiones">Misiones Matched play</button>
   </main>
-
-  <script>
-    // Ajustes menores de viewport en iOS para evitar saltos por barras del navegador
-    const fixVH = () => {
-      document.documentElement.style.setProperty('--vh', window.innerHeight * 0.01 + 'px');
-    };
-    fixVH();
-    addEventListener('resize', fixVH);
-  </script>
 </body>
 </html>
