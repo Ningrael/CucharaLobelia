@@ -1,60 +1,91 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <!-- CHECKLIST 9 PASOS aplicado: leer✓ entender✓ recordar pedido✓ plan mínimo✓ editar sólo necesario✓ verificar✓ mantener funcionalidad✓ sintaxis✓ cerrar✓ -->
+  <!-- CHECKLIST 9 PASOS aplicado -->
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>Misiones · Matched Play</title>
-  <meta name="theme-color" content="#ffffff" />
+  <title>La Cuchara de Lobelia · Inicio</title>
+  <meta name="theme-color" content="#2f3b2b" />
   <style>
+    :root{
+      --lobelia-green: #2E8B57;
+      --lobelia-green-dark:#1f5e3b;
+      --lobelia-cream: #EFE5CF;
+      --lobelia-wood: #3A2A1E;
+      --lobelia-gold: #CFA15B;
+      --shadow: 0 8px 24px rgba(0,0,0,.28);
+      --radius: 16px;
+      --radius-pill: 999px;
+      --gap: 14px;
+    }
+
     html, body { height: 100%; margin: 0; }
     * { box-sizing: border-box; }
 
-    /* Fondo blanco de la página */
     body {
-      background: #ffffff;
+      background: var(--lobelia-wood);
       min-height: 100dvh;
       display: grid;
       place-items: center;
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
     }
 
-    /* Lienzo 9:16 (rectángulo negro) */
     .app {
-      width: 100vw;
-      height: 100dvh;
-      max-width: 56.25vh;   /* 9/16 del alto */
-      aspect-ratio: 9 / 16; /* mantiene la relación */
-      background: #000000;
-      position: relative;
-      border-radius: 16px;
-      overflow: hidden;
-      box-shadow: 0 10px 30px rgba(0,0,0,.25);
-      display: grid;
-      place-items: center; /* centra el contenido (botón) */
-      touch-action: manipulation;
+      width: 100vw; height: 100dvh; max-width: 56.25vh; aspect-ratio: 9 / 16;
+      position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: center;
+      padding: 18px; background: url('Inicio.png') center/cover no-repeat, #000;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
     }
 
-    /* Botón centrado */
-    .btn {
-      appearance: none;
-      border: none;
-      padding: 14px 18px;
-      border-radius: 999px;
-      background: #ffffff;
-      color: #111111;
-      font-weight: 700;
-      letter-spacing: .2px;
-      cursor: pointer;
-      user-select: none;
+    .app::before{
+      content: ""; position: absolute; inset: 0; pointer-events:none;
+      background: radial-gradient(80% 60% at 50% 50%, rgba(0,0,0,0.00) 0%, rgba(0,0,0,0.35) 60%, rgba(0,0,0,.55) 100%),
+                  linear-gradient(to bottom, rgba(0,0,0,.15) 0%, rgba(0,0,0,.35) 60%, rgba(0,0,0,.65) 100%);
     }
 
-    .btn:active { transform: scale(.98); }
+    .content{ position: relative; z-index: 1; width: 100%; display: flex; flex-direction: column; align-items: center; gap: var(--gap); margin-top: 160px; }
+
+    .btn{ appearance:none; border:none; cursor:pointer; user-select:none; letter-spacing:.2px; font-weight:700; text-align:center; transition: transform .06s ease, filter .15s ease, box-shadow .15s ease; }
+    .btn:active{ transform: translateY(1px) scale(.99); }
+
+    .btn-primary{
+      width: 50%; max-width: 200px; padding: 14px 18px; border-radius: var(--radius-pill);
+      background: rgba(239,229,207,.92); color: #1c1a16; box-shadow: var(--shadow);
+      border: 1px solid rgba(0,0,0,.12);
+    }
+    @media(hover:hover){ .btn-primary:hover{ filter: brightness(1.03); } }
+
+    .top-right{ position:absolute; top: 12px; right: 12px; z-index:2; }
+    .btn-google{ padding:10px 12px; border-radius: var(--radius-pill); background: rgba(239,229,207,.95); color:#1c1a16; box-shadow: var(--shadow); border:1px solid rgba(0,0,0,.12); }
+
+    .bottom{ position: absolute; left: 0; right: 0; z-index:1; display:flex; justify-content:center; }
+    .btn-small{ padding: 10px 12px; border-radius: var(--radius-pill); width: 50%; max-width: 200px; background: rgba(239,229,207,.9); color:#1c1a16; box-shadow: var(--shadow); border:1px solid rgba(0,0,0,.12); font-weight:600; }
+
+    .btn-primary, .btn-small, .btn-google{ outline: none; }
+    .btn-primary:focus-visible, .btn-small:focus-visible, .btn-google:focus-visible{ box-shadow: 0 0 0 3px rgba(46,139,87,.35), var(--shadow); }
   </style>
 </head>
 <body>
-  <main class="app" role="main" aria-label="Contenedor 9:16">
-    <button class="btn" id="btn-misiones">Misiones Matched play</button>
+  <main class="app" role="main" aria-label="Pantalla de inicio">
+    <div class="top-right">
+      <button class="btn btn-google">Sesión Google</button>
+    </div>
+
+    <div class="content" aria-live="polite">
+      <button class="btn btn-primary">Misiones Matched play</button>
+      <button class="btn btn-primary">Tutoriales</button>
+      <button class="btn btn-primary">Calendarios</button>
+      <button class="btn btn-primary">STL de interés</button>
+    </div>
+
+    <div class="bottom" style="bottom: 60px;">
+      <button class="btn btn-small">Configuración</button>
+    </div>
+
+    <div class="bottom" style="bottom: 14px;">
+      <button class="btn btn-small">Contacta y reporta bugs</button>
+    </div>
   </main>
 </body>
 </html>
