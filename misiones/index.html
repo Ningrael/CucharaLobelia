@@ -222,12 +222,12 @@
             .screen::before{content:""; position:absolute; inset:0; background:url('../Inicio.png') center/cover no-repeat; z-index:0}
             .screen > *{position:relative; z-index:1}  
 
-            .banner{padding:6px 8px; border-bottom:1px solid rgba(255,255,255,.12); background:rgba(0,0,0,.18); display:flex; align-items:center} 
+            .banner{padding:6px 8px; border-bottom:1px solid rgba(255,255,255,.12); background:rgba(0,0,0,.18); display:flex; align-items:center; justify-content:flex-start; position:relative} 
             .brand{font-family:Georgia,serif; font-weight:900; color:var(--cream); font-size:16px; letter-spacing:.3px; text-shadow:0 1px 0 rgba(0,0,0,.35)}
 
-            .lang-switch{display:flex; align-items:center; gap:6px}
-            .flag-btn{border:1px solid rgba(255,255,255,.25); background:rgba(0,0,0,.15); color:#fff; border-radius:9999px; padding:4px 8px; cursor:pointer; font-weight:800}
-            @media(hover:hover){ .flag-btn:hover{filter:brightness(1.08)} }
+            .top-right{ position:absolute; top:8px; right:8px; z-index:2; display:flex; align-items:center; gap:6px; }
+.flag-btn{ width:26px; height:18px; border:none; background-size:cover; background-position:center; border-radius:4px; cursor:pointer; box-shadow:var(--shadow-sm); }
+@media(hover:hover){ .flag-btn:hover{ filter:brightness(1.03); } }
 
             .controls{padding:6px 8px; display:flex; align-items:center; justify-content:space-between; gap:8px; background:rgba(0,0,0,.12); border-bottom:1px solid rgba(255,255,255,.10)}  
 
@@ -284,9 +284,9 @@
             <div className="screen" ref={screenRef}>
               <div className="banner" ref={bannerRef}>
                 <div className="brand" data-i18n="brand">@cucharalobelia Misiones</div>
-                <div className="lang-switch" role="group" aria-label="Language">
-                  <button className="flag-btn" data-i18n-aria-lang-es onClick={()=> setLang('es')} title="ES" type="button">🇪🇸</button>
-                  <button className="flag-btn" data-i18n-aria-lang-en onClick={()=> setLang('en')} title="EN" type="button">🇬🇧</button>
+                <div className="top-right" role="group" aria-label="Language">
+                  <button className="flag-btn" data-i18n-aria-lang-es onClick={()=> setLang('es')} title="ES" type="button" style={{backgroundImage:"url('https://flagcdn.com/w20/es.png')"}}></button>
+                  <button className="flag-btn" data-i18n-aria-lang-en onClick={()=> setLang('en')} title="EN" type="button" style={{backgroundImage:"url('https://flagcdn.com/w20/gb.png')"}}></button>
                 </div>
               </div>
 
