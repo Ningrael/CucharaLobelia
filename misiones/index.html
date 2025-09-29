@@ -43,27 +43,19 @@
         const controlsH = (controlsRef.current && controlsRef.current.getBoundingClientRect().height) || 0;
         const footerH   = (footerRef.current   && footerRef.current.getBoundingClientRect().height) || 0;
 
-        let availH = screen.clientHeight - bannerH - controlsH - footerH;
-        let availW = screen.clientWidth;
+        let availH = screen.clientHeight - bannerH - controlsH - footerH - 8; // reducir márgenes
+        let availW = screen.clientWidth - 8*2; // reducir márgenes laterales
 
-        const poolsWrap = gridRef.current && gridRef.current.parentElement;
-        if (poolsWrap) {
-          const cs = getComputedStyle(poolsWrap);
-          const padV = parseFloat(cs.paddingTop||0) + parseFloat(cs.paddingBottom||0);
-          const padH = parseFloat(cs.paddingLeft||0) + parseFloat(cs.paddingRight||0);
-          availH -= padV; availW -= padH;
-        }
-
-        const gap = 8;
+        const gap = 5; // reducir el gap para aprovechar mejor
         const cols = 2, rows = 3;
         const sizeByH = Math.floor((availH - gap * (rows + 1)) / rows);
         const sizeByW = Math.floor((availW - gap * (cols + 1)) / cols);
         const tile = Math.max(0, Math.min(sizeByH, sizeByW));
 
-        const pad = 8;
+        const pad = 5; // reducir padding interno
         const innerW = tile - pad*2;
         const innerH = tile - pad*2;
-        const btnGap = 8;
+        const btnGap = 6;
         const subCols = 2, subRows = 2;
         const btnW = Math.max(0, Math.floor((innerW - btnGap * (subCols - 1)) / subCols));
         const btnH = Math.max(0, Math.floor((innerH - btnGap * (subRows - 1)) / subRows));
@@ -115,47 +107,72 @@
       const inc = () => { let n = parseInt(rounds||"3",10); if(Number.isNaN(n)) n=3; if(n<6) setRounds(String(n+1)); };
 
       return (
-        <div className="stage" style={{minHeight:"100svh",display:"flex",alignItems:"center",justifyContent:"center",background:"url('../Inicio.png') center/cover no-repeat"}}>
+        <div className="stage" style={{minHeight:"100svh",display:"flex",alignItems:"center",justifyContent:"center",background:"#3b2b20"}}>
           <style>{`
-            :root{ --tile:120px; --btnW:54px; --btnH:54px; --gap:8px; }
+            :root{
+              --cream:#EFE5CF; --cream-2:#F7EFDA;
+              --ink:#221b14; --ink-soft:#574635;
+              --gold:#CFA15B; --gold-2:#EAD39A; --gold-line:#B79045;
+              --shadow-lg:0 14px 40px rgba(0,0,0,.40);
+              --shadow-sm:0 4px 14px rgba(0,0,0,.18);
+              --tile:120px; --btnW:54px; --btnH:54px; --gap:6px;
+              --radius:14px; --radius-pill:9999px;
+            }
             *{box-sizing:border-box}
-            .phone{aspect-ratio:9/16; width:min(92vw,430px); max-height:min(94vh,860px); border-radius:22px; padding:10px; box-shadow:0 0 24px rgba(0,0,0,.45); background:rgba(0,0,0,.4); border:1px solid rgba(0,0,0,.45); position:relative}
-            .screen{position:absolute; inset:12px; border-radius:18px; overflow:hidden; display:flex; flex-direction:column; background:rgba(255,255,255,.04);}
 
-            .banner{padding:8px 10px; border-bottom:1px solid rgba(255,255,255,.12); background:rgba(0,0,0,.18); display:flex; align-items:center}
-            .brand{font-family:Georgia,serif; font-weight:900; color:#f4e9d2; font-size:16px; letter-spacing:.3px}
+            .phone{aspect-ratio:9/16; width:min(96vw,480px); max-height:min(98vh,940px); border-radius:22px; padding:6px; box-shadow:var(--shadow-lg); background:url('../Inicio.png') center/cover no-repeat; border:1px solid rgba(0,0,0,.45); position:relative} 
+            .screen{position:absolute; inset:8px; border-radius:18px; overflow:hidden; display:flex; flex-direction:column; background:transparent;} 
 
-            .controls{padding:8px 10px; display:flex; align-items:center; justify-content:space-between; gap:10px; background:rgba(0,0,0,.12); border-bottom:1px solid rgba(255,255,255,.1)}
-            .btn-gold{background:linear-gradient(180deg,#ead39a,#cfa15b); border:1px solid #b79045; border-radius:9999px; color:#1f1a14; padding:6px 12px; font-weight:800}
-            .stack{display:flex; align-items:center; gap:8px}
-            .btn-circle{width:24px;height:24px;border-radius:9999px;display:inline-flex;align-items:center;justify-content:center;border:1px solid #b79045;background:linear-gradient(180deg,#ead39a,#cfa15b);color:#1f1a14;font-weight:900}
-            .rounds-input{appearance:none;-moz-appearance:textfield;width:44px;padding:4px 6px;border-radius:10px;border:1px solid rgba(255,255,255,.25);background:rgba(0,0,0,.25);color:#f4e9d2;font-weight:800;text-align:center}
-            .btn-secondary{border-radius:9999px; border:1px solid rgba(234,211,154,.5); background:rgba(12,11,9,.45); color:#f4e9d2; padding:6px 12px; font-weight:800}
+            .banner{padding:6px 8px; border-bottom:1px solid rgba(255,255,255,.12); background:rgba(0,0,0,.18); display:flex; align-items:center} 
+            .brand{font-family:Georgia,serif; font-weight:900; color:var(--cream); font-size:16px; letter-spacing:.3px; text-shadow:0 1px 0 rgba(0,0,0,.35)}
+
+            .controls{padding:6px 8px; display:flex; align-items:center; justify-content:space-between; gap:8px; background:rgba(0,0,0,.12); border-bottom:1px solid rgba(255,255,255,.10)} 
+
+            .btn-gold,.btn-secondary{appearance:none; border:1px solid var(--gold-line); border-radius:var(--radius-pill); color:var(--ink);
+              padding:6px 12px; font-weight:800; cursor:pointer; transition:transform .06s ease, filter .18s ease, box-shadow .18s ease;
+              box-shadow:var(--shadow-sm)}
+
+            .btn-gold{background:linear-gradient(180deg,var(--gold-2),var(--gold));}
+            .btn-secondary{background:linear-gradient(180deg, #f0e7cf, #e2d7bb); color:var(--ink)}
+            .btn-gold:active,.btn-secondary:active{transform:translateY(1px) scale(.99)}
+            @media(hover:hover){ .btn-gold:hover,.btn-secondary:hover{filter:brightness(1.05)} }
+
+            .stack{display:flex; align-items:center; gap:6px}
+            .btn-circle{width:24px;height:24px;border-radius:var(--radius-pill);display:inline-flex;align-items:center;justify-content:center;
+              border:1px solid var(--gold-line); background:linear-gradient(180deg,var(--gold-2),var(--gold)); color:var(--ink); font-weight:900; box-shadow:var(--shadow-sm)}
+            .rounds-input{appearance:none;-moz-appearance:textfield;width:40px;padding:4px 6px;border-radius:10px;border:1px solid rgba(255,255,255,.25);
+              background:rgba(0,0,0,.28);color:var(--cream);font-weight:800;text-align:center}
 
             .content{flex:1; overflow:hidden}
-            .pools{height:100%; padding:var(--gap)}
-            .pools-grid{height:100%; display:grid; grid-template-columns:repeat(2, var(--tile)); grid-template-rows:repeat(3, var(--tile)); gap:var(--gap); justify-content:center}
+            .pools{height:100%; padding:var(--gap) 4px} 
+            .pools-grid{height:100%; display:grid; grid-template-columns:repeat(2, var(--tile)); grid-template-rows:repeat(3, var(--tile)); gap:var(--gap); justify-content:center} 
 
-            .pool-card{width:var(--tile); height:var(--tile); background:#efe5cf; border:1px solid rgba(0,0,0,.12); border-radius:12px; padding:8px; box-shadow:0 4px 12px rgba(0,0,0,.12); display:flex; flex-direction:column}
-            .missions{list-style:none; padding:0; margin:0; flex:1; display:grid; grid-template-columns:repeat(2, 1fr); grid-template-rows:repeat(2, 1fr); gap:8px; align-items:stretch; justify-items:stretch}
-            .missions>li{min-width:0; min-height:0}
-            .item{width:100%; height:100%; border:1px solid rgba(0,0,0,.10); border-radius:10px; background:#fff8e9; display:flex; align-items:center; justify-content:center; padding:4px; text-align:center}
-            .item .label{font-weight:700; font-size:10px; color:#2a241b; line-height:1.2; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
-            .item.selected{outline:2px solid #cfa15b; outline-offset:1px; box-shadow:0 0 10px rgba(202,161,91,.25)}
-            .badge{position:absolute; right:6px; top:6px; padding:2px 6px; border-radius:9999px; background:rgba(12,11,9,.8); border:1px solid rgba(234,211,154,.6); color:#f2e6c6; font-size:10px; font-weight:800}
+            .pool-card{width:var(--tile); height:var(--tile);
+              background:linear-gradient(180deg,var(--cream),var(--cream-2));
+              border:1px solid rgba(0,0,0,.12); border-radius:var(--radius); padding:6px; box-shadow:var(--shadow-sm); display:flex; flex-direction:column}
 
-            .footer{padding:10px; text-align:center; background:rgba(0,0,0,.12); border-top:1px solid rgba(255,255,255,.1)}
-            .btn-footer{border-radius:9999px; border:1px solid rgba(0,0,0,.15); background:#efe5cf; color:#1c1a16; padding:8px 16px; font-weight:700; box-shadow:0 2px 8px rgba(0,0,0,.25)}
+            .missions{list-style:none; padding:0; margin:0; flex:1; display:grid; grid-template-columns:repeat(2, 1fr); grid-template-rows:repeat(2, 1fr); gap:6px; align-items:stretch; justify-items:stretch}
+            .missions>li{min-width:0; min-height:0; position:relative}
+
+            .item{width:100%; height:100%; border:1px solid rgba(0,0,0,.12); border-radius:10px;
+              background:#fff8e9; display:flex; align-items:center; justify-content:center; padding:4px; text-align:center;
+              box-shadow:inset 0 -1px 0 rgba(0,0,0,.05), 0 1px 0 rgba(255,255,255,.6); transition:filter .15s ease, transform .06s ease}
+            .item:active{transform:translateY(1px)}
+            @media(hover:hover){ .item:hover{filter:brightness(1.03)} }
+            .item .label{font-weight:700; font-size:11px; color:var(--ink); line-height:1.2; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
+            .item.selected{outline:2px solid var(--gold); outline-offset:1px; box-shadow:0 0 10px rgba(202,161,91,.28)}
+            .badge{position:absolute; right:4px; top:4px; padding:2px 5px; border-radius:9999px; background:rgba(12,11,9,.82); border:1px solid rgba(234,211,154,.6); color:#f2e6c6; font-size:9px; font-weight:800}
+
+            .footer{padding:8px; text-align:center; background:rgba(0,0,0,.12); border-top:1px solid rgba(255,255,255,.10)} 
+            .btn-footer{border-radius:var(--radius-pill); border:1px solid rgba(0,0,0,.15); background:var(--cream); color:#1c1a16; padding:8px 14px; font-weight:700; box-shadow:var(--shadow-sm)}
           `}</style>
 
           <div className="phone">
             <div className="screen" ref={screenRef}>
-              {/* Banner superior */}
               <div className="banner" ref={bannerRef}>
                 <div className="brand">@cucharalobelia Misiones</div>
               </div>
 
-              {/* Barra de controles */}
               <div className="controls" ref={controlsRef}>
                 <button className="btn-gold" onClick={pickRandom}>Elegir Random</button>
                 <div className="stack">
@@ -169,7 +186,6 @@
                 <button className="btn-secondary" onClick={generateRounds}>Generar</button>
               </div>
 
-              {/* Contenido con separación alrededor */}
               <div className="content">
                 <div className="pools">
                   <div className="pools-grid" ref={gridRef}>
@@ -188,7 +204,6 @@
                 </div>
               </div>
 
-              {/* Footer con botón Volver */}
               <div className="footer" ref={footerRef}>
                 <button className="btn-footer" onClick={()=> window.location.href = "../index.html"}>Volver</button>
               </div>
