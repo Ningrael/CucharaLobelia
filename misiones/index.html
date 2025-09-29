@@ -40,23 +40,6 @@
       ]},
     ];
 
-    // ===== Pequeño "test" de estructura para evitar errores de mapeo =====
-    (()=>{
-      if (!Array.isArray(POOLS)) {
-        console.error("POOLS no es un array.");
-      } else {
-        const bad = POOLS.filter(p => !p || !Array.isArray(p.items) || p.items.length!==4);
-        if (bad.length) console.warn("Algún pool no tiene exactamente 4 items: ", bad);
-      }
-    })();
-
-    const PAGES_BY_MISSION = {
-      "Domination": "https://drive.google.com/file/d/1h3OUvVS59GOClhn5Qcj-FscDpZobNo6h/preview",
-      ...Object.fromEntries(
-        POOLS.flatMap(p => (p.items||[]).filter(n=>n!=="Domination").map(n => [n, "1"]))
-      )
-    };
-
     const slug = (s) => String(s||"").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 
     function openPlaceholder(missionName) {
@@ -75,8 +58,6 @@
     function App(){
       const missions = useMemo(()=> POOLS.flatMap(p=> (p.items||[])), []);
       const [selected, setSelected] = useState("");
-      const [toast, setToast] = useState("");
-      const toastTimer = useRef(null);
       const refs = useRef({});
 
       const [roundsInput, setRoundsInput] = useState("3");
@@ -91,7 +72,7 @@
         const screen = screenRef.current; if (!screen) return;
         const bannerH = (bannerRef.current&&bannerRef.current.getBoundingClientRect().height) || 0;
         const controlsH = (controlsRef.current&&controlsRef.current.getBoundingClientRect().height) || 0;
-        const availH = screen.clientHeight - bannerH - controlsH;
+        const availH = screen.clientHeight - bannerH - controlsH - 50; // espacio para botón volver
         const availW = screen.clientWidth;
 
         const gap = 8;
@@ -122,17 +103,7 @@
         return ()=> window.removeEventListener('resize', onR);
       },[]);
 
-      const showToast = (msg) => { setToast(msg); if (toastTimer.current) clearTimeout(toastTimer.current); toastTimer.current = setTimeout(()=> setToast(""), 1600); };
-      const choose = (name) => setSelected(name);
-      const pickRandom = () => { if (!missions.length) return; setBadges({}); const name = missions[Math.floor(Math.random()*missions.length)]; choose(name); showToast(`🎲 ${name}`); };
-      const handleClickMission = (name) => { choose(name); const url = PAGES_BY_MISSION[name]; if (url && url !== "1") window.open(url, "_blank"); else openPlaceholder(name); };
-
-      const genTournament = () => {
-        const raw = roundsInput === "" ? "3" : roundsInput; let n = parseInt(raw, 10); if (Number.isNaN(n)) n = 3; const count = Math.max(1, Math.min(6, n));
-        const idxs = Array.from({length: POOLS.length}, (_,i)=>i); for (let i=idxs.length-1; i>0; i--){ const j=Math.floor(Math.random()*(i+1)); [idxs[i],idxs[j]]=[idxs[j],idxs[i]]; }
-        const chosen = idxs.slice(0,count); const newBadges={}; const seq=[]; chosen.forEach((pi,k)=>{ const pool=POOLS[pi]; const m=(pool.items||[])[Math.floor(Math.random()*pool.items.length)]; newBadges[m]=k+1; seq.push({round:k+1,mission:m});});
-        setBadges(newBadges); const last=seq[seq.length-1]; if(last) choose(last.mission); seq.forEach((s,k)=> setTimeout(()=> showToast(`🏆 R${s.round}: ${s.mission}`), 500+k*900));
-      };
+      const handleClickMission = (name) => { setSelected(name); openPlaceholder(name); };
 
       const incRounds = () => { let n = parseInt(roundsInput || "3", 10); if (Number.isNaN(n)) n = 3; if (n < 6) setRoundsInput(String(n+1)); };
       const decRounds = () => { let n = parseInt(roundsInput || "3", 10); if (Number.isNaN(n)) n = 3; if (n > 1) setRoundsInput(String(n-1)); };
@@ -181,8 +152,8 @@
             .item.selected{outline:2px solid #caa24f; outline-offset:1px; box-shadow:0 0 10px rgba(202,162,79,.28)}
             .badge{position:absolute; right:6px; top:6px; padding:2px 6px; border-radius:999px; background:rgba(12,11,9,.85); border:1px solid rgba(234,211,154,.6); color:#f2e6c6; font-size:10px; font-weight:800}
 
-            .toast{position:fixed; top:10px; left:50%; transform:translateX(-50%) translateY(-8px); opacity:0; pointer-events:none; background:rgba(12,11,9,.88); color:#f4e9d2; border:1px solid rgba(234,211,154,.5); padding:8px 12px; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,.45); font-weight:800}
-            .toast.show{opacity:1; transform:translateX(-50%) translateY(0); transition:opacity .18s ease, transform .18s ease}
+            .footer{padding:8px; text-align:center; background:rgba(0,0,0,.15); border-top:1px solid rgba(255,255,255,.1)}
+            .btn-footer{border-radius:var(--pill); border:1px solid rgba(234,211,154,.5); background:rgba(12,11,9,.65); color:#f4e9d2; padding:8px 16px; font-weight:800}
           `}</style>
 
           <div className="phone">
@@ -191,19 +162,17 @@
                 <div className="brand">@cucharalobelia Misiones</div>
               </div>
 
-              <div className={"toast" + (toast?" show":"")}>{toast}</div>
-
               <div className="controls" ref={controlsRef}>
-                <button onClick={pickRandom} className="btn-gold" title="Elegir una misión al azar">Elegir Random</button>
+                <button onClick={()=>{}} className="btn-gold">Elegir Random</button>
                 <div className="stack">
                   <label>Rondas</label>
                   <button className="btn-circle" onClick={decRounds}>-</button>
-                  <input className="rounds-input" type="text" inputMode="numeric" aria-label="Número de rondas" placeholder="3" value={roundsInput}
+                  <input className="rounds-input" type="text" inputMode="numeric" value={roundsInput}
                     onChange={(e)=>{ const v=e.target.value.trim(); if (v===""){setRoundsInput("");return;} if (/^[1-6]$/.test(v)){setRoundsInput(v);} }}
                     onBlur={()=>{ if (roundsInput === "") setRoundsInput("3"); }} />
                   <button className="btn-circle" onClick={incRounds}>+</button>
                 </div>
-                <button onClick={genTournament} className="btn-secondary" title="Generar rondas de torneo">Generar</button>
+                <button onClick={()=>{}} className="btn-secondary">Generar</button>
               </div>
 
               <div className="content">
@@ -232,6 +201,10 @@
                     ))}
                   </div>
                 </div>
+              </div>
+
+              <div className="footer">
+                <button className="btn-footer" onClick={()=> window.location.href = "../index.html"}>Volver</button>
               </div>
 
             </div>
