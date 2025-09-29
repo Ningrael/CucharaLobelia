@@ -67,12 +67,14 @@
       const bannerRef = useRef(null);
       const controlsRef = useRef(null);
       const gridRef = useRef(null);
+      const footerRef = useRef(null);
 
       const recalcSizes = () => {
         const screen = screenRef.current; if (!screen) return;
         const bannerH = (bannerRef.current&&bannerRef.current.getBoundingClientRect().height) || 0;
         const controlsH = (controlsRef.current&&controlsRef.current.getBoundingClientRect().height) || 0;
-        const availH = screen.clientHeight - bannerH - controlsH - 50; // espacio para botón volver
+        const footerH = (footerRef.current && footerRef.current.getBoundingClientRect().height) || 0;
+        const availH = screen.clientHeight - bannerH - controlsH - footerH;
         const availW = screen.clientWidth;
 
         const gap = 8;
@@ -123,7 +125,12 @@
             .phone{aspect-ratio:9/16; width:min(92vw,430px); max-height:min(94vh,860px); border-radius:22px; padding:10px; box-shadow:var(--shadow);
               background:linear-gradient(180deg,var(--wood-dark),#2b1e14); border:1px solid rgba(0,0,0,.45); position:relative}
             .screen{position:absolute; inset:12px; border-radius:18px; overflow:hidden; display:flex; flex-direction:column;
-              background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.03)); border:1px solid rgba(255,255,255,.06)}
+              background:
+                repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0 2px, transparent 2px 6px),
+                linear-gradient(180deg, rgba(239,229,207,0.55), rgba(46,139,87,0.35), rgba(239,229,207,0.55)),
+                url('../Inicio.png') center/cover no-repeat;
+              background-blend-mode: overlay; border:1px solid rgba(255,255,255,.06); position:relative}
+            .screen::before{content:""; position:absolute; inset:0; pointer-events:none; background: radial-gradient(80% 60% at 50% 50%, rgba(0,0,0,0.00) 0%, rgba(0,0,0,0.25) 60%, rgba(0,0,0,.45) 100%);}
 
             .banner{padding:6px 10px; border-bottom:1px solid rgba(255,255,255,.12); background:rgba(0,0,0,.18); display:flex; align-items:center}
             .brand{font-family:Georgia,serif; font-weight:900; color:#f4e9d2; font-size:16px; letter-spacing:.3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
@@ -152,8 +159,8 @@
             .item.selected{outline:2px solid #caa24f; outline-offset:1px; box-shadow:0 0 10px rgba(202,162,79,.28)}
             .badge{position:absolute; right:6px; top:6px; padding:2px 6px; border-radius:999px; background:rgba(12,11,9,.85); border:1px solid rgba(234,211,154,.6); color:#f2e6c6; font-size:10px; font-weight:800}
 
-            .footer{padding:8px; text-align:center; background:rgba(0,0,0,.15); border-top:1px solid rgba(255,255,255,.1)}
-            .btn-footer{border-radius:var(--pill); border:1px solid rgba(234,211,154,.5); background:rgba(12,11,9,.65); color:#f4e9d2; padding:8px 16px; font-weight:800}
+            .footer{padding:12px; text-align:center; background:rgba(0,0,0,.15); border-top:1px solid rgba(255,255,255,.1)}
+            .btn-footer{border-radius:var(--pill); border:1px solid rgba(0,0,0,.12); background: rgba(239,229,207,.92); color:#1c1a16; padding:10px 16px; font-weight:700; box-shadow:var(--shadow)}
           `}</style>
 
           <div className="phone">
@@ -203,7 +210,7 @@
                 </div>
               </div>
 
-              <div className="footer">
+              <div className="footer" ref={footerRef}>
                 <button className="btn-footer" onClick={()=> window.location.href = "../index.html"}>Volver</button>
               </div>
 
