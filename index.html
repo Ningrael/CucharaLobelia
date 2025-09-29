@@ -73,33 +73,89 @@
 
     .btn-primary, .btn-small, .btn-google{ outline: none; }
     .btn-primary:focus-visible, .btn-small:focus-visible, .btn-google:focus-visible{ box-shadow: 0 0 0 3px rgba(46,139,87,.35), var(--shadow); }
-  </style>
+      /* Estado visual deshabilitado (pero clicable para mostrar aviso) */
+    .btn-disabled{ opacity:.55; filter:saturate(.2) contrast(.95); }
+    @media(hover:hover){ .btn-disabled:hover{ filter:saturate(.25) contrast(.98); }}
+
+    /* Modal WIP */
+    .modal-backdrop{ position:fixed; inset:0; background:rgba(0,0,0,.5); display:none; z-index:999; }
+    .modal{ position:fixed; inset:auto; left:50%; top:50%; transform:translate(-50%,-50%); background:rgba(239,229,207,.98); color:#1c1a16; border-radius:16px; box-shadow: var(--shadow); border:1px solid rgba(0,0,0,.12); width:min(92vw,420px); padding:18px; display:none; z-index:1000; }
+    .modal h2{ margin:0 0 8px; font-size:1.05rem; }
+    .modal p{ margin:0 0 14px; line-height:1.35; }
+    .modal .actions{ display:flex; justify-content:flex-end; gap:10px; }
+    .modal .btn-ok{ padding:10px 14px; border:none; border-radius:999px; background:var(--lobelia-cream); box-shadow: var(--shadow); font-weight:700; cursor:pointer; }
+    .modal-open .modal, .modal-open .modal-backdrop{ display:block; }
+</style>
 </head>
 <body>
   <main class="app" role="main" aria-label="Pantalla de inicio">
 
     <div class="top-right">
-      <button class="btn btn-google" type="button">Sesión Google</button>
+      <button class="btn btn-google btn-disabled" type="button" data-wip aria-disabled="true">Sesión Google</button>
     </div>
 
     <div class="content" aria-live="polite">
-      <!-- Corregido: el enlace usa la ruta relativa correcta sin barra inicial -->
       <a class="btn btn-primary" id="btn-misiones" href="misiones/index.html" target="_self" aria-label="Abrir Misiones Matched Play">
         Misiones Matched play
       </a>
 
-      <button class="btn btn-primary" type="button">Tutoriales</button>
-      <button class="btn btn-primary" type="button">Calendarios</button>
-      <button class="btn btn-primary" type="button">STL de interés</button>
+      <button class="btn btn-primary btn-disabled" type="button" data-wip aria-disabled="true">Tutoriales</button>
+      <button class="btn btn-primary btn-disabled" type="button" data-wip aria-disabled="true">Calendarios</button>
+      <button class="btn btn-primary btn-disabled" type="button" data-wip aria-disabled="true">STL de interés</button>
     </div>
 
     <div class="bottom" style="bottom: 60px;">
-      <button class="btn btn-small" type="button">Configuración</button>
+      <button class="btn btn-small btn-disabled" type="button" data-wip aria-disabled="true">Configuración</button>
     </div>
 
     <div class="bottom" style="bottom: 14px;">
-      <button class="btn btn-small" type="button">Contacta y reporta bugs</button>
+      <button class="btn btn-small btn-disabled" type="button" data-wip aria-disabled="true">Contacta y reporta bugs</button>
+    </div>
+
+    <!-- Modal WIP -->
+    <div id="wip-backdrop" class="modal-backdrop" aria-hidden="true"></div>
+    <div id="wip-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="wip-title" aria-describedby="wip-desc" aria-hidden="true">
+      <h2 id="wip-title">Función en construcción</h2>
+      <p id="wip-desc">Estamos trabajando en esta sección. Vuelve en un tiempo.</p>
+      <div class="actions">
+        <button id="wip-ok" class="btn-ok" type="button">OK</button>
+      </div>
     </div>
   </main>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const modal = document.getElementById('wip-modal');
+      const backdrop = document.getElementById('wip-backdrop');
+      const okBtn = document.getElementById('wip-ok');
+      let lastFocus = null;
+
+      const openModal = () => {
+        lastFocus = document.activeElement;
+        document.documentElement.classList.add('modal-open');
+        modal.removeAttribute('aria-hidden');
+        backdrop.removeAttribute('aria-hidden');
+        okBtn.focus();
+      };
+
+      const closeModal = () => {
+        document.documentElement.classList.remove('modal-open');
+        modal.setAttribute('aria-hidden','true');
+        backdrop.setAttribute('aria-hidden','true');
+        if (lastFocus && typeof lastFocus.focus === 'function') lastFocus.focus();
+      };
+
+      okBtn.addEventListener('click', closeModal);
+      backdrop.addEventListener('click', closeModal);
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+
+      document.querySelectorAll('[data-wip]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          openModal();
+        }, { passive: true });
+      });
+    });
+  </script>
 </body>
 </html>
