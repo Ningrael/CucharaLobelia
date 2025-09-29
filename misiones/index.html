@@ -107,11 +107,15 @@
       const inc = () => { let n = parseInt(rounds||"3",10); if(Number.isNaN(n)) n=3; if(n<6) setRounds(String(n+1)); };
 
       const handleMissionClick = (name) => {
-        if (name === "Domination") {
-          window.open("../Domination.pdf", "_blank");
-        } else {
-          alert("Función en construcción");
-        }
+        const fileName = name.toUpperCase().replace(/ /g, "_") + ".pdf";
+        const url = encodeURI(`./${fileName}`);
+        fetch(url, { method: 'HEAD' }).then(res => {
+          if(res.ok){
+            window.open(url, "_blank");
+          } else {
+            alert("Función en construcción");
+          }
+        }).catch(()=> alert("Función en construcción"));
       };
 
       return (
