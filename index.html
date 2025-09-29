@@ -1,35 +1,58 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <!-- CHECKLIST 9 PASOS aplicado -->
+  <!-- 
+    CHECKLIST 9 PASOS (documentado)
+    1) LEER código actual  ·  2) ENTENDER comportamiento  ·  3) RECORDAR lo pedido
+    4) PLAN CAMBIO MÍNIMO  ·  5) EDITAR solo lo necesario  ·  6) VERIFICAR alcance
+    7) PROBAR que todo sigue bien  ·  8) REVISAR sintaxis  ·  9) CERRAR
+
+    Mini‑tutorial del archivo
+    ────────────────────────
+    • Este HTML dibuja un "lienzo" 9:16 centrado (clase .app) y encima muestra un stack de botones.
+    • El fondo de .app combina: imagen Inicio.png + un degradado translúcido + una textura CSS.
+    • Los botones comparten estilos base (.btn) y dos variantes: .btn-primary (centrales) y .btn-small (inferiores).
+    • Para convertir un botón en navegación se puede usar <a href="/ruta/" class="btn btn-primary">Texto</a>.
+    • GitHub Pages sirve la raíz del repo. Si creamos /misiones/index.html, un enlace a "./misiones/" funciona.
+  -->
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>La Cuchara de Lobelia · Inicio</title>
   <meta name="theme-color" content="#2f3b2b" />
   <style>
+    /* ─────────────────────────────────────────────────────────────
+       1) Paleta y constantes de diseño ("Design Tokens")
+       ───────────────────────────────────────────────────────────── */
     :root{
-      --lobelia-green: #2E8B57;
-      --lobelia-green-dark:#1f5e3b;
-      --lobelia-cream: #EFE5CF;
-      --lobelia-wood: #3A2A1E;
-      --lobelia-gold: #CFA15B;
+      --lobelia-green: #2E8B57;        /* Verde marca */
+      --lobelia-green-dark:#1f5e3b;    /* Verde oscuro de apoyo */
+      --lobelia-cream: #EFE5CF;        /* Crema pergamino */
+      --lobelia-wood: #3A2A1E;         /* Madera exterior */
+      --lobelia-gold: #CFA15B;         /* Dorado acentos */
       --shadow: 0 8px 24px rgba(0,0,0,.28);
       --radius: 16px;
       --radius-pill: 999px;
       --gap: 14px;
     }
 
+    /* Reset mínimo y tipografía */
     html, body { height: 100%; margin: 0; }
     * { box-sizing: border-box; }
 
+    /* Fondo exterior (fuera del 9:16) */
     body {
       background: var(--lobelia-wood);
       min-height: 100dvh;
       display: grid;
-      place-items: center;
+      place-items: center;             /* centra el lienzo .app */
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
     }
 
+    /* ─────────────────────────────────────────────────────────────
+       2) Lienzo 9:16 principal (.app)
+          - Relación de aspecto fija
+          - Fondo = imagen + degradado + textura (todo en CSS)
+       ───────────────────────────────────────────────────────────── */
     .app {
       width: 100vw; height: 100dvh; max-width: 56.25vh; aspect-ratio: 9 / 16;
       position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: center;
@@ -39,20 +62,37 @@
 
       /* Imagen base + overlay degradado y textura */
       background:
+        /* textura diagonal muy sutil */
         repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0 2px, transparent 2px 6px),
+        /* degradado translúcido que unifica la paleta sobre la imagen */
         linear-gradient(180deg, rgba(239,229,207,0.55), rgba(46,139,87,0.35), rgba(239,229,207,0.55)),
+        /* imagen central recortada como cover */
         url('Inicio.png') center/cover no-repeat;
-      background-blend-mode: overlay;
+      background-blend-mode: overlay;  /* mezcla la textura y el degradado con la imagen */
     }
 
+    /* Vignette para dar contraste al contenido sobre el fondo */
     .app::before{
       content: ""; position: absolute; inset: 0; pointer-events:none;
       background: radial-gradient(80% 60% at 50% 50%, rgba(0,0,0,0.00) 0%, rgba(0,0,0,0.25) 60%, rgba(0,0,0,.45) 100%);
     }
 
+    /* Contenedor de los botones centrales */
     .content{ position: relative; z-index: 1; width: 100%; display: flex; flex-direction: column; align-items: center; gap: var(--gap); margin-top: 160px; }
 
-    .btn{ appearance:none; border:none; cursor:pointer; user-select:none; letter-spacing:.2px; font-weight:700; text-align:center; transition: transform .06s ease, filter .15s ease, box-shadow .15s ease; }
+    /* ─────────────────────────────────────────────────────────────
+       3) Sistema de botones
+          - .btn = base reutilizable (para <button> o <a>)
+          - .btn-primary = botones centrales
+          - .btn-small   = botones inferiores
+       ───────────────────────────────────────────────────────────── */
+    .btn{
+      appearance:none; border:none; cursor:pointer; user-select:none; letter-spacing:.2px; font-weight:700; text-align:center; 
+      transition: transform .06s ease, filter .15s ease, box-shadow .15s ease;
+      display: inline-block;           /* hace que <a> se comporte visualmente como botón */
+      text-decoration: none;           /* elimina subrayado si es <a> */
+      color: inherit;                  /* usa el color definido por la variante */
+    }
     .btn:active{ transform: translateY(1px) scale(.99); }
 
     .btn-primary{
@@ -62,35 +102,59 @@
     }
     @media(hover:hover){ .btn-primary:hover{ filter: brightness(1.03); } }
 
+    /* Botón "Sesión Google" anclado arriba a la derecha */
     .top-right{ position:absolute; top: 12px; right: 12px; z-index:2; }
     .btn-google{ padding:10px 12px; border-radius: var(--radius-pill); background: rgba(239,229,207,.95); color:#1c1a16; box-shadow: var(--shadow); border:1px solid rgba(0,0,0,.12); }
 
+    /* Botonera inferior fija (configuración / contacto) */
     .bottom{ position: absolute; left: 0; right: 0; z-index:1; display:flex; justify-content:center; }
     .btn-small{ padding: 10px 12px; border-radius: var(--radius-pill); width: 50%; max-width: 200px; background: rgba(239,229,207,.9); color:#1c1a16; box-shadow: var(--shadow); border:1px solid rgba(0,0,0,.12); font-weight:600; }
 
+    /* Accesibilidad: foco visible sin cambiar la estética */
     .btn-primary, .btn-small, .btn-google{ outline: none; }
     .btn-primary:focus-visible, .btn-small:focus-visible, .btn-google:focus-visible{ box-shadow: 0 0 0 3px rgba(46,139,87,.35), var(--shadow); }
   </style>
 </head>
 <body>
+  <!--
+    Estructura de pantalla
+    ──────────────────────
+    <main.app>      → lienzo 9:16 con fondo marca Lobelia
+      ├─ .top-right → botón de sesión (futuro login Google)
+      ├─ .content   → columna de botones principales
+      └─ .bottom    → fila(s) de botones pequeños anclados al pie
+  -->
   <main class="app" role="main" aria-label="Pantalla de inicio">
+
+    <!-- Futuro: aquí conectaremos Firebase Auth / Google Identity -->
     <div class="top-right">
-      <button class="btn btn-google">Sesión Google</button>
+      <button class="btn btn-google" type="button">Sesión Google</button>
     </div>
 
     <div class="content" aria-live="polite">
-      <button class="btn btn-primary">Misiones Matched play</button>
-      <button class="btn btn-primary">Tutoriales</button>
-      <button class="btn btn-primary">Calendarios</button>
-      <button class="btn btn-primary">STL de interés</button>
+      <!--
+        MIS PRIMERA RUTA (estructura, sin lógica):
+        - Usamos <a> en lugar de <button> para navegar a otra vista.
+        - La URL apunta a una carpeta \/misiones\/ que tendrá su propio index.html.
+        - Si aún no existe, el enlace dará 404; es normal hasta crear esa sección.
+      -->
+      <a class="btn btn-primary" id="btn-misiones" href="./misiones/" target="_self" aria-label="Abrir Misiones Matched Play">
+        Misiones Matched play
+      </a>
+
+      <!-- Los demás siguen como botones visuales hasta que definamos su ruta -->
+      <button class="btn btn-primary" type="button">Tutoriales</button>
+      <button class="btn btn-primary" type="button">Calendarios</button>
+      <button class="btn btn-primary" type="button">STL de interés</button>
     </div>
 
+    <!-- Pie con acciones secundarias -->
     <div class="bottom" style="bottom: 60px;">
-      <button class="btn btn-small">Configuración</button>
+      <button class="btn btn-small" type="button">Configuración</button>
     </div>
 
     <div class="bottom" style="bottom: 14px;">
-      <button class="btn btn-small">Contacta y reporta bugs</button>
+      <button class="btn btn-small" type="button">Contacta y reporta bugs</button>
     </div>
   </main>
 </body>
