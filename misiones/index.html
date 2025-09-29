@@ -178,8 +178,10 @@
         const baseName = (name || '').toUpperCase() + '.pdf';
         const base = new URL('.', window.location.href); // carpeta actual (/misiones/)
         const candidates = [
-          new URL(encodeURIComponent(baseName), base).href,
-          new URL(encodeURIComponent(baseName.replace(/ /g, '_')), base).href,
+          new URL(baseName, base).href, // dejar al navegador codificar espacios
+          new URL(encodeURIComponent(baseName), base).href, // variante codificada explícita
+          new URL(baseName.replace(/ /g, '_'), base).href, // variante con guiones bajos
+          new URL(baseName.replace(/!/g, ''), base).href, // variante sin '!'
         ];
 
         for (const href of candidates) {
@@ -192,7 +194,7 @@
               setSelected(name);
               return;
             }
-          } catch (_) { /* sigue con el siguiente */ }
+          } catch (_) { /* intenta siguiente */ }
         }
         alert(I18N[getSavedLang()].pdf_missing);
       };
@@ -201,6 +203,21 @@
         setShowPdf(false);
         setTimeout(()=> setPdfViewerSrc('about:blank'), 200);
       };
+
+      // --- mini pruebas de sanidad en consola ("test cases" livianos) ---
+      useEffect(()=>{
+        try {
+          console.assert(Array.isArray(POOLS) && POOLS.length === 6, 'POOLS debe tener 6 entradas');
+          console.assert(POOLS.every(p=>Array.isArray(p.items)&&p.items.length===4), 'Cada pool debe tener 4 misiones');
+          const varsOk = getComputedStyle(document.documentElement);
+          // Ejecuta un recálculo y comprueba que tile > 0
+          recalcSizes();
+          const grid = gridRef.current; if (grid) {
+            const tile = parseInt(grid.style.getPropertyValue('--tile')||'0',10);
+            console.assert(tile>0, 'El tamaño de tile debería ser > 0');
+          }
+        } catch(e){ console.warn('Self-check warning:', e); }
+      },[]);
 
       return (
         <div className="stage" style={{minHeight:"100svh",display:"flex",alignItems:"center",justifyContent:"center",background:"#3b2b20"}}>
@@ -254,7 +271,7 @@
             .pools-grid{height:100%; display:grid; grid-template-columns:repeat(2, var(--tile)); grid-template-rows:repeat(3, var(--tile)); gap:var(--gap); justify-content:center}
 
             .pool-card{width:var(--tile); height:var(--tile);
-              /* Fondo con degradado/transparencia ~25% para dejar ver más la imagen de fondo */
+              /* Transparencia 25% para lucir el fondo */
               background:linear-gradient(180deg, rgba(239,229,207,.25), rgba(247,239,218,.25));
               border:1px solid rgba(0,0,0,.12); border-radius:var(--radius); padding:6px; box-shadow:var(--shadow-sm); display:flex; flex-direction:column}
 
@@ -264,7 +281,9 @@
             .item{width:100%; height:100%; border:1px solid rgba(0,0,0,.12); border-radius:12px; background:#fff8e9; display:flex; align-items:center; justify-content:center; padding:4px; text-align:center; box-shadow:inset 0 -1px 0 rgba(0,0,0,.04)}
             .item .label{font-weight:700; font-size:11px; color:var(--ink); max-width:100%; text-align:center; line-height:1.2; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
             .item:active{transform:translateY(1px)}
-            .item.selected{outline:2px solid #caa24f; outline-offset:1px; box-shadow:0 0 10px rgba(202,162,79,.28)}
+            /* Selección visible: pinta todo el casillero en dorado (mismo que botón) */
+            .item.selected{border-color:var(--gold-line); background:linear-gradient(180deg,var(--gold-2),var(--gold)); box-shadow:0 0 0 1px var(--gold-line) inset, 0 8px 18px rgba(0,0,0,.18)}
+            .item.selected .label{color:#1c1a16}
 
             .badge{position:absolute; right:6px; top:6px; padding:2px 6px; border-radius:999px; background:rgba(12,11,9,.85); border:1px solid rgba(234,211,154,.6); color:#f2e6c6; font-size:10px; font-weight:800}
 
@@ -340,7 +359,7 @@
           </div>
 
           {showPdf ? (
-            <div className="modal-backdrop" role="dialog" aria-modal="true">
+            <div className="modal-backdrop" role="dialog" aria-modal="true" onKeyDown={(e)=>{ if(e.key==='Escape') closePdf(); }}>
               <div className="modal-card">
                 <button className="modal-close" onClick={closePdf} data-i18n="close">Cerrar</button>
                 <iframe className="modal-iframe" id="pdfFrame" src={pdfViewerSrc} referrerPolicy="no-referrer"></iframe>
