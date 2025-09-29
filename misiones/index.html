@@ -141,6 +141,24 @@
 
       useEffect(()=>{ saveLang(lang); }, [lang]);
 
+      // ===== Historial para cerrar el visor con "atrás" sin salir de Misiones
+      useEffect(()=>{
+        // Marca estado base de Misiones (si no existe)
+        if (!history.state || !history.state.__misionesBase) {
+          history.replaceState({ __misionesBase: true }, "");
+        }
+        const onPop = (e)=>{
+          // Si el visor está abierto, al pulsar atrás solo lo cerramos y consumimos esa navegación
+          if (showPdf || (e.state && e.state.__pdfOpen)) {
+            setShowPdf(false);
+            setTimeout(()=> setPdfViewerSrc('about:blank'), 150);
+            // Si venimos de un pushState del visor, no hacemos nada más (quedamos en Misiones)
+          }
+        };
+        window.addEventListener('popstate', onPop);
+        return ()=> window.removeEventListener('popstate', onPop);
+      }, [showPdf]);
+
       const pickRandom = () => {
         if (!allMissions.length) return;
         setBadges({});
@@ -191,6 +209,8 @@
               const viewer = `https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(href)}`;
               setPdfViewerSrc(viewer);
               setShowPdf(true);
+              // Empuja un estado de historial para que "atrás" solo cierre el visor
+              history.pushState({ __pdfOpen: true }, "", "#pdf");
               setSelected(name);
               return;
             }
@@ -200,6 +220,12 @@
       };
 
       const closePdf = () => {
+        // Si el estado actual es el del visor, vuelve atrás (cerrará el modal vía popstate)
+        if (history.state && history.state.__pdfOpen) {
+          history.back();
+          return;
+        }
+        // fallback por si acaso
         setShowPdf(false);
         setTimeout(()=> setPdfViewerSrc('about:blank'), 200);
       };
@@ -209,8 +235,6 @@
         try {
           console.assert(Array.isArray(POOLS) && POOLS.length === 6, 'POOLS debe tener 6 entradas');
           console.assert(POOLS.every(p=>Array.isArray(p.items)&&p.items.length===4), 'Cada pool debe tener 4 misiones');
-          const varsOk = getComputedStyle(document.documentElement);
-          // Ejecuta un recálculo y comprueba que tile > 0
           recalcSizes();
           const grid = gridRef.current; if (grid) {
             const tile = parseInt(grid.style.getPropertyValue('--tile')||'0',10);
