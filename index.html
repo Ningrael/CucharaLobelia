@@ -1,230 +1,161 @@
-<!doctype html>
+!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>Misiones – @cucharalobelia</title>
-  <!-- React 18 + Babel (sin build) -->
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <style>html,body{margin:0;height:100%;background:#3b2b20}</style>
-</head>
-<body>
-  <div id="root"></div>
-
-  <script type="text/babel">
-    const { useRef, useState, useEffect, useMemo } = React;
-
-    const POOLS = [
-      { items: ["Domination", "Capture & Control", "Breakthrough", "Stake a Claim"]},
-      { items: ["To the Death!", "Lords of Battle", "Assassination", "Contest of Champions"]},
-      { items: ["Hold Ground", "Heirloom of Ages Past", "Sites of Power", "Command the Battlefield"]},
-      { items: ["Destroy the Supplies", "Retrieval", "Seize the Prizes", "Treasure Hoard"]},
-      { items: ["Reconnoitre", "Storm the Camp", "Divide & Conquer", "Escort the Wounded"]},
-      { items: ["Fog of War", "Clash by Moonlight", "Lead from the Front", "Convergence"]},
-    ];
-
-    function App(){
-      const [selected, setSelected] = useState("");
-      const allMissions = useMemo(() => POOLS.flatMap(p => p.items || []), []);
-      const [rounds, setRounds] = useState("3");
-      const screenRef = useRef(null);
-      const bannerRef = useRef(null);
-      const controlsRef = useRef(null);
-      const footerRef = useRef(null);
-      const gridRef = useRef(null);
-
-      const [badges, setBadges] = useState({});
-
-      const recalcSizes = () => {
-        const screen = screenRef.current; if (!screen) return;
-        const bannerH   = (bannerRef.current   && bannerRef.current.getBoundingClientRect().height) || 0;
-        const controlsH = (controlsRef.current && controlsRef.current.getBoundingClientRect().height) || 0;
-        const footerH   = (footerRef.current   && footerRef.current.getBoundingClientRect().height) || 0;
-
-        let availH = screen.clientHeight - bannerH - controlsH - footerH - 8;
-        let availW = screen.clientWidth - 8*2;
-
-        const gap = 5;
-        const cols = 2, rows = 3;
-        const sizeByH = Math.floor((availH - gap * (rows + 1)) / rows);
-        const sizeByW = Math.floor((availW - gap * (cols + 1)) / cols);
-        const tile = Math.max(0, Math.min(sizeByH, sizeByW));
-
-        const pad = 5;
-        const innerW = tile - pad*2;
-        const innerH = tile - pad*2;
-        const btnGap = 6;
-        const subCols = 2, subRows = 2;
-        const btnW = Math.max(0, Math.floor((innerW - btnGap * (subCols - 1)) / subCols));
-        const btnH = Math.max(0, Math.floor((innerH - btnGap * (subRows - 1)) / subRows));
-
-        const rootStyle = gridRef.current && gridRef.current.style; if (!rootStyle) return;
-        rootStyle.setProperty("--tile", `${tile}px`);
-        rootStyle.setProperty("--btnW", `${btnW}px`);
-        rootStyle.setProperty("--btnH", `${btnH}px`);
-        rootStyle.setProperty("--gap", `${gap}px`);
-      };
-
-      useEffect(()=>{
-        recalcSizes();
-        const onR = () => recalcSizes();
-        window.addEventListener('resize', onR);
-        return ()=> window.removeEventListener('resize', onR);
-      },[]);
-
-      const pickRandom = () => {
-        if (!allMissions.length) return;
-        setBadges({});
-        const name = allMissions[Math.floor(Math.random()*allMissions.length)];
-        setSelected(name);
-      };
-
-      const clampRounds = (v) => {
-        let n = parseInt(v||"3",10); if(Number.isNaN(n)) n=3; n = Math.max(1, Math.min(6, n)); return String(n);
-      };
-
-      const generateRounds = () => {
-        const n = parseInt(clampRounds(rounds),10);
-        const idxs = Array.from({length: POOLS.length}, (_,i)=>i);
-        for(let i=idxs.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [idxs[i], idxs[j]] = [idxs[j], idxs[i]]; }
-        const chosen = idxs.slice(0, n);
-        const b = {};
-        let last = null;
-        chosen.forEach((pi, k)=>{
-          const pool = POOLS[pi];
-          const items = pool.items||[]; if (!items.length) return;
-          const m = items[Math.floor(Math.random()*items.length)];
-          b[m] = k+1;
-          last = m;
-        });
-        setBadges(b);
-        if (last) setSelected(last);
-      };
-
-      const dec = () => { let n = parseInt(rounds||"3",10); if(Number.isNaN(n)) n=3; if(n>1) setRounds(String(n-1)); };
-      const inc = () => { let n = parseInt(rounds||"3",10); if(Number.isNaN(n)) n=3; if(n<6) setRounds(String(n+1)); };
-
-      const handleMissionClick = (name) => {
-        if (name === "Domination") {
-          window.open("../Domination.pdf", "_blank");
-        } else {
-          alert("Función en construcción");
-        }
-      };
-
-      return (
-        <div className="stage" style={{minHeight:"100svh",display:"flex",alignItems:"center",justifyContent:"center",background:"#3b2b20"}}>
-          <style>{`
-            :root{
-              --cream:#EFE5CF; --cream-2:#F7EFDA;
-              --ink:#221b14; --ink-soft:#574635;
-              --gold:#CFA15B; --gold-2:#EAD39A; --gold-line:#B79045;
-              --shadow-lg:0 14px 40px rgba(0,0,0,.40);
-              --shadow-sm:0 4px 14px rgba(0,0,0,.18);
-              --tile:120px; --btnW:54px; --btnH:54px; --gap:6px;
-              --radius:14px; --radius-pill:9999px;
-            }
-            *{box-sizing:border-box}
-
-            .phone{aspect-ratio:9/16; width:min(96vw,480px); max-height:min(98vh,940px); border-radius:22px; padding:6px; box-shadow:var(--shadow-lg); background:#3b2b20; border:1px solid rgba(0,0,0,.45); position:relative}  
-            .screen{position:absolute; inset:8px; border-radius:18px; overflow:hidden; display:flex; flex-direction:column; background:transparent;} 
-            .screen::before{content:""; position:absolute; inset:0; background:url('../Inicio.png') center/cover no-repeat; z-index:0}
-            .screen > *{position:relative; z-index:1}  
-
-            .banner{padding:6px 8px; border-bottom:1px solid rgba(255,255,255,.12); background:rgba(0,0,0,.18); display:flex; align-items:center} 
-            .brand{font-family:Georgia,serif; font-weight:900; color:var(--cream); font-size:16px; letter-spacing:.3px; text-shadow:0 1px 0 rgba(0,0,0,.35)}
-
-            .controls{padding:6px 8px; display:flex; align-items:center; justify-content:space-between; gap:8px; background:rgba(0,0,0,.12); border-bottom:1px solid rgba(255,255,255,.10)} 
-
-            .btn-gold,.btn-secondary{appearance:none; border:1px solid var(--gold-line); border-radius:var(--radius-pill); color:var(--ink);
-              padding:6px 12px; font-weight:800; cursor:pointer; transition:transform .06s ease, filter .18s ease, box-shadow .18s ease;
-              box-shadow:var(--shadow-sm)}
-
-            .btn-gold{background:linear-gradient(180deg,var(--gold-2),var(--gold));}
-            .btn-secondary{background:linear-gradient(180deg, #f0e7cf, #e2d7bb); color:var(--ink)}
-            .btn-gold:active,.btn-secondary:active{transform:translateY(1px) scale(.99)}
-            @media(hover:hover){ .btn-gold:hover,.btn-secondary:hover{filter:brightness(1.05)} }
-
-            .stack{display:flex; align-items:center; gap:6px}
-            .btn-circle{width:24px;height:24px;border-radius:var(--radius-pill);display:inline-flex;align-items:center;justify-content:center;
-              border:1px solid var(--gold-line); background:linear-gradient(180deg,var(--gold-2),var(--gold)); color:var(--ink); font-weight:900; box-shadow:var(--shadow-sm)}
-            .rounds-input{appearance:none;-moz-appearance:textfield;width:40px;padding:4px 6px;border-radius:10px;border:1px solid rgba(255,255,255,.25);
-              background:rgba(0,0,0,.28);color:var(--cream);font-weight:800;text-align:center}
-
-            .content{flex:1; overflow:hidden}
-            .pools{height:100%; padding:var(--gap) 4px} 
-            .pools-grid{height:100%; display:grid; grid-template-columns:repeat(2, var(--tile)); grid-template-rows:repeat(3, var(--tile)); gap:var(--gap); justify-content:center} 
-
-            .pool-card{width:var(--tile); height:var(--tile);
-              background:linear-gradient(180deg,var(--cream),var(--cream-2));
-              border:1px solid rgba(0,0,0,.12); border-radius:var(--radius); padding:6px; box-shadow:var(--shadow-sm); display:flex; flex-direction:column}
-
-            .missions{list-style:none; padding:0; margin:0; flex:1; display:grid; grid-template-columns:repeat(2, 1fr); grid-template-rows:repeat(2, 1fr); gap:6px; align-items:stretch; justify-items:stretch}
-            .missions>li{min-width:0; min-height:0; position:relative}
-
-            .item{width:100%; height:100%; border:1px solid rgba(0,0,0,.12); border-radius:10px;
-              background:#fff8e9; display:flex; align-items:center; justify-content:center; padding:4px; text-align:center;
-              box-shadow:inset 0 -1px 0 rgba(0,0,0,.05), 0 1px 0 rgba(255,255,255,.6); transition:filter .15s ease, transform .06s ease}
-            .item:active{transform:translateY(1px)}
-            @media(hover:hover){ .item:hover{filter:brightness(1.03)} }
-            .item .label{font-weight:700; font-size:11px; color:var(--ink); line-height:1.2; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
-            .item.selected{outline:2px solid var(--gold); outline-offset:1px; box-shadow:0 0 10px rgba(202,161,91,.28)}
-            .badge{position:absolute; right:4px; top:4px; padding:2px 5px; border-radius:9999px; background:rgba(12,11,9,.82); border:1px solid rgba(234,211,154,.6); color:#f2e6c6; font-size:9px; font-weight:800}
-
-            .footer{padding:8px; text-align:center; background:rgba(0,0,0,.12); border-top:1px solid rgba(255,255,255,.10)} 
-            .btn-footer{border-radius:var(--radius-pill); border:1px solid rgba(0,0,0,.15); background:var(--cream); color:#1c1a16; padding:8px 14px; font-weight:700; box-shadow:var(--shadow-sm)}
-          `}</style>
-
-          <div className="phone">
-            <div className="screen" ref={screenRef}>
-              <div className="banner" ref={bannerRef}>
-                <div className="brand">@cucharalobelia Misiones</div>
-              </div>
-
-              <div className="controls" ref={controlsRef}>
-                <button className="btn-gold" onClick={pickRandom}>Elegir Random</button>
-                <div className="stack">
-                  <span style={{color:'#f4e9d2',fontWeight:900}}>Rondas</span>
-                  <button className="btn-circle" onClick={dec}>-</button>
-                  <input className="rounds-input" type="text" inputMode="numeric" value={rounds}
-                    onChange={(e)=>{ const v=e.target.value.trim(); if (v===""){setRounds("");return;} if (/^[1-6]$/.test(v)){setRounds(v);} }}
-                    onBlur={()=>{ if (rounds === "") setRounds("3"); }} />
-                  <button className="btn-circle" onClick={inc}>+</button>
-                </div>
-                <button className="btn-secondary" onClick={generateRounds}>Generar</button>
-              </div>
-
-              <div className="content">
-                <div className="pools">
-                  <div className="pools-grid" ref={gridRef}>
-                    {POOLS.map((pool, pi)=> (
-                      <section key={pi} className="pool-card">
-                        <ul className="missions">
-                          {pool.items.map((name)=> (
-                            <li key={name}>
-                              <button className={"item" + (selected===name?" selected":"")} onClick={()=> handleMissionClick(name)}><span className="label">{name}</span>{badges[name]? <span className="badge">R{badges[name]}</span>: null}</button>
-                            </li>
-                          ))}
-                        </ul>
-                      </section>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div className="footer" ref={footerRef}>
-                <button className="btn-footer" onClick={()=> window.location.href = "../index.html"}>Volver</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      );
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>La Cuchara de Lobelia · Inicio</title>
+  <meta name="theme-color" content="#2f3b2b" />
+  <style>
+    :root{
+      --lobelia-green: #2E8B57;
+      --lobelia-green-dark:#1f5e3b;
+      --lobelia-cream: #EFE5CF;
+      --lobelia-wood: #3A2A1E;
+      --lobelia-gold: #CFA15B;
+      --shadow: 0 8px 24px rgba(0,0,0,.28);
+      --radius: 16px;
+      --radius-pill: 999px;
+      --gap: 14px;
     }
 
-    const root = ReactDOM.createRoot(document.getElementById("root"));
-    root.render(<App />);
+    html, body { height: 100%; margin: 0; }
+    * { box-sizing: border-box; }
+
+    body {
+      background: var(--lobelia-wood);
+      min-height: 100dvh;
+      display: grid;
+      place-items: center;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    .app {
+      width: 100vw; height: 100dvh; max-width: 56.25vh; aspect-ratio: 9 / 16;
+      position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: center;
+      padding: 18px;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      background:
+        repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0 2px, transparent 2px 6px),
+        linear-gradient(180deg, rgba(239,229,207,0.55), rgba(46,139,87,0.35), rgba(239,229,207,0.55)),
+        url('Inicio.png') center/cover no-repeat;
+      background-blend-mode: overlay;
+    }
+
+    .app::before{
+      content: ""; position: absolute; inset: 0; pointer-events:none;
+      background: radial-gradient(80% 60% at 50% 50%, rgba(0,0,0,0.00) 0%, rgba(0,0,0,0.25) 60%, rgba(0,0,0,.45) 100%);
+    }
+
+    .content{ position: relative; z-index: 1; width: 100%; display: flex; flex-direction: column; align-items: center; gap: var(--gap); margin-top: 160px; }
+
+    .btn{
+      appearance:none; border:none; cursor:pointer; user-select:none; letter-spacing:.2px; font-weight:700; text-align:center; 
+      transition: transform .06s ease, filter .15s ease, box-shadow .15s ease;
+      display: inline-block;
+      text-decoration: none;
+      color: inherit;
+    }
+    .btn:active{ transform: translateY(1px) scale(.99); }
+
+    .btn-primary{
+      width: 50%; max-width: 200px; padding: 14px 18px; border-radius: var(--radius-pill);
+      background: rgba(239,229,207,.92); color: #1c1a16; box-shadow: var(--shadow);
+      border: 1px solid rgba(0,0,0,.12);
+    }
+    @media(hover:hover){ .btn-primary:hover{ filter: brightness(1.03); } }
+
+    .top-right{ position:absolute; top: 12px; right: 12px; z-index:2; }
+    .btn-google{ padding:10px 12px; border-radius: var(--radius-pill); background: rgba(239,229,207,.95); color:#1c1a16; box-shadow: var(--shadow); border:1px solid rgba(0,0,0,.12); }
+
+    .bottom{ position: absolute; left: 0; right: 0; z-index:1; display:flex; justify-content:center; }
+    .btn-small{ padding: 10px 12px; border-radius: var(--radius-pill); width: 50%; max-width: 200px; background: rgba(239,229,207,.9); color:#1c1a16; box-shadow: var(--shadow); border:1px solid rgba(0,0,0,.12); font-weight:600; }
+
+    .btn-primary, .btn-small, .btn-google{ outline: none; }
+    .btn-primary:focus-visible, .btn-small:focus-visible, .btn-google:focus-visible{ box-shadow: 0 0 0 3px rgba(46,139,87,.35), var(--shadow); }
+      /* Estado visual deshabilitado (pero clicable para mostrar aviso) */
+    .btn-disabled{ opacity:.55; filter:saturate(.2) contrast(.95); }
+    @media(hover:hover){ .btn-disabled:hover{ filter:saturate(.25) contrast(.98); }}
+
+    /* Modal WIP */
+    .modal-backdrop{ position:fixed; inset:0; background:rgba(0,0,0,.5); display:none; z-index:999; }
+    .modal{ position:fixed; inset:auto; left:50%; top:50%; transform:translate(-50%,-50%); background:rgba(239,229,207,.98); color:#1c1a16; border-radius:16px; box-shadow: var(--shadow); border:1px solid rgba(0,0,0,.12); width:min(92vw,420px); padding:18px; display:none; z-index:1000; }
+    .modal h2{ margin:0 0 8px; font-size:1.05rem; }
+    .modal p{ margin:0 0 14px; line-height:1.35; }
+    .modal .actions{ display:flex; justify-content:flex-end; gap:10px; }
+    .modal .btn-ok{ padding:10px 14px; border:none; border-radius:999px; background:var(--lobelia-cream); box-shadow: var(--shadow); font-weight:700; cursor:pointer; }
+    .modal-open .modal, .modal-open .modal-backdrop{ display:block; }
+</style>
+</head>
+<body>
+  <main class="app" role="main" aria-label="Pantalla de inicio">
+
+    <div class="top-right">
+      <button class="btn btn-google btn-disabled" type="button" data-wip aria-disabled="true">Sesión Google</button>
+    </div>
+
+    <div class="content" aria-live="polite">
+      <a class="btn btn-primary" id="btn-misiones" href="misiones/index.html" target="_self" aria-label="Abrir Misiones Matched Play">
+        Misiones Matched play
+      </a>
+
+      <button class="btn btn-primary btn-disabled" type="button" data-wip aria-disabled="true">Tutoriales</button>
+      <button class="btn btn-primary btn-disabled" type="button" data-wip aria-disabled="true">Calendarios</button>
+      <button class="btn btn-primary btn-disabled" type="button" data-wip aria-disabled="true">STL de interés</button>
+    </div>
+
+    <div class="bottom" style="bottom: 60px;">
+      <button class="btn btn-small btn-disabled" type="button" data-wip aria-disabled="true">Configuración</button>
+    </div>
+
+    <div class="bottom" style="bottom: 14px;">
+      <button class="btn btn-small btn-disabled" type="button" data-wip aria-disabled="true">Contacta y reporta bugs</button>
+    </div>
+
+    <!-- Modal WIP -->
+    <div id="wip-backdrop" class="modal-backdrop" aria-hidden="true"></div>
+    <div id="wip-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="wip-title" aria-describedby="wip-desc" aria-hidden="true">
+      <h2 id="wip-title">Función en construcción</h2>
+      <p id="wip-desc">Estamos trabajando en esta sección. Vuelve en un tiempo.</p>
+      <div class="actions">
+        <button id="wip-ok" class="btn-ok" type="button">OK</button>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const modal = document.getElementById('wip-modal');
+      const backdrop = document.getElementById('wip-backdrop');
+      const okBtn = document.getElementById('wip-ok');
+      let lastFocus = null;
+
+      const openModal = () => {
+        lastFocus = document.activeElement;
+        document.documentElement.classList.add('modal-open');
+        modal.removeAttribute('aria-hidden');
+        backdrop.removeAttribute('aria-hidden');
+        okBtn.focus();
+      };
+
+      const closeModal = () => {
+        document.documentElement.classList.remove('modal-open');
+        modal.setAttribute('aria-hidden','true');
+        backdrop.setAttribute('aria-hidden','true');
+        if (lastFocus && typeof lastFocus.focus === 'function') lastFocus.focus();
+      };
+
+      okBtn.addEventListener('click', closeModal);
+      backdrop.addEventListener('click', closeModal);
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+
+      document.querySelectorAll('[data-wip]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          openModal();
+        }, { passive: true });
+      });
+    });
   </script>
 </body>
 </html>
