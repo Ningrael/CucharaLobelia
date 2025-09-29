@@ -107,15 +107,29 @@
       const inc = () => { let n = parseInt(rounds||"3",10); if(Number.isNaN(n)) n=3; if(n<6) setRounds(String(n+1)); };
 
       const handleMissionClick = (name) => {
-        const fileName = name.toUpperCase().replace(/ /g, "_") + ".pdf";
-        const url = encodeURI(`./${fileName}`);
-        fetch(url, { method: 'HEAD' }).then(res => {
-          if(res.ok){
-            window.open(url, "_blank");
-          } else {
-            alert("Función en construcción");
+        // 1) Construye el nombre EXACTO del PDF tal como está en GitHub (MAYÚSCULAS + ESPACIOS)
+        const baseName = (name || '').toUpperCase() + '.pdf';
+        // 2) Asegura que la ruta sea SIEMPRE relative a esta carpeta (misiones/)
+        const base = new URL('.', window.location.href); // mismo directorio que index.html
+        // 3) Candidatos: con espacios (oficial) y con guiones bajos como fallback
+        const candidates = [
+          new URL(encodeURI(baseName), base).href,
+          new URL(encodeURI(baseName.replace(/ /g, '_')), base).href,
+        ];
+
+        // Intenta abrir el primer candidato que exista
+        (async () => {
+          for (const href of candidates) {
+            try {
+              const res = await fetch(href, { method: 'HEAD', cache: 'no-store' });
+              if (res.ok) {
+                window.open(href, '_blank', 'noopener');
+                return;
+              }
+            } catch (e) { /* ignora y prueba el siguiente */ }
           }
-        }).catch(()=> alert("Función en construcción"));
+          alert('Función en construcción o PDF no encontrado');
+        })();
       };
 
       return (
