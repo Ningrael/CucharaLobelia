@@ -14,82 +14,59 @@
   <div id="root"></div>
 
   <script type="text/babel">
-    const { useMemo, useRef, useState, useEffect } = React;
-
-    // ===== Config & datos =====
-    const IMAGE_BG = ""; 
+    const { useRef, useState, useEffect, useMemo } = React;
 
     const POOLS = [
-      { title: "POOL 1 — HOLD OBJECTIVE", items: [
-        "Domination", "Capture & Control", "Breakthrough", "Stake a Claim",
-      ]},
-      { title: "POOL 2 — KILL THE ENEMY", items: [
-        "To the Death!", "Lords of Battle", "Assassination", "Contest of Champions",
-      ]},
-      { title: "POOL 3 — MAELSTROM OF BATTLE", items: [
-        "Hold Ground", "Heirloom of Ages Past", "Sites of Power", "Command the Battlefield",
-      ]},
-      { title: "POOL 4 — OBJECT", items: [
-        "Destroy the Supplies", "Retrieval", "Seize the Prizes", "Treasure Hoard",
-      ]},
-      { title: "POOL 5 — MANOEUVRING", items: [
-        "Reconnoitre", "Storm the Camp", "Divide & Conquer", "Escort the Wounded",
-      ]},
-      { title: "POOL 6 — UNIQUE", items: [
-        "Fog of War", "Clash by Moonlight", "Lead from the Front", "Convergence",
-      ]},
+      { items: ["Domination", "Capture & Control", "Breakthrough", "Stake a Claim"]},
+      { items: ["To the Death!", "Lords of Battle", "Assassination", "Contest of Champions"]},
+      { items: ["Hold Ground", "Heirloom of Ages Past", "Sites of Power", "Command the Battlefield"]},
+      { items: ["Destroy the Supplies", "Retrieval", "Seize the Prizes", "Treasure Hoard"]},
+      { items: ["Reconnoitre", "Storm the Camp", "Divide & Conquer", "Escort the Wounded"]},
+      { items: ["Fog of War", "Clash by Moonlight", "Lead from the Front", "Convergence"]},
     ];
 
-    const slug = (s) => String(s||"").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-
-    function openPlaceholder(missionName) {
-      const html = `<!doctype html><meta charset="utf-8"><title>${missionName}</title>
-      <style>html,body{height:100%;margin:0;font-family:system-ui,Segoe UI,Roboto,Inter}
-      .wrap{display:flex;align-items:center;justify-content:center;height:100%;background:#0c0b09;color:#f3e9d2}
-      .card{padding:36px 28px;border:1px solid #8a6a2f;border-radius:18px;background:linear-gradient(180deg,#1b1a17,#12110f);box-shadow:0 12px 40px rgba(0,0,0,.55);text-align:center}
-      h1{margin:0 0 10px;font-size:22px;letter-spacing:.2px}
-      p{margin:0;opacity:.9}</style>
-      <div class="wrap"><div class="card"><h1>${missionName}</h1><p>En construcción</p></div></div>`;
-      const blob = new Blob([html], { type: "text/html" });
-      const url = URL.createObjectURL(blob);
-      window.open(url, "_blank", "noopener,noreferrer");
-    }
-
     function App(){
-      const missions = useMemo(()=> POOLS.flatMap(p=> (p.items||[])), []);
       const [selected, setSelected] = useState("");
-      const refs = useRef({});
-
-      const [roundsInput, setRoundsInput] = useState("3");
-      const [badges, setBadges] = useState({});
-
+      const allMissions = useMemo(() => POOLS.flatMap(p => p.items || []), []);
+      const [rounds, setRounds] = useState("3");
       const screenRef = useRef(null);
       const bannerRef = useRef(null);
       const controlsRef = useRef(null);
-      const gridRef = useRef(null);
       const footerRef = useRef(null);
+      const gridRef = useRef(null);
+
+      const [badges, setBadges] = useState({});
 
       const recalcSizes = () => {
         const screen = screenRef.current; if (!screen) return;
-        const bannerH = (bannerRef.current&&bannerRef.current.getBoundingClientRect().height) || 0;
-        const controlsH = (controlsRef.current&&controlsRef.current.getBoundingClientRect().height) || 0;
-        const footerH = (footerRef.current && footerRef.current.getBoundingClientRect().height) || 0;
-        const availH = screen.clientHeight - bannerH - controlsH - footerH;
-        const availW = screen.clientWidth;
+        const bannerH   = (bannerRef.current   && bannerRef.current.getBoundingClientRect().height) || 0;
+        const controlsH = (controlsRef.current && controlsRef.current.getBoundingClientRect().height) || 0;
+        const footerH   = (footerRef.current   && footerRef.current.getBoundingClientRect().height) || 0;
+
+        let availH = screen.clientHeight - bannerH - controlsH - footerH;
+        let availW = screen.clientWidth;
+
+        const poolsWrap = gridRef.current && gridRef.current.parentElement;
+        if (poolsWrap) {
+          const cs = getComputedStyle(poolsWrap);
+          const padV = parseFloat(cs.paddingTop||0) + parseFloat(cs.paddingBottom||0);
+          const padH = parseFloat(cs.paddingLeft||0) + parseFloat(cs.paddingRight||0);
+          availH -= padV; availW -= padH;
+        }
 
         const gap = 8;
         const cols = 2, rows = 3;
-        const cellW = (availW - gap*(cols+1)) / cols;
-        const cellH = (availH - gap*(rows+1)) / rows;
-        const tile = Math.floor(Math.min(cellW, cellH));
+        const sizeByH = Math.floor((availH - gap * (rows + 1)) / rows);
+        const sizeByW = Math.floor((availW - gap * (cols + 1)) / cols);
+        const tile = Math.max(0, Math.min(sizeByH, sizeByW));
 
         const pad = 8;
         const innerW = tile - pad*2;
         const innerH = tile - pad*2;
-        const btnGap = gap;
+        const btnGap = 8;
         const subCols = 2, subRows = 2;
-        const btnW = (innerW - btnGap*(subCols-1)) / subCols;
-        const btnH = (innerH - btnGap*(subRows-1)) / subRows;
+        const btnW = Math.max(0, Math.floor((innerW - btnGap * (subCols - 1)) / subCols));
+        const btnH = Math.max(0, Math.floor((innerH - btnGap * (subRows - 1)) / subRows));
 
         const rootStyle = gridRef.current && gridRef.current.style; if (!rootStyle) return;
         rootStyle.setProperty("--tile", `${tile}px`);
@@ -105,104 +82,105 @@
         return ()=> window.removeEventListener('resize', onR);
       },[]);
 
-      const handleClickMission = (name) => { setSelected(name); openPlaceholder(name); };
+      const pickRandom = () => {
+        if (!allMissions.length) return;
+        setBadges({});
+        const name = allMissions[Math.floor(Math.random()*allMissions.length)];
+        setSelected(name);
+      };
 
-      const incRounds = () => { let n = parseInt(roundsInput || "3", 10); if (Number.isNaN(n)) n = 3; if (n < 6) setRoundsInput(String(n+1)); };
-      const decRounds = () => { let n = parseInt(roundsInput || "3", 10); if (Number.isNaN(n)) n = 3; if (n > 1) setRoundsInput(String(n-1)); };
+      const clampRounds = (v) => {
+        let n = parseInt(v||"3",10); if(Number.isNaN(n)) n=3; n = Math.max(1, Math.min(6, n)); return String(n);
+      };
 
-      const bgImage = IMAGE_BG ? `linear-gradient(rgba(12,11,9,.25),rgba(12,11,9,.55)), url(${IMAGE_BG})` : "linear-gradient(160deg,#302419,#1e1712)";
+      const generateRounds = () => {
+        const n = parseInt(clampRounds(rounds),10);
+        const idxs = Array.from({length: POOLS.length}, (_,i)=>i);
+        for(let i=idxs.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [idxs[i], idxs[j]] = [idxs[j], idxs[i]]; }
+        const chosen = idxs.slice(0, n);
+        const b = {};
+        let last = null;
+        chosen.forEach((pi, k)=>{
+          const pool = POOLS[pi];
+          const items = pool.items||[]; if (!items.length) return;
+          const m = items[Math.floor(Math.random()*items.length)];
+          b[m] = k+1;
+          last = m;
+        });
+        setBadges(b);
+        if (last) setSelected(last);
+      };
+
+      const dec = () => { let n = parseInt(rounds||"3",10); if(Number.isNaN(n)) n=3; if(n>1) setRounds(String(n-1)); };
+      const inc = () => { let n = parseInt(rounds||"3",10); if(Number.isNaN(n)) n=3; if(n<6) setRounds(String(n+1)); };
 
       return (
-        <div className="stage" style={{minHeight:"100svh",display:"flex",alignItems:"center",justifyContent:"center",background:bgImage,backgroundSize:"cover",backgroundPosition:"center"}}>
+        <div className="stage" style={{minHeight:"100svh",display:"flex",alignItems:"center",justifyContent:"center",background:"url('../Inicio.png') center/cover no-repeat"}}>
           <style>{`
-            :root{
-              --wood-dark:#3A2A1E; --wood-mid:#6b4a2f; --wood-light:#996a3a;
-              --cream:#EFE5CF; --cream-2:#f6ecd6; --ink:#2a241b; --ink-soft:#5b4a39;
-              --gold:#CFA15B; --gold-2:#ead39a; --shadow:0 20px 60px rgba(0,0,0,.35);
-              --pill:9999px; --gap:8px;
-            }
+            :root{ --tile:120px; --btnW:54px; --btnH:54px; --gap:8px; }
             *{box-sizing:border-box}
-            .phone{aspect-ratio:9/16; width:min(92vw,430px); max-height:min(94vh,860px); border-radius:22px; padding:10px; box-shadow:var(--shadow);
-              background:linear-gradient(180deg,var(--wood-dark),#2b1e14); border:1px solid rgba(0,0,0,.45); position:relative}
-            .screen{position:absolute; inset:12px; border-radius:18px; overflow:hidden; display:flex; flex-direction:column;
-              background:
-                repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0 2px, transparent 2px 6px),
-                linear-gradient(180deg, rgba(239,229,207,0.55), rgba(46,139,87,0.35), rgba(239,229,207,0.55)),
-                url('../Inicio.png') center/cover no-repeat;
-              background-blend-mode: overlay; border:1px solid rgba(255,255,255,.06); position:relative}
-            .screen::before{content:""; position:absolute; inset:0; pointer-events:none; background: radial-gradient(80% 60% at 50% 50%, rgba(0,0,0,0.00) 0%, rgba(0,0,0,0.25) 60%, rgba(0,0,0,.45) 100%);}
+            .phone{aspect-ratio:9/16; width:min(92vw,430px); max-height:min(94vh,860px); border-radius:22px; padding:10px; box-shadow:0 0 24px rgba(0,0,0,.45); background:rgba(0,0,0,.4); border:1px solid rgba(0,0,0,.45); position:relative}
+            .screen{position:absolute; inset:12px; border-radius:18px; overflow:hidden; display:flex; flex-direction:column; background:rgba(255,255,255,.04);}
 
-            .banner{padding:6px 10px; border-bottom:1px solid rgba(255,255,255,.12); background:rgba(0,0,0,.18); display:flex; align-items:center}
-            .brand{font-family:Georgia,serif; font-weight:900; color:#f4e9d2; font-size:16px; letter-spacing:.3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+            .banner{padding:8px 10px; border-bottom:1px solid rgba(255,255,255,.12); background:rgba(0,0,0,.18); display:flex; align-items:center}
+            .brand{font-family:Georgia,serif; font-weight:900; color:#f4e9d2; font-size:16px; letter-spacing:.3px}
 
-            .controls{padding:6px 10px; display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:nowrap;
-              border-bottom:1px solid rgba(255,255,255,.1); background:rgba(0,0,0,.12)}
-            .btn-gold{background:linear-gradient(180deg,var(--gold-2),var(--gold)); border:1px solid #b79045; border-radius:var(--pill); color:var(--ink); padding:6px 10px; font-weight:800}
-            .stack{display:flex; align-items:center; gap:6px; white-space:nowrap}
-            .btn-circle{width:22px;height:22px;border-radius:var(--pill);display:inline-flex;align-items:center;justify-content:center;border:1px solid #b79045;background:linear-gradient(180deg,var(--gold-2),var(--gold));color:var(--ink);font-weight:900}
-            .rounds-input{appearance:none;-moz-appearance:textfield;width:40px;padding:4px 6px;border-radius:10px;border:1px solid rgba(255,255,255,.25);background:rgba(0,0,0,.25);color:#f4e9d2;font-weight:800;text-align:center}
-            .btn-secondary{border-radius:var(--pill); border:1px solid rgba(234,211,154,.5); background:rgba(12,11,9,.45); color:#f4e9d2; padding:6px 10px; font-weight:800}
-            .controls label{color:#f4e9d2; font-weight:900; opacity:.95}
+            .controls{padding:8px 10px; display:flex; align-items:center; justify-content:space-between; gap:10px; background:rgba(0,0,0,.12); border-bottom:1px solid rgba(255,255,255,.1)}
+            .btn-gold{background:linear-gradient(180deg,#ead39a,#cfa15b); border:1px solid #b79045; border-radius:9999px; color:#1f1a14; padding:6px 12px; font-weight:800}
+            .stack{display:flex; align-items:center; gap:8px}
+            .btn-circle{width:24px;height:24px;border-radius:9999px;display:inline-flex;align-items:center;justify-content:center;border:1px solid #b79045;background:linear-gradient(180deg,#ead39a,#cfa15b);color:#1f1a14;font-weight:900}
+            .rounds-input{appearance:none;-moz-appearance:textfield;width:44px;padding:4px 6px;border-radius:10px;border:1px solid rgba(255,255,255,.25);background:rgba(0,0,0,.25);color:#f4e9d2;font-weight:800;text-align:center}
+            .btn-secondary{border-radius:9999px; border:1px solid rgba(234,211,154,.5); background:rgba(12,11,9,.45); color:#f4e9d2; padding:6px 12px; font-weight:800}
 
             .content{flex:1; overflow:hidden}
-            .pools, .pools-grid{height:100%}
-            .pools{padding:var(--gap)}
-            .pools-grid{display:grid; grid-template-columns:repeat(2, var(--tile)); grid-template-rows:repeat(3, var(--tile)); gap:var(--gap); justify-content:center}
+            .pools{height:100%; padding:var(--gap)}
+            .pools-grid{height:100%; display:grid; grid-template-columns:repeat(2, var(--tile)); grid-template-rows:repeat(3, var(--tile)); gap:var(--gap); justify-content:center}
 
-            .pool-card{width:var(--tile); height:var(--tile); background:linear-gradient(180deg,var(--cream),var(--cream-2)); border:1px solid rgba(0,0,0,.12); border-radius:12px; padding:8px; box-shadow:0 4px 12px rgba(0,0,0,.12); display:flex; flex-direction:column}
+            .pool-card{width:var(--tile); height:var(--tile); background:#efe5cf; border:1px solid rgba(0,0,0,.12); border-radius:12px; padding:8px; box-shadow:0 4px 12px rgba(0,0,0,.12); display:flex; flex-direction:column}
+            .missions{list-style:none; padding:0; margin:0; flex:1; display:grid; grid-template-columns:repeat(2, 1fr); grid-template-rows:repeat(2, 1fr); gap:8px; align-items:stretch; justify-items:stretch}
+            .missions>li{min-width:0; min-height:0}
+            .item{width:100%; height:100%; border:1px solid rgba(0,0,0,.10); border-radius:10px; background:#fff8e9; display:flex; align-items:center; justify-content:center; padding:4px; text-align:center}
+            .item .label{font-weight:700; font-size:10px; color:#2a241b; line-height:1.2; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
+            .item.selected{outline:2px solid #cfa15b; outline-offset:1px; box-shadow:0 0 10px rgba(202,161,91,.25)}
+            .badge{position:absolute; right:6px; top:6px; padding:2px 6px; border-radius:9999px; background:rgba(12,11,9,.8); border:1px solid rgba(234,211,154,.6); color:#f2e6c6; font-size:10px; font-weight:800}
 
-            .missions{list-style:none; padding:0; margin:0; flex:1; display:grid; grid-template-columns:repeat(2, 1fr); grid-template-rows:repeat(2, 1fr); gap:var(--gap); align-items:stretch; justify-items:stretch}
-            .item{width:100%; height:100%; border:1px solid rgba(0,0,0,.10); border-radius:12px; background:#fff8e9; display:flex; align-items:center; justify-content:center; padding:4px; text-align:center; box-shadow:inset 0 -1px 0 rgba(0,0,0,.04)}
-            .item .label{font-weight:700; font-size:11px; color:var(--ink); max-width:100%; text-align:center; line-height:1.2; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
-            .item:hover{filter:brightness(1.02)}
-            .item:active{transform:translateY(1px)}
-            .item.selected{outline:2px solid #caa24f; outline-offset:1px; box-shadow:0 0 10px rgba(202,162,79,.28)}
-            .badge{position:absolute; right:6px; top:6px; padding:2px 6px; border-radius:999px; background:rgba(12,11,9,.85); border:1px solid rgba(234,211,154,.6); color:#f2e6c6; font-size:10px; font-weight:800}
-
-            .footer{padding:12px; text-align:center; background:rgba(0,0,0,.15); border-top:1px solid rgba(255,255,255,.1)}
-            .btn-footer{border-radius:var(--pill); border:1px solid rgba(0,0,0,.12); background: rgba(239,229,207,.92); color:#1c1a16; padding:10px 16px; font-weight:700; box-shadow:var(--shadow)}
+            .footer{padding:10px; text-align:center; background:rgba(0,0,0,.12); border-top:1px solid rgba(255,255,255,.1)}
+            .btn-footer{border-radius:9999px; border:1px solid rgba(0,0,0,.15); background:#efe5cf; color:#1c1a16; padding:8px 16px; font-weight:700; box-shadow:0 2px 8px rgba(0,0,0,.25)}
           `}</style>
 
           <div className="phone">
             <div className="screen" ref={screenRef}>
+              {/* Banner superior */}
               <div className="banner" ref={bannerRef}>
                 <div className="brand">@cucharalobelia Misiones</div>
               </div>
 
+              {/* Barra de controles */}
               <div className="controls" ref={controlsRef}>
-                <button onClick={()=>{}} className="btn-gold">Elegir Random</button>
+                <button className="btn-gold" onClick={pickRandom}>Elegir Random</button>
                 <div className="stack">
-                  <label>Rondas</label>
-                  <button className="btn-circle" onClick={decRounds}>-</button>
-                  <input className="rounds-input" type="text" inputMode="numeric" value={roundsInput}
-                    onChange={(e)=>{ const v=e.target.value.trim(); if (v===""){setRoundsInput("");return;} if (/^[1-6]$/.test(v)){setRoundsInput(v);} }}
-                    onBlur={()=>{ if (roundsInput === "") setRoundsInput("3"); }} />
-                  <button className="btn-circle" onClick={incRounds}>+</button>
+                  <span style={{color:'#f4e9d2',fontWeight:900}}>Rondas</span>
+                  <button className="btn-circle" onClick={dec}>-</button>
+                  <input className="rounds-input" type="text" inputMode="numeric" value={rounds}
+                    onChange={(e)=>{ const v=e.target.value.trim(); if (v===""){setRounds("");return;} if (/^[1-6]$/.test(v)){setRounds(v);} }}
+                    onBlur={()=>{ if (rounds === "") setRounds("3"); }} />
+                  <button className="btn-circle" onClick={inc}>+</button>
                 </div>
-                <button onClick={()=>{}} className="btn-secondary">Generar</button>
+                <button className="btn-secondary" onClick={generateRounds}>Generar</button>
               </div>
 
+              {/* Contenido con separación alrededor */}
               <div className="content">
                 <div className="pools">
                   <div className="pools-grid" ref={gridRef}>
-                    {Array.isArray(POOLS) && POOLS.map((pool, pi)=> (
+                    {POOLS.map((pool, pi)=> (
                       <section key={pi} className="pool-card">
                         <ul className="missions">
-                          {(pool.items||[]).map((name)=> {
-                            const isSel = selected === name;
-                            return (
-                              <li key={name} style={{position:'relative'}}>
-                                <button
-                                  ref={el=>{ if(el) refs.current[name]=el; }}
-                                  id={slug(name)}
-                                  onClick={()=> handleClickMission(name)}
-                                  className={"item" + (isSel?" selected":"")}>
-                                  <span className="label">{name}</span>
-                                  {badges[name] ? <span className="badge">R{badges[name]}</span> : null}
-                                </button>
-                              </li>
-                            );
-                          })}
+                          {pool.items.map((name)=> (
+                            <li key={name}>
+                              <button className={"item" + (selected===name?" selected":"")} onClick={()=> setSelected(name)}><span className="label">{name}</span>{badges[name]? <span className="badge">R{badges[name]}</span>: null}</button>
+                            </li>
+                          ))}
                         </ul>
                       </section>
                     ))}
@@ -210,10 +188,10 @@
                 </div>
               </div>
 
+              {/* Footer con botón Volver */}
               <div className="footer" ref={footerRef}>
                 <button className="btn-footer" onClick={()=> window.location.href = "../index.html"}>Volver</button>
               </div>
-
             </div>
           </div>
         </div>
