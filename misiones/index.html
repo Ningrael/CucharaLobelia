@@ -37,6 +37,10 @@
 
       const [badges, setBadges] = useState({});
 
+      // --- visor PDF en modal ---
+      const [pdfViewerSrc, setPdfViewerSrc] = useState("");
+      const [showPdf, setShowPdf] = useState(false);
+
       const recalcSizes = () => {
         const screen = screenRef.current; if (!screen) return;
         const bannerH   = (bannerRef.current   && bannerRef.current.getBoundingClientRect().height) || 0;
@@ -106,30 +110,34 @@
       const dec = () => { let n = parseInt(rounds||"3",10); if(Number.isNaN(n)) n=3; if(n>1) setRounds(String(n-1)); };
       const inc = () => { let n = parseInt(rounds||"3",10); if(Number.isNaN(n)) n=3; if(n<6) setRounds(String(n+1)); };
 
-      const handleMissionClick = (name) => {
-        // 1) Construye el nombre EXACTO del PDF tal como está en GitHub (MAYÚSCULAS + ESPACIOS)
+      // --- abrir mision en visor PDF sin descargar ---
+      const handleMissionClick = async (name) => {
         const baseName = (name || '').toUpperCase() + '.pdf';
-        // 2) Asegura que la ruta sea SIEMPRE relative a esta carpeta (misiones/)
-        const base = new URL('.', window.location.href); // mismo directorio que index.html
-        // 3) Candidatos: con espacios (oficial) y con guiones bajos como fallback
+        const base = new URL('.', window.location.href); // carpeta actual (/misiones/)
         const candidates = [
-          new URL(encodeURI(baseName), base).href,
-          new URL(encodeURI(baseName.replace(/ /g, '_')), base).href,
+          new URL(encodeURIComponent(baseName), base).href,
+          new URL(encodeURIComponent(baseName.replace(/ /g, '_')), base).href,
         ];
 
-        // Intenta abrir el primer candidato que exista
-        (async () => {
-          for (const href of candidates) {
-            try {
-              const res = await fetch(href, { method: 'HEAD', cache: 'no-store' });
-              if (res.ok) {
-                window.open(href, '_blank', 'noopener');
-                return;
-              }
-            } catch (e) { /* ignora y prueba el siguiente */ }
-          }
-          alert('Función en construcción o PDF no encontrado');
-        })();
+        for (const href of candidates) {
+          try {
+            const res = await fetch(href, { method: 'HEAD', cache: 'no-store' });
+            if (res.ok) {
+              const viewer = `https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(href)}`;
+              setPdfViewerSrc(viewer);
+              setShowPdf(true);
+              setSelected(name);
+              return;
+            }
+          } catch (_) { /* sigue con el siguiente */ }
+        }
+        alert('Función en construcción o PDF no encontrado');
+      };
+
+      const closePdf = () => {
+        setShowPdf(false);
+        // descarga el iframe para liberar memoria
+        setTimeout(()=> setPdfViewerSrc('about:blank'), 200);
       };
 
       return (
@@ -197,6 +205,12 @@
 
             .footer{padding:8px; text-align:center; background:rgba(0,0,0,.12); border-top:1px solid rgba(255,255,255,.10)} 
             .btn-footer{border-radius:var(--radius-pill); border:1px solid rgba(0,0,0,.15); background:var(--cream); color:#1c1a16; padding:8px 14px; font-weight:700; box-shadow:var(--shadow-sm)}
+
+            /* Modal del visor PDF.js */
+            .modal-backdrop{position:fixed; inset:0; background:rgba(0,0,0,.6); display:flex; align-items:center; justify-content:center; z-index:9999}
+            .modal-card{width:min(96vw, 860px); height:min(92vh, 900px); background:#111; border-radius:16px; box-shadow:var(--shadow-lg); position:relative; overflow:hidden; border:1px solid rgba(255,255,255,.15)}
+            .modal-close{position:absolute; top:10px; right:10px; z-index:2; padding:8px 12px; border-radius:9999px; border:1px solid rgba(255,255,255,.35); background:#fff; font-weight:800; cursor:pointer}
+            .modal-iframe{position:absolute; inset:0; width:100%; height:100%; border:0}
           `}</style>
 
           <div className="phone">
@@ -243,6 +257,15 @@
               </div>
             </div>
           </div>
+
+          {showPdf && (
+            <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label="Visor PDF">
+              <div className="modal-card">
+                <button className="modal-close" onClick={closePdf}>Cerrar</button>
+                <iframe className="modal-iframe" id="pdfFrame" src={pdfViewerSrc} referrerPolicy="no-referrer"></iframe>
+              </div>
+            </div>
+          )}
         </div>
       );
     }
