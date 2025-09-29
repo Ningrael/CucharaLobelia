@@ -91,7 +91,7 @@
   <main class="app" role="main" aria-label="Pantalla de inicio">
 
     <div class="top-right">
-      <button class="btn btn-google btn-disabled" type="button" data-wip aria-disabled="true">Sesión Google</button>
+      <button class="btn btn-google btn-disabled" type="button" data-wip="google" aria-disabled="true">Sesión Google</button>
     </div>
 
     <div class="content" aria-live="polite">
@@ -128,13 +128,22 @@
       const modal = document.getElementById('wip-modal');
       const backdrop = document.getElementById('wip-backdrop');
       const okBtn = document.getElementById('wip-ok');
+      const modalTitle = document.getElementById('wip-title');
+      const modalDesc = document.getElementById('wip-desc');
       let lastFocus = null;
 
-      const openModal = () => {
+      const openModal = (type) => {
         lastFocus = document.activeElement;
         document.documentElement.classList.add('modal-open');
         modal.removeAttribute('aria-hidden');
         backdrop.removeAttribute('aria-hidden');
+        if(type === 'google'){
+          modalTitle.textContent = 'Login con Google';
+          modalDesc.textContent = 'El inicio de sesión con Google estará disponible pronto.';
+        } else {
+          modalTitle.textContent = 'Función en construcción';
+          modalDesc.textContent = 'Estamos trabajando en esta sección. Vuelve en un tiempo.';
+        }
         okBtn.focus();
       };
 
@@ -152,7 +161,8 @@
       document.querySelectorAll('[data-wip]').forEach(btn => {
         btn.addEventListener('click', (e) => {
           e.preventDefault();
-          openModal();
+          const type = btn.getAttribute('data-wip');
+          openModal(type);
         }, { passive: true });
       });
     });
