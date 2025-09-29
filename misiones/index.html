@@ -43,16 +43,16 @@
         const controlsH = (controlsRef.current && controlsRef.current.getBoundingClientRect().height) || 0;
         const footerH   = (footerRef.current   && footerRef.current.getBoundingClientRect().height) || 0;
 
-        let availH = screen.clientHeight - bannerH - controlsH - footerH - 8; // reducir márgenes
-        let availW = screen.clientWidth - 8*2; // reducir márgenes laterales
+        let availH = screen.clientHeight - bannerH - controlsH - footerH - 8;
+        let availW = screen.clientWidth - 8*2;
 
-        const gap = 5; // reducir el gap para aprovechar mejor
+        const gap = 5;
         const cols = 2, rows = 3;
         const sizeByH = Math.floor((availH - gap * (rows + 1)) / rows);
         const sizeByW = Math.floor((availW - gap * (cols + 1)) / cols);
         const tile = Math.max(0, Math.min(sizeByH, sizeByW));
 
-        const pad = 5; // reducir padding interno
+        const pad = 5;
         const innerW = tile - pad*2;
         const innerH = tile - pad*2;
         const btnGap = 6;
@@ -106,6 +106,14 @@
       const dec = () => { let n = parseInt(rounds||"3",10); if(Number.isNaN(n)) n=3; if(n>1) setRounds(String(n-1)); };
       const inc = () => { let n = parseInt(rounds||"3",10); if(Number.isNaN(n)) n=3; if(n<6) setRounds(String(n+1)); };
 
+      const handleMissionClick = (name) => {
+        if (name === "Domination") {
+          window.open("../Domination.pdf", "_blank");
+        } else {
+          alert("Función en construcción");
+        }
+      };
+
       return (
         <div className="stage" style={{minHeight:"100svh",display:"flex",alignItems:"center",justifyContent:"center",background:"#3b2b20"}}>
           <style>{`
@@ -120,17 +128,20 @@
             }
             *{box-sizing:border-box}
 
-            .phone{aspect-ratio:9/16; width:min(96vw,480px); max-height:min(98vh,940px); border-radius:22px; padding:6px; box-shadow:var(--shadow-lg); background:url('../Inicio.png') center/cover no-repeat; border:1px solid rgba(0,0,0,.45); position:relative} 
+            .phone{aspect-ratio:9/16; width:min(96vw,480px); max-height:min(98vh,940px); border-radius:22px; padding:6px; box-shadow:var(--shadow-lg); background:#3b2b20; border:1px solid rgba(0,0,0,.45); position:relative}  
             .screen{position:absolute; inset:8px; border-radius:18px; overflow:hidden; display:flex; flex-direction:column; background:transparent;} 
+            .screen::before{content:""; position:absolute; inset:0; background:url('../Inicio.png') center/cover no-repeat; z-index:0}
+            .screen > *{position:relative; z-index:1}  
 
             .banner{padding:6px 8px; border-bottom:1px solid rgba(255,255,255,.12); background:rgba(0,0,0,.18); display:flex; align-items:center} 
             .brand{font-family:Georgia,serif; font-weight:900; color:var(--cream); font-size:16px; letter-spacing:.3px; text-shadow:0 1px 0 rgba(0,0,0,.35)}
 
-            .controls{padding:6px 8px; display:flex; align-items:center; justify-content:space-between; gap:8px; background:rgba(0,0,0,.12); border-bottom:1px solid rgba(255,255,255,.10)} 
+            .controls{padding:6px 8px; display:flex; align-items:center; justify-content:space-between; gap:8px; background:rgba(0,0,0,.12); border-bottom:1px solid rgba(255,255,255,.10)}  
 
             .btn-gold,.btn-secondary{appearance:none; border:1px solid var(--gold-line); border-radius:var(--radius-pill); color:var(--ink);
               padding:6px 12px; font-weight:800; cursor:pointer; transition:transform .06s ease, filter .18s ease, box-shadow .18s ease;
               box-shadow:var(--shadow-sm)}
+            .btn-sm{padding:5px 10px} 
 
             .btn-gold{background:linear-gradient(180deg,var(--gold-2),var(--gold));}
             .btn-secondary{background:linear-gradient(180deg, #f0e7cf, #e2d7bb); color:var(--ink)}
@@ -138,6 +149,9 @@
             @media(hover:hover){ .btn-gold:hover,.btn-secondary:hover{filter:brightness(1.05)} }
 
             .stack{display:flex; align-items:center; gap:6px}
+            .rounds-group{display:flex; align-items:center; gap:8px; padding:6px; border:1px solid rgba(255,255,255,.18); background:rgba(0,0,0,.10); border-radius:9999px}
+            .rounds-label{color:#f4e9d2; font-weight:900; margin:0 4px}
+            .stepper{display:flex; align-items:center; gap:6px} 
             .btn-circle{width:24px;height:24px;border-radius:var(--radius-pill);display:inline-flex;align-items:center;justify-content:center;
               border:1px solid var(--gold-line); background:linear-gradient(180deg,var(--gold-2),var(--gold)); color:var(--ink); font-weight:900; box-shadow:var(--shadow-sm)}
             .rounds-input{appearance:none;-moz-appearance:textfield;width:40px;padding:4px 6px;border-radius:10px;border:1px solid rgba(255,255,255,.25);
@@ -175,15 +189,17 @@
 
               <div className="controls" ref={controlsRef}>
                 <button className="btn-gold" onClick={pickRandom}>Elegir Random</button>
-                <div className="stack">
-                  <span style={{color:'#f4e9d2',fontWeight:900}}>Rondas</span>
-                  <button className="btn-circle" onClick={dec}>-</button>
-                  <input className="rounds-input" type="text" inputMode="numeric" value={rounds}
-                    onChange={(e)=>{ const v=e.target.value.trim(); if (v===""){setRounds("");return;} if (/^[1-6]$/.test(v)){setRounds(v);} }}
-                    onBlur={()=>{ if (rounds === "") setRounds("3"); }} />
-                  <button className="btn-circle" onClick={inc}>+</button>
+                <div className="rounds-group" role="group" aria-label="Rondas y generar">
+                  <span className="rounds-label">Rondas</span>
+                  <div className="stepper">
+                    <button className="btn-circle" onClick={dec} aria-label="Quitar ronda">-</button>
+                    <input className="rounds-input" type="text" inputMode="numeric" value={rounds}
+                      onChange={(e)=>{ const v=e.target.value.trim(); if (v===""){setRounds("");return;} if (/^[1-6]$/.test(v)){setRounds(v);} }}
+                      onBlur={()=>{ if (rounds === "") setRounds("3"); }} aria-live="polite" aria-label="Número de rondas" />
+                    <button className="btn-circle" onClick={inc} aria-label="Agregar ronda">+</button>
+                  </div>
+                  <button className="btn-secondary btn-sm" onClick={generateRounds}>Generar</button>
                 </div>
-                <button className="btn-secondary" onClick={generateRounds}>Generar</button>
               </div>
 
               <div className="content">
@@ -194,7 +210,7 @@
                         <ul className="missions">
                           {pool.items.map((name)=> (
                             <li key={name}>
-                              <button className={"item" + (selected===name?" selected":"")} onClick={()=> setSelected(name)}><span className="label">{name}</span>{badges[name]? <span className="badge">R{badges[name]}</span>: null}</button>
+                              <button className={"item" + (selected===name?" selected":"")} onClick={()=> handleMissionClick(name)}><span className="label">{name}</span>{badges[name]? <span className="badge">R{badges[name]}</span>: null}</button>
                             </li>
                           ))}
                         </ul>
