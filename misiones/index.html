@@ -254,8 +254,8 @@
             .pools-grid{height:100%; display:grid; grid-template-columns:repeat(2, var(--tile)); grid-template-rows:repeat(3, var(--tile)); gap:var(--gap); justify-content:center}
 
             .pool-card{width:var(--tile); height:var(--tile);
-              /* Fondo con degradado/transparencia ~75% para dejar ver la imagen sin afectar a los botones */
-              background:linear-gradient(180deg, rgba(239,229,207,.75), rgba(247,239,218,.75));
+              /* Fondo con degradado/transparencia ~25% para dejar ver más la imagen de fondo */
+              background:linear-gradient(180deg, rgba(239,229,207,.25), rgba(247,239,218,.25));
               border:1px solid rgba(0,0,0,.12); border-radius:var(--radius); padding:6px; box-shadow:var(--shadow-sm); display:flex; flex-direction:column}
 
             .missions{list-style:none; padding:0; margin:0; flex:1; display:grid; grid-template-columns:repeat(2, 1fr); grid-template-rows:repeat(2, 1fr); gap:6px; align-items:stretch; justify-items:stretch}
@@ -282,9 +282,9 @@
             <div className="screen" ref={screenRef}>
               <div className="banner" ref={bannerRef}>
                 <div className="brand" data-i18n="brand">@cucharalobelia Misiones</div>
-                <div className="top-right">
-                  <button className="flag-btn" id="lang-es" style={{backgroundImage:"url('https://flagcdn.com/w20/es.png')"}} data-i18n-aria-lang-es aria-label="ES"></button>
-                  <button className="flag-btn" id="lang-en" style={{backgroundImage:"url('https://flagcdn.com/w20/gb.png')"}} data-i18n-aria-lang-en aria-label="EN"></button>
+                <div className="top-right" role="group" aria-label="Language">
+                  <button className="flag-btn" onClick={()=> setLang('es')} style={{backgroundImage:"url('https://flagcdn.com/w20/es.png')"}} data-i18n-aria-lang-es aria-label="ES"></button>
+                  <button className="flag-btn" onClick={()=> setLang('en')} style={{backgroundImage:"url('https://flagcdn.com/w20/gb.png')"}} data-i18n-aria-lang-en aria-label="EN"></button>
                 </div>
               </div>
 
