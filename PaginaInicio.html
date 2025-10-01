@@ -1,0 +1,45 @@
+﻿<!-- PaginaInicio.html
+     Landing screen for the Lobelia app mock, provides navigation and language switching. -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>La Cuchara de Lobelia &#8211; Inicio</title>
+  <meta name="theme-color" content="#2f3b2b" />
+  <link rel="stylesheet" href="css/main.css" />
+  <script src="js/i18n.js"></script>
+  <script src="js/main.js" defer></script>
+</head>
+<body>
+  <main class="app" role="main" aria-label="Pantalla de inicio">
+    <div class="top-right">
+      <button class="flag-btn" id="lang-es" style="background-image:url('https://flagcdn.com/w20/es.png');" data-i18n-aria="flag_es" aria-label="Espa&ntilde;ol"></button>
+      <button class="flag-btn" id="lang-en" style="background-image:url('https://flagcdn.com/w20/gb.png');" data-i18n-aria="flag_en" aria-label="English"></button>
+    </div>
+
+    <div class="content" aria-live="polite">
+      <a class="btn btn-primary" id="btn-misiones" href="misiones/MisionesMatched.html" target="_self" data-i18n="missions" data-i18n-aria="missions">Misiones Matched Play</a>
+    </div>
+
+    <div class="bottom" style="bottom: 14px;">
+      <button class="btn btn-small" type="button" id="btn-about" data-i18n="about">Acerca de</button>
+    </div>
+
+    <div id="wip-backdrop" class="modal-backdrop" aria-hidden="true"></div>
+    <div id="wip-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="wip-title" aria-describedby="wip-desc" aria-hidden="true">
+      <h2 id="wip-title" data-i18n="modalTitleGeneric">Funci&oacute;n en construcci&oacute;n</h2>
+      <p id="wip-desc" data-i18n="modalDescGeneric">Estamos trabajando en esta secci&oacute;n. Vuelve en un tiempo.</p>
+      <div class="actions">
+        <button id="wip-ok" class="btn-ok" type="button" data-i18n="ok">OK</button>
+      </div>
+    </div>
+  </main>
+</body>
+</html>
+
+
+
+
+
+
