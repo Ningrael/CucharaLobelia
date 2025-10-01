@@ -387,3 +387,4 @@
   initEventHandlers();
   recalcSizes();
 })();
+
