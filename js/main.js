@@ -16,6 +16,95 @@ window.APP_VERSION = APP_VERSION;
     modalTitle: doc.getElementById('wip-title'),
     modalDesc: doc.getElementById('wip-desc')
   };
+  const videoCards = Array.from(doc.querySelectorAll('.mini-card[data-video-slot]'));
+
+  function extractYouTubeId(source) {
+    if (!source) return '';
+    try {
+      const url = new URL(source);
+      if (url.hostname.includes('youtu.be')) {
+        return url.pathname.replace(/\//g, '').trim();
+      }
+      const idParam = url.searchParams.get('v');
+      if (idParam) {
+        return idParam;
+      }
+    } catch (error) {
+      return '';
+    }
+    return '';
+  }
+
+  function normaliseVideoUrl(raw) {
+    if (!raw) {
+      return '';
+    }
+    try {
+      const url = new URL(raw);
+      url.searchParams.delete('feature');
+      return url.toString();
+    } catch (error) {
+      return raw;
+    }
+  }
+
+  function applyVideoCard(card, data, index) {
+    const label = card.querySelector('.mini-card__label');
+    const fallbackTitle = 'Miniatura ' + (index + 1);
+
+    if (!data) {
+      card.href = '#';
+      delete card.dataset.videoUrl;
+      card.removeAttribute('title');
+      card.style.backgroundImage = '';
+      card.classList.remove('is-loaded');
+      if (label) {
+        label.textContent = fallbackTitle;
+      }
+      return;
+    }
+
+    const rawTitle = (data[0] || '').trim();
+    const rawUrl = (data[1] || '').trim();
+    const cleanUrl = normaliseVideoUrl(rawUrl);
+    const videoId = extractYouTubeId(cleanUrl);
+
+    if (!cleanUrl || !videoId) {
+      applyVideoCard(card, null, index);
+      return;
+    }
+
+    const thumb = 'https://img.youtube.com/vi/' + videoId + '/hqdefault.jpg';
+    card.href = cleanUrl;
+    card.dataset.videoUrl = cleanUrl;
+    card.setAttribute('title', rawTitle || fallbackTitle);
+    card.style.backgroundImage = "url('" + thumb + "')";
+    card.classList.add('is-loaded');
+    if (label) {
+      label.textContent = rawTitle || fallbackTitle;
+    }
+  }
+
+  async function loadFeaturedVideos() {
+    if (!videoCards.length) {
+      return;
+    }
+    try {
+      const response = await fetch('videos.txt', { cache: 'no-store' });
+      if (!response.ok) {
+        throw new Error('HTTP ' + response.status);
+      }
+      const textContent = await response.text();
+      const lines = textContent.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+      videoCards.forEach((card, index) => {
+        const entry = index < lines.length ? lines[index].split('|') : null;
+        applyVideoCard(card, entry, index);
+      });
+    } catch (error) {
+      videoCards.forEach((card, index) => applyVideoCard(card, null, index));
+      console.warn('No se pudieron cargar las miniaturas de video:', error);
+    }
+  }
 
   let currentLang = detectInitialLang();
   let lastFocus = null;
@@ -91,6 +180,15 @@ window.APP_VERSION = APP_VERSION;
     bindWorkInProgressHandlers();
     elements.aboutBtn?.addEventListener('click', () => openModal('about'));
 
+    videoCards.forEach((card) => {
+      card.addEventListener('click', (event) => {
+        if (!card.dataset.videoUrl) {
+          event.preventDefault();
+        }
+      });
+    });
+    loadFeaturedVideos();
+
     elements.okBtn?.addEventListener('click', closeModal);
     elements.backdrop?.addEventListener('click', closeModal);
     doc.addEventListener('keydown', (event) => {
@@ -106,8 +204,3 @@ window.APP_VERSION = APP_VERSION;
     init();
   }
 })();
-
-
-
-
-
