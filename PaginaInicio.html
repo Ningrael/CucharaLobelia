@@ -1,4 +1,4 @@
-﻿<!-- PaginaInicio.html
+<!-- PaginaInicio.html
      Landing screen for the Lobelia app mock, provides navigation and language switching. -->
 <!DOCTYPE html>
 <html lang="es">
@@ -7,19 +7,197 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>La Cuchara de Lobelia &#8211; Inicio</title>
   <meta name="theme-color" content="#2f3b2b" />
+  <link rel="icon" type="image/png" sizes="128x128" href="images/Favicon.png">
   <link rel="stylesheet" href="css/main.css" />
   <script src="js/i18n.js"></script>
   <script src="js/main.js" defer></script>
+    <style>
+    .app {
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 64px 20px 110px;
+      width: 100%;
+    }
+
+    .home-layout {
+      width: 100%;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 32px;
+    }
+
+    .mini-gallery {
+      width: 240px;
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+    }
+
+    .mini-card {
+      position: relative;
+      display: block;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      border-radius: 26px;
+      overflow: hidden;
+      background: rgba(239, 229, 207, 0.92);
+      background-size: cover;
+      background-position: center;
+      box-shadow: 0 18px 34px rgba(0, 0, 0, 0.38);
+      text-decoration: none;
+      color: inherit;
+      transition: transform 0.18s ease, box-shadow 0.24s ease;
+    }
+
+    .mini-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(0, 0, 0, 0.08) 25%, rgba(0, 0, 0, 0.55) 100%);
+      opacity: 0;
+      transition: opacity 0.24s ease;
+    }
+
+    .mini-card__thumb {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: 0;
+    }
+
+    .mini-card__label {
+      position: absolute;
+      left: 14px;
+      right: 14px;
+      bottom: 14px;
+      padding: 10px 14px;
+      border-radius: 18px;
+      background: rgba(0, 0, 0, 0.62);
+      color: #f4e9d2;
+      font-weight: 700;
+      font-size: 12px;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      line-height: 1.3;
+      opacity: 0;
+      transition: opacity 0.24s ease;
+    }
+
+    .mini-card:not(.is-loaded) {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(239, 229, 207, 0.92);
+      box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+    }
+
+    .mini-card:not(.is-loaded)::before {
+      display: none;
+    }
+
+    .mini-card:not(.is-loaded) .mini-card__label {
+      position: static;
+      opacity: 1;
+      background: transparent;
+      color: #3a2a1e;
+      padding: 0;
+      text-align: center;
+    }
+
+    .mini-card:focus-visible,
+    .mini-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 26px 46px rgba(0, 0, 0, 0.45);
+      outline: none;
+    }
+
+    .mini-card.is-loaded:hover::before,
+    .mini-card.is-loaded:focus-visible::before {
+      opacity: 1;
+    }
+
+    .mini-card.is-loaded:hover .mini-card__label,
+    .mini-card.is-loaded:focus-visible .mini-card__label {
+      opacity: 1;
+    }
+
+    .main-action {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 26px;
+    }
+
+    .cta-card {
+      display: block;
+      width: 240px;
+      height: 132px;
+      border-radius: 30px;
+      background-image: url('images/Boton Matched.png');
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: 100% 100%;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.42);
+      text-decoration: none;
+      transition: transform 0.18s ease, box-shadow 0.24s ease;
+    }
+
+    .cta-card:hover,
+    .cta-card:focus-visible {
+      transform: translateY(-4px);
+      box-shadow: 0 26px 52px rgba(0, 0, 0, 0.48);
+      outline: none;
+    }
+
+    .cta-card__label {
+      display: none;
+    }
+
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      border: 0;
+    }
+  </style>
 </head>
 <body>
   <main class="app" role="main" aria-label="Pantalla de inicio">
+    <div class="layout-grid" id="layout-grid" aria-hidden="true"></div>
     <div class="top-right">
-      <button class="flag-btn" id="lang-es" style="background-image:url('https://flagcdn.com/w20/es.png');" data-i18n-aria="flag_es" aria-label="Espa&ntilde;ol"></button>
+      <button class="flag-btn" id="lang-es" style="background-image:url('https://flagcdn.com/w20/es.png');" data-i18n-aria="flag_es" aria-label="Español"></button>
       <button class="flag-btn" id="lang-en" style="background-image:url('https://flagcdn.com/w20/gb.png');" data-i18n-aria="flag_en" aria-label="English"></button>
     </div>
 
-    <div class="content" aria-live="polite">
-      <a class="btn btn-primary" id="btn-misiones" href="misiones/MisionesMatched.html" target="_self" data-i18n="missions" data-i18n-aria="missions">Misiones Matched Play</a>
+    <div class="home-shell">
+      <div class="home-layout" aria-label="Destacados y accesos">
+        <section class="mini-gallery" aria-label="Miniaturas destacadas">
+          <a class="mini-card" data-video-slot="0" href="#" target="_blank" rel="noopener">
+            <span class="mini-card__label">Miniatura 1</span>
+          </a>
+          <a class="mini-card" data-video-slot="1" href="#" target="_blank" rel="noopener">
+            <span class="mini-card__label">Miniatura 2</span>
+          </a>
+          <a class="mini-card" data-video-slot="2" href="#" target="_blank" rel="noopener">
+            <span class="mini-card__label">Miniatura 3</span>
+          </a>
+        </section>
+
+        <section class="main-action" aria-label="Acciones principales">
+          <a class="cta-card" id="btn-misiones" href="misiones/MisionesMatched.html" target="_self" data-i18n-aria="missions">
+            <span class="visually-hidden" data-i18n="missions">Misiones Matched Play</span>
+            <span class="cta-card__label" aria-hidden="true"></span>
+          </a>
+        </section>
+      </div>
     </div>
 
     <div class="bottom" style="bottom: 14px;">
@@ -28,8 +206,8 @@
 
     <div id="wip-backdrop" class="modal-backdrop" aria-hidden="true"></div>
     <div id="wip-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="wip-title" aria-describedby="wip-desc" aria-hidden="true">
-      <h2 id="wip-title" data-i18n="modalTitleGeneric">Funci&oacute;n en construcci&oacute;n</h2>
-      <p id="wip-desc" data-i18n="modalDescGeneric">Estamos trabajando en esta secci&oacute;n. Vuelve en un tiempo.</p>
+      <h2 id="wip-title" data-i18n="modalTitleGeneric">Función en construcción</h2>
+      <p id="wip-desc" data-i18n="modalDescGeneric">Estamos trabajando en esta sección. Vuelve en un tiempo.</p>
       <div class="actions">
         <button id="wip-ok" class="btn-ok" type="button" data-i18n="ok">OK</button>
       </div>
@@ -37,9 +215,5 @@
   </main>
 </body>
 </html>
-
-
-
-
 
 

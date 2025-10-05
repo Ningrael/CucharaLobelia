@@ -69,7 +69,7 @@
     if (Number.isNaN(parsed)) {
       return '3';
     }
-    return String(Math.min(MISSIONS.length, Math.max(1, parsed)));
+    return String(Math.min(6, Math.max(1, parsed)));
   }
 
   function ensureHistoryBase() {
@@ -176,6 +176,7 @@
     const roundsInput = create('input', 'rounds-input', {
       type: 'text',
       inputmode: 'numeric',
+      maxlength: '1',
       'aria-label': 'Número de rondas',
       value: state.rounds
     });
@@ -273,6 +274,7 @@
       backBtn,
       grid,
       modalBackdrop,
+      modalCard,
       modalClose,
       modalFrame
     });
@@ -484,6 +486,16 @@
   initEventHandlers();
   recalcSizes();
 })();
+
+
+
+
+
+
+
+
+
+
 
 
 

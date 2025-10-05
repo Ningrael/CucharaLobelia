@@ -45,11 +45,8 @@ body {
   padding: 18px;
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  background:
-    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.05) 0 2px, transparent 2px 6px),
-    linear-gradient(180deg, rgba(239, 229, 207, 0.55), rgba(46, 139, 87, 0.35), rgba(239, 229, 207, 0.55)),
-    url('../images/Inicio.png') center/cover no-repeat;
-  background-blend-mode: overlay;
+  background: url('../images/Choma.png') center/cover no-repeat;
+  background-blend-mode: normal;
 }
 
 .app::before {
@@ -57,7 +54,7 @@ body {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: radial-gradient(80% 60% at 50% 50%, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.25) 60%, rgba(0, 0, 0, 0.45) 100%);
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0) 55%, rgba(0, 0, 0, 0.18) 100%);
 }
 
 .content {
@@ -224,4 +221,48 @@ body {
 .modal-open .modal,
 .modal-open .modal-backdrop {
   display: block;
+}
+
+/* Debug Grid Styles */
+.app {
+  position: relative; /* Asegura que la cuadrícula sea relativa a este contenedor */
+}
+
+.layout-grid {
+  position: absolute; /* Cambiado de fixed a absolute */
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 56.25vh; /* Mantiene la relación de aspecto 9:16 */
+  height: 100%;
+  z-index: 5; /* Reducido para no interferir con controles */
+  pointer-events: none;
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  grid-auto-rows: 1fr;
+  gap: 1px;
+  padding: 0;
+  margin: 0;
+  background-color: rgba(0, 0, 0, 0.1);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease;
+}
+
+.layout-grid.is-visible {
+  opacity: 0.9;
+  visibility: visible;
+}
+
+.layout-grid__cell {
+  background-color: rgba(255, 0, 0, 0.1);
+  border: 1px solid rgba(255, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: rgba(255, 0, 0, 0.7);
+  text-transform: uppercase;
+  font-weight: 600;
 }
