@@ -514,24 +514,24 @@ window.APP_VERSION = APP_VERSION;
    * Posiciona los elementos en la cuadrícula según las coordenadas definidas
    */
   function positionElements() {
-    // Los botones de idioma ya están posicionados con CSS (top-right)
-    // No necesitan reposicionamiento con la cuadrícula
+    console.log('🎯 Posicionando elementos en la cuadrícula...');
     
-    // Posicionar botones de misiones (si existen en el DOM)
-    const misiones1 = document.getElementById('misiones-1');
-    const misiones2 = document.getElementById('misiones-2');
-    const misiones3 = document.getElementById('misiones-3');
-    const matchedBtn = document.getElementById('btn-matched');
+    // Posicionar la galería de miniaturas (izquierda)
+    const miniGallery = document.querySelector('.mini-gallery');
+    if (miniGallery) {
+      positionInGrid(miniGallery, 'A6:D14', 10);
+      console.log('✅ Mini-gallery posicionada en A6:D14');
+    }
     
-    if (misiones1) positionInGrid(misiones1, 'A5:C6', 10);
-    if (misiones2) positionInGrid(misiones2, 'A8:C9', 10);
-    if (misiones3) positionInGrid(misiones3, 'A10:C12', 10);
-    if (matchedBtn) positionInGrid(matchedBtn, 'J6:L8', 10);
+    // Posicionar la acción principal (derecha)
+    const mainAction = document.querySelector('.main-action');
+    if (mainAction) {
+      positionInGrid(mainAction, 'I8:L12', 10);
+      console.log('✅ Main-action posicionada en I8:L12');
+    }
     
-    // Las miniaturas de video y otros elementos ya tienen su posición
-    // definida por CSS en la estructura home-layout
-    // Solo usamos la cuadrícula para elementos que necesiten
-    // posicionamiento absoluto específico
+    // Los botones de idioma y el botón inferior están posicionados con CSS
+    // y no necesitan la cuadrícula
   }
 
   function setupEventListeners() {

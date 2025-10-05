@@ -131,10 +131,11 @@ body {
   position: absolute;
   top: 18px;
   right: 18px;
-  z-index: 2;
+  z-index: 20;
   display: flex;
   align-items: center;
   gap: 8px;
+  pointer-events: auto;
 }
 
 .flag-btn {
@@ -153,9 +154,14 @@ body {
   bottom: 18px;
   left: 0;
   right: 0;
-  z-index: 1;
+  z-index: 20;
   display: flex;
   justify-content: center;
+  pointer-events: none;
+}
+
+.bottom > * {
+  pointer-events: auto;
 }
 
 .btn-disabled {
@@ -238,7 +244,7 @@ body {
   bottom: 0;
   width: 100%;
   height: 100%;
-  z-index: 5;
+  z-index: 999;
   pointer-events: none;
   display: grid;
   grid-template-columns: repeat(12, 1fr);
