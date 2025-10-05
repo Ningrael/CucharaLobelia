@@ -97,21 +97,18 @@ window.APP_VERSION = APP_VERSION;
     const app = document.querySelector('.app');
     if (!app) return;
     
-    // Obtener dimensiones del contenedor
+    // Obtener dimensiones del contenedor (sin padding, ahora es 0)
     const rect = app.getBoundingClientRect();
-    const padding = parseInt(window.getComputedStyle(app).paddingLeft) || 18;
-    
-    // Calcular dimensiones útiles (sin padding)
-    const usableWidth = rect.width - (padding * 2);
-    const usableHeight = rect.height - (padding * 2);
+    const containerWidth = rect.width;
+    const containerHeight = rect.height;
     
     // Calcular tamaño de cada celda
-    const cellWidth = usableWidth / GRID_COLUMNS;
-    const cellHeight = usableHeight / GRID_ROWS;
+    const cellWidth = containerWidth / GRID_COLUMNS;
+    const cellHeight = containerHeight / GRID_ROWS;
     
     // Calcular posición y tamaño del elemento
-    const left = startPos.col * cellWidth + padding;
-    const top = startPos.row * cellHeight + padding;
+    const left = startPos.col * cellWidth;
+    const top = startPos.row * cellHeight;
     const width = (endPos.col - startPos.col + 1) * cellWidth;
     const height = (endPos.row - startPos.row + 1) * cellHeight;
     
@@ -122,6 +119,9 @@ window.APP_VERSION = APP_VERSION;
     element.style.width = width + 'px';
     element.style.height = height + 'px';
     element.style.zIndex = zIndex;
+    
+    // Log para debug
+    console.log(`📍 ${gridArea}: ${width.toFixed(1)}×${height.toFixed(1)}px en (${left.toFixed(1)}, ${top.toFixed(1)})`);
   }
 
   // Función obsoleta, se mantiene por compatibilidad
@@ -517,17 +517,19 @@ window.APP_VERSION = APP_VERSION;
     console.log('🎯 Posicionando elementos en la cuadrícula...');
     
     // Posicionar la galería de miniaturas (izquierda)
+    // A5:E15 = 5 columnas × 11 filas (más espacio para mejor visualización)
     const miniGallery = document.querySelector('.mini-gallery');
     if (miniGallery) {
-      positionInGrid(miniGallery, 'A6:D14', 10);
-      console.log('✅ Mini-gallery posicionada en A6:D14');
+      positionInGrid(miniGallery, 'A5:E15', 10);
+      console.log('✅ Mini-gallery posicionada');
     }
     
     // Posicionar la acción principal (derecha)
+    // H8:L13 = 5 columnas × 6 filas (botón más grande)
     const mainAction = document.querySelector('.main-action');
     if (mainAction) {
-      positionInGrid(mainAction, 'I8:L12', 10);
-      console.log('✅ Main-action posicionada en I8:L12');
+      positionInGrid(mainAction, 'H8:L13', 10);
+      console.log('✅ Main-action posicionada');
     }
     
     // Los botones de idioma y el botón inferior están posicionados con CSS
