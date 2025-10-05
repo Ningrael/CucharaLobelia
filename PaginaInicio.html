@@ -176,6 +176,63 @@
       clip: rect(0, 0, 0, 0);
       border: 0;
     }
+
+    /* Media Queries para móviles */
+    @media (max-width: 768px) {
+      .app {
+        padding: 8px 8px 50px;
+      }
+
+      .home-layout {
+        flex-direction: column;
+        gap: 16px;
+        align-items: center;
+      }
+
+      .mini-gallery {
+        width: 140px;
+        gap: 12px;
+      }
+
+      .mini-card {
+        border-radius: 16px;
+      }
+
+      .mini-card__label {
+        font-size: 9px;
+        padding: 6px 8px;
+        left: 8px;
+        right: 8px;
+        bottom: 8px;
+      }
+
+      .main-action {
+        gap: 12px;
+      }
+
+      .cta-card {
+        width: 140px;
+        height: 77px;
+        border-radius: 18px;
+      }
+
+      .cta-card__img {
+        border-radius: 18px;
+      }
+    }
+
+    /* Ajustes para pantallas muy pequeñas */
+    @media (max-width: 400px) {
+      .mini-gallery {
+        width: 120px;
+        gap: 10px;
+      }
+
+      .cta-card {
+        width: 120px;
+        height: 66px;
+      }
+    }
   </style>
 </head>
 <body>
