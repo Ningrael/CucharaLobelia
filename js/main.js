@@ -93,25 +93,35 @@ window.APP_VERSION = APP_VERSION;
     const startPos = convertGridRefToPosition(start);
     const endPos = end ? convertGridRefToPosition(end) : startPos;
     
-    // Calcular área de la cuadrícula
-    const gridColumnStart = Math.min(startPos.col, endPos.col) + 1;
-    const gridColumnEnd = Math.max(startPos.col, endPos.col) + 2; // +1 porque grid-column-end es exclusivo
-    const gridRowStart = Math.min(startPos.row, endPos.row) + 1;
-    const gridRowEnd = Math.max(startPos.row, endPos.row) + 2; // +1 porque grid-row-end es exclusivo
+    // Obtener el contenedor principal
+    const app = document.querySelector('.app');
+    if (!app) return;
+    
+    // Obtener dimensiones del contenedor
+    const rect = app.getBoundingClientRect();
+    const padding = parseInt(window.getComputedStyle(app).paddingLeft) || 18;
+    
+    // Calcular dimensiones útiles (sin padding)
+    const usableWidth = rect.width - (padding * 2);
+    const usableHeight = rect.height - (padding * 2);
+    
+    // Calcular tamaño de cada celda
+    const cellWidth = usableWidth / GRID_COLUMNS;
+    const cellHeight = usableHeight / GRID_ROWS;
+    
+    // Calcular posición y tamaño del elemento
+    const left = startPos.col * cellWidth + padding;
+    const top = startPos.row * cellHeight + padding;
+    const width = (endPos.col - startPos.col + 1) * cellWidth;
+    const height = (endPos.row - startPos.row + 1) * cellHeight;
     
     // Aplicar estilos
     element.style.position = 'absolute';
-    element.style.gridColumnStart = gridColumnStart;
-    element.style.gridColumnEnd = gridColumnEnd;
-    element.style.gridRowStart = gridRowStart;
-    element.style.gridRowEnd = gridRowEnd;
+    element.style.left = left + 'px';
+    element.style.top = top + 'px';
+    element.style.width = width + 'px';
+    element.style.height = height + 'px';
     element.style.zIndex = zIndex;
-    
-    // Asegurar que el contenedor tenga posición relativa
-    const container = element.parentElement;
-    if (container && window.getComputedStyle(container).position === 'static') {
-      container.style.position = 'relative';
-    }
   }
 
   // Función obsoleta, se mantiene por compatibilidad
@@ -396,10 +406,20 @@ window.APP_VERSION = APP_VERSION;
     return strings;
   }
 
+  function updateButtonImage() {
+    const buttonImg = document.getElementById('btn-misiones-img');
+    if (buttonImg) {
+      const imageName = currentLang === 'es' ? 'Misiones matched.png' : 'Boton Matched.png';
+      buttonImg.src = `images/${imageName}`;
+      console.log('Imagen actualizada a:', imageName);
+    }
+  }
+
   function refreshDomStrings() {
     const strings = getActiveStrings();
     applyDomTranslations(currentLang, doc);
     doc.title = strings.home_title;
+    updateButtonImage();
   }
 
   function switchLang(lang) {
@@ -494,15 +514,10 @@ window.APP_VERSION = APP_VERSION;
    * Posiciona los elementos en la cuadrícula según las coordenadas definidas
    */
   function positionElements() {
-    // Posicionar botones de idioma
-    const flagEs = document.getElementById('lang-es');
-    const flagEn = document.getElementById('lang-en');
+    // Los botones de idioma ya están posicionados con CSS (top-right)
+    // No necesitan reposicionamiento con la cuadrícula
     
-    // Posicionar banderas en la esquina superior derecha
-    if (flagEs) positionInGrid(flagEs.parentElement, 'K1:L1', 20);
-    if (flagEn) positionInGrid(flagEn.parentElement, 'I1:J1', 20);
-    
-    // Posicionar botones de misiones
+    // Posicionar botones de misiones (si existen en el DOM)
     const misiones1 = document.getElementById('misiones-1');
     const misiones2 = document.getElementById('misiones-2');
     const misiones3 = document.getElementById('misiones-3');
@@ -513,14 +528,10 @@ window.APP_VERSION = APP_VERSION;
     if (misiones3) positionInGrid(misiones3, 'A10:C12', 10);
     if (matchedBtn) positionInGrid(matchedBtn, 'J6:L8', 10);
     
-    // Posicionar miniaturas de video (si existen)
-    const miniCards = document.querySelectorAll('.mini-card[data-video-slot]');
-    miniCards.forEach((card, index) => {
-      const positions = []; // Ya no necesitamos posiciones por defecto
-      if (positions[index]) {
-        positionInGrid(card, positions[index], 5);
-      }
-    });
+    // Las miniaturas de video y otros elementos ya tienen su posición
+    // definida por CSS en la estructura home-layout
+    // Solo usamos la cuadrícula para elementos que necesiten
+    // posicionamiento absoluto específico
   }
 
   function setupEventListeners() {
@@ -557,6 +568,18 @@ window.APP_VERSION = APP_VERSION;
           event.preventDefault();
         }
       });
+    });
+
+    // Reposicionar elementos al cambiar el tamaño de la ventana
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        positionElements();
+        if (debugGridEnabled) {
+          buildDebugGrid();
+        }
+      }, 100);
     });
   }
 
