@@ -129,8 +129,8 @@ body {
 
 .top-right {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  top: 18px;
+  right: 18px;
   z-index: 2;
   display: flex;
   align-items: center;
@@ -150,6 +150,7 @@ body {
 
 .bottom {
   position: absolute;
+  bottom: 18px;
   left: 0;
   right: 0;
   z-index: 1;
@@ -275,8 +276,29 @@ body {
     height: 100dvh;
     max-width: 100vw;
     max-height: 100dvh;
-    padding: 12px;
+    padding: 8px;
     border-radius: 0;
+  }
+  
+  .top-right {
+    top: 8px;
+    right: 8px;
+    gap: 6px;
+  }
+  
+  .flag-btn {
+    width: 22px;
+    height: 15px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+  
+  .bottom {
+    bottom: 8px;
+  }
+  
+  .btn-small {
+    padding: 8px 10px;
+    font-size: 0.9rem;
   }
   
   .layout-grid__cell {
