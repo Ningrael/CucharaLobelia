@@ -525,11 +525,11 @@ window.APP_VERSION = APP_VERSION;
     }
     
     // Posicionar la acción principal (derecha)
-    // H8:L13 = 5 columnas × 6 filas (botón más grande)
+    // H5:L6 = 5 columnas × 2 filas (botón más arriba)
     const mainAction = document.querySelector('.main-action');
     if (mainAction) {
-      positionInGrid(mainAction, 'H8:L13', 10);
-      console.log('✅ Main-action posicionada');
+      positionInGrid(mainAction, 'H5:L6', 10);
+      console.log('✅ Main-action posicionada en H5:L6');
     }
     
     // Los botones de idioma y el botón inferior están posicionados con CSS
