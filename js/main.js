@@ -587,7 +587,9 @@ window.APP_VERSION = APP_VERSION;
   // Modal PDF (como en MisionesMatched): abrir en flotante
   function openPdfModal(pdfHref) {
     if (!pdfHref) return;
-    const viewer = 'https://mozilla.github.io/pdf.js/web/viewer.html?file=' + encodeURIComponent(pdfHref);
+    // Igual que en MisionesMatched: resolver a URL ABSOLUTA antes de pasar al visor
+    const absolutePdfUrl = new URL(pdfHref, window.location.href).href;
+    const viewer = 'https://mozilla.github.io/pdf.js/web/viewer.html?file=' + encodeURIComponent(absolutePdfUrl);
     const backdrop = doc.getElementById('pdf-backdrop');
     const frame = doc.getElementById('pdf-frame');
     const closeBtn = doc.getElementById('pdf-close');
