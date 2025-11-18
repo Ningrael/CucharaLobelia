@@ -1,0 +1,34 @@
+﻿<!-- misiones/Matched2vs2.html
+     Vanilla JS screen for browsing matched play missions and opening their PDF references. -->
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Misiones 2vs2 &#8211; @cucharalobelia</title>
+  <link rel="stylesheet" href="../css/misiones.css" />
+  <script src="../js/i18n.js"></script>
+  <script>
+    // Asegurarse de que LobeliaI18n estÃ© disponible globalmente
+    document.addEventListener('DOMContentLoaded', function() {
+      if (window.LobeliaI18n) {
+        // Inicializar el idioma
+        const lang = window.LobeliaI18n.detectInitialLang();
+        document.documentElement.lang = lang;
+      } else {
+        console.error('LobeliaI18n no se ha cargado correctamente');
+      }
+    });
+  </script>
+  <script src="../js/Matched2vs2.js" defer></script>
+  <style>\r\n      .phone.phone--compact {\r\n        padding: 10px 6px;\r\n      }\r\n      .screen.screen--compact {\r\n        margin: 6px 0;\r\n      }\r\n  </style>\r\n</head>
+<body>
+  <div id="root"></div>
+</body>
+</html>
+
+
+
+
+
+
