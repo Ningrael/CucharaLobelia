@@ -37,7 +37,7 @@ body {
   align-items: center;
   justify-content: center;
   background: #3b2b20;
-  padding: 16px;
+  padding: 0;
 }
 
 .phone {
@@ -48,7 +48,7 @@ body {
   padding: 6px;
   box-shadow: var(--shadow-lg);
   background: #3b2b20;
-  border: 1px solid rgba(0, 0, 0, 0.45);
+  border: none;
   position: relative;
 }
 
@@ -59,15 +59,22 @@ body {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  background: transparent;
+  background: url('../images/Choma.png') center/cover no-repeat;
+}
 }
 
 .screen::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: url('../images/Inicio.png') center/cover no-repeat;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0) 55%, rgba(0,0,0,0.2) 100%);
   z-index: 0;
+}
+
+.screen > * {
+  position: relative;
+  z-index: 1;
 }
 
 .screen > * {
@@ -442,3 +449,21 @@ body {
   color: var(--ink);
   line-height: 1.25;
 }
+
+
+
+
+
+.phone::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0) 55%, rgba(0,0,0,0.2) 100%);
+}
+
+
+
+
+
+

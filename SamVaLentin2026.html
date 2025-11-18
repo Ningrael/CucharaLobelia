@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es" data-i18n-lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Sam VaLentin 2026</title>
+  <meta name="theme-color" content="#2f3b2b" />
+  <link rel="icon" type="image/png" sizes="128x128" href="images/Favicon.png">
+  <link rel="stylesheet" href="css/main.css" />
+  <link rel="stylesheet" href="css/misiones.css" />
+  <script src="js/i18n.js"></script>
+  <script src="js/main.js?v=flyer3" defer></script>
+</head>
+<body>
+  <main class="app" role="main" aria-label="Sam VaLentin 2026">
+    <div class="layout-grid" id="layout-grid" aria-hidden="true"></div>
+
+    <!-- Contenido del menú Sam VaLentin 2026 -->
+    <div class="top-right">
+      <button class="flag-btn" id="lang-es" style="background-image:url('https://flagcdn.com/w20/es.png');" aria-label="Español"></button>
+      <button class="flag-btn" id="lang-en" style="background-image:url('https://flagcdn.com/w20/gb.png');" aria-label="English"></button>
+    </div>
+
+    <div class="home-shell">
+      <div class="home-layout" aria-label="Sam VaLentin 2026">
+        <!-- Mini-cards ocultas para activar la carga de videos.txt y el modo debug -->
+        <section class="mini-gallery" aria-label="Oculto" style="display:none;">
+          <a class="mini-card" data-video-slot="0" href="#" target="_blank" rel="noopener">
+            <span class="mini-card__label">Placeholder</span>
+          </a>
+        </section>
+
+        <!-- Botón QR WhatsApp -->
+        <section class="qr-action" aria-label="WhatsApp QR">
+          <a class="cta-card" id="btn-whatsapp" href="#" target="_self" data-url="https://chat.whatsapp.com/CbwMm3CPait9BocchQE7lX">
+            <img src="images/QR.png" alt="Grupo de WhatsApp" class="cta-card__img" />
+            <span class="cta-card__label" aria-hidden="true"></span>
+          </a>
+        </section>
+
+        <!-- Botón Inscripción Amonsul -->
+        <section class="amonsul-action" aria-label="Inscribirse Amonsul">
+          <a class="cta-card" id="btn-amonsul" href="#" target="_self" data-url="https://amonsul.netlify.app/detalle-torneo/121">
+            <img src="images/InscribirseAmonsul.png" alt="Inscribirse en Amonsul" class="cta-card__img" />
+            <span class="cta-card__label" aria-hidden="true"></span>
+          </a>
+        </section>
+
+        <!-- Botón Reglamento Español -->
+        <section class="reg-es-action" aria-label="Reglamento Español">
+          <a class="cta-card" id="btn-reg-es" href="#" data-pdf="pdfs/Sam Va Lentin 2026.pdf">
+            <img src="images/ReglamentoESP.png" alt="Ver reglamento (ES)" class="cta-card__img" />
+            <span class="cta-card__label" aria-hidden="true"></span>
+          </a>
+        </section>
+
+        <!-- Botón Reglamento Catalán -->
+        <section class="reg-cat-action" aria-label="Reglament Català">
+          <a class="cta-card" id="btn-reg-cat" href="#" data-pdf="pdfs/Sam Va Lentin 2026-cat.pdf">
+            <img src="images/ReglamentoCAT.png" alt="Veure reglament (CAT)" class="cta-card__img" />
+            <span class="cta-card__label" aria-hidden="true"></span>
+          </a>
+        </section>
+      </div>
+    </div>
+
+    <div class="bottom" style="bottom: 14px;">
+      <button class="btn btn-small" type="button" id="btn-back">Volver</button>
+    </div>
+
+    <div id="wip-backdrop" class="modal-backdrop" aria-hidden="true"></div>
+    <div id="wip-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="wip-title" aria-describedby="wip-desc" aria-hidden="true">
+      <h2 id="wip-title" data-i18n="modalTitleGeneric">Función en construcción</h2>
+      <p id="wip-desc" data-i18n="modalDescGeneric">Estamos trabajando en esta sección. Vuelve en un tiempo.</p>
+      <div class="actions">
+        <button id="wip-ok" class="btn-ok" type="button" data-i18n="ok">OK</button>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Modal PDF (flotante) fuera de .app para ocupar toda la ventana -->
+  <div id="pdf-backdrop" class="modal-backdrop" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Vista previa del PDF" style="display:none;">
+    <div class="modal-card">
+      <button id="pdf-close" class="modal-close" type="button" aria-label="Cerrar">×</button>
+      <iframe id="pdf-frame" class="modal-iframe" title="Vista previa del PDF" referrerpolicy="no-referrer"></iframe>
+    </div>
+  </div>
+</body>
+</html>

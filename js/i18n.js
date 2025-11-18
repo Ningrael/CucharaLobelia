@@ -1,4 +1,4 @@
-﻿// i18n.js
+// i18n.js
 // Shared translation dictionary and helpers for switching between Spanish and English.
 (function (global) {
   const translations = {
@@ -12,7 +12,7 @@
       settings: 'Configuraci\u00f3n',
       contact: 'Contacta y reporta bugs',
       about_title: 'Información de la versión',
-      about_body: 'Versión actual: {version}. Última actualización: 1/10/2025.',
+      about_body: 'Versión actual: V1.0.6. Última actualización: 18/11/2025.',
       google: 'Sesi\u00f3n Google',
       modalTitleGeneric: 'Funci\u00f3n en construcci\u00f3n',
       modalDescGeneric: 'Estamos trabajando en esta secci\u00f3n. Vuelve en un tiempo.',
@@ -47,7 +47,7 @@
       settings: 'Settings',
       contact: 'Contact & report bugs',
       about_title: 'Version Information',
-      about_body: 'Current version: {version}. Last update: 1/10/2025.',
+      about_body: 'Current version: V1.0.6. Last update: 18/11/2025.',
       google: 'Google Sign-in',
       modalTitleGeneric: 'Feature under construction',
       modalDescGeneric: 'We are working on this section. Please check back later.',
@@ -142,6 +142,9 @@
     applyDomTranslations
   };
 })(window);
+
+
+
 
 
 
