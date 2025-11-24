@@ -4,6 +4,22 @@
   const translations = {
     es: {
       missions: 'Misiones Matched Play',
+      calculator: 'Calculadora estadística',
+      calculator_img: 'images/CalculadoraEstadistica.png',
+      spell_calc: 'Lanzar Spell',
+      spell_calc_img: 'images/LanzarSpell.png?v=2',
+      resist_calc: 'Resistir Hechizo',
+      resist_calc_img: 'images/ResistirSpell.png?v=2',
+      rival_spell_result: 'Resultado del Spell Rival:',
+      resist_probability: 'Probabilidad de Resistir:',
+      resist_by_result: 'Resistir por Resultado:',
+      will_points: 'Puntos de Will:',
+      spell_difficulty: 'Dificultad del Spell:',
+      might_points: 'Puntos de Might:',
+      magic_resistance: 'Resistencia Mágica',
+      results: 'Resultados:',
+      success_probability: 'Probabilidad de éxito:',
+      success_by_result: 'Éxito por resultado:',
       about: 'Acerca de',
       missions_2v2: 'Misiones 2vs2',
       tutorials: 'Tutoriales',
@@ -39,6 +55,22 @@
     },
     en: {
       missions: 'Matched Play Missions',
+      calculator: 'Statistics Calculator',
+      calculator_img: 'images/Statistics Calculator.png',
+      spell_calc: 'Cast Spell',
+      spell_calc_img: 'images/CastSpell.png?v=2',
+      resist_calc: 'Resist Spell',
+      resist_calc_img: 'images/ResistSpell.png?v=2',
+      rival_spell_result: 'Rival Spell Result:',
+      resist_probability: 'Resist Probability:',
+      resist_by_result: 'Resist by Result:',
+      will_points: 'Will Points:',
+      spell_difficulty: 'Spell Difficulty:',
+      might_points: 'Might Points:',
+      magic_resistance: 'Magic Resistance',
+      results: 'Results:',
+      success_probability: 'Success Probability:',
+      success_by_result: 'Success by Result:',
       about: 'About',
       missions_2v2: '2v2 Missions',
       tutorials: 'Tutorials',
@@ -128,6 +160,13 @@
       const key = node.getAttribute('data-i18n-aria');
       if (key && strings[key]) {
         node.setAttribute('aria-label', strings[key]);
+      }
+    });
+
+    doc.querySelectorAll('[data-i18n-src]').forEach((node) => {
+      const key = node.getAttribute('data-i18n-src');
+      if (key && strings[key]) {
+        node.setAttribute('src', strings[key]);
       }
     });
   }

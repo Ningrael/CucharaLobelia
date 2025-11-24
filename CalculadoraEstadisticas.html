@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="es" data-i18n-lang="es">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Calculadora Estadística</title>
+  <meta name="theme-color" content="#2f3b2b" />
+  <link rel="icon" type="image/png" sizes="128x128" href="images/Favicon.png">
+  <link rel="stylesheet" href="css/main.css?v=1.3" />
+  <link rel="stylesheet" href="css/misiones.css" />
+  <script src="js/i18n.js"></script>
+  <script src="js/main.js?v=flyer4" defer></script>
+</head>
+
+<body>
+  <main class="app" role="main" aria-label="Calculadora Estadística">
+    <div class="layout-grid" id="layout-grid" aria-hidden="true"></div>
+
+    <!-- Banderas de idioma posicionadas por cuadrícula -->
+    <button class="flag-btn" id="lang-es" style="background-image:url('https://flagcdn.com/w20/es.png');"
+      data-i18n-aria="flag_es" aria-label="Español"></button>
+    <button class="flag-btn" id="lang-en" style="background-image:url('https://flagcdn.com/w20/gb.png');"
+      data-i18n-aria="flag_en" aria-label="English"></button>
+
+    <div class="home-shell">
+      <div class="home-layout" aria-label="Calculadora Estadística">
+        <!-- Mini-gallery oculta: mantiene el sistema que lee videos.txt y controla el grid debug -->
+        <section class="mini-gallery" aria-label="Oculto" style="display:none;">
+          <a class="mini-card" data-video-slot="0" href="#" target="_blank" rel="noopener">
+            <span class="mini-card__label">Placeholder</span>
+          </a>
+        </section>
+
+        <!-- Botones de la Calculadora de Estadísticas -->
+        <section class="spell-calc-action" aria-label="Lanzar Spell">
+          <a class="cta-card" id="btn-spell-calc" href="#" target="_self" data-i18n-aria="spell_calc">
+            <span class="visually-hidden" data-i18n="spell_calc">Lanzar Spell</span>
+            <img src="images/LanzarSpell.png" alt="Lanzar Spell" class="cta-card__img" data-i18n-src="spell_calc_img" />
+          </a>
+        </section>
+
+        <section class="resist-calc-action" aria-label="Resistir Hechizo">
+          <a class="cta-card" id="btn-resist-calc" href="#" target="_self" data-i18n-aria="resist_calc">
+            <span class="visually-hidden" data-i18n="resist_calc">Resistir Hechizo</span>
+            <img src="images/ResistirSpell.png" alt="Resistir Hechizo" class="cta-card__img"
+              data-i18n-src="resist_calc_img" />
+          </a>
+        </section>
+
+        <!-- Espacio para futuros botones (3-4 botones más) -->
+        <!-- <section class="future-calc-action" aria-label="Futura Función">
+          <a class="cta-card" id="btn-future-calc" href="#" target="_self">
+            <span class="visually-hidden">Futura Función</span>
+            <img src="images/Future.png" alt="Futura Función" class="cta-card__img" />
+            <span class="cta-card__label" aria-hidden="true">Futura Función</span>
+          </a>
+        </section> -->
+      </div>
+    </div>
+
+    <div class="bottom" style="bottom: 14px;">
+      <button class="btn btn-small" type="button" id="btn-back">Volver</button>
+    </div>
+
+    <div id="wip-backdrop" class="modal-backdrop" aria-hidden="true"></div>
+    <div id="wip-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="wip-title"
+      aria-describedby="wip-desc" aria-hidden="true">
+      <h2 id="wip-title" data-i18n="modalTitleGeneric">Función en construcción</h2>
+      <p id="wip-desc" data-i18n="modalDescGeneric">Estamos trabajando en esta sección. Vuelve en un tiempo.</p>
+      <div class="actions">
+        <button id="wip-ok" class="btn-ok" type="button" data-i18n="ok">OK</button>
+      </div>
+    </div>
+
+    <!-- Modal Calculadora Lanzar Spell -->
+    <div id="spell-calc-backdrop" class="modal-backdrop" aria-hidden="true"></div>
+    <div id="spell-calc-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="spell-calc-title"
+      aria-describedby="spell-calc-desc" aria-hidden="true">
+      <button id="spell-calc-close" class="modal-close" type="button" aria-label="Cerrar">×</button>
+      <h2 id="spell-calc-title" data-i18n="spell_calc">Lanzar Spell</h2>
+
+      <div class="spell-calculator">
+        <div class="input-group">
+          <label for="will-points" data-i18n="will_points">Puntos de Will:</label>
+          <div class="control-buttons">
+            <button type="button" id="will-decrease">-</button>
+            <input type="number" id="will-points" min="0" value="1" inputmode="numeric" pattern="[0-9]*" />
+            <button type="button" id="will-increase">+</button>
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label for="spell-difficulty" data-i18n="spell_difficulty">Dificultad del Spell:</label>
+          <div class="control-buttons">
+            <button type="button" id="difficulty-decrease">-</button>
+            <input type="number" id="spell-difficulty" min="2" max="6" value="4" readonly />
+            <button type="button" id="difficulty-increase">+</button>
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label for="might-points" data-i18n="might_points">Puntos de Might:</label>
+          <div class="control-buttons">
+            <button type="button" id="might-decrease">-</button>
+            <input type="number" id="might-points" min="0" max="6" value="0" readonly />
+            <button type="button" id="might-increase">+</button>
+          </div>
+        </div>
+
+        <div class="results">
+          <h3 data-i18n="results">Resultados:</h3>
+          <div class="probability-display">
+            <div class="main-probability" data-i18n="success_probability">Probabilidad de Éxito:</div>
+            <span id="success-rate">0%</span>
+          </div>
+
+          <div class="detailed-results">
+            <h4 data-i18n="success_by_result">Éxito por Resultado:</h4>
+            <div id="result-breakdown"></div>
+          </div>
+
+          <div class="chart-container">
+            <canvas id="probability-chart" width="400" height="250"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Calculadora Resistir Spell -->
+    <div id="resist-calc-backdrop" class="modal-backdrop" aria-hidden="true"></div>
+    <div id="resist-calc-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="resist-calc-title"
+      aria-describedby="resist-calc-desc" aria-hidden="true">
+      <button id="resist-calc-close" class="modal-close" type="button" aria-label="Cerrar">×</button>
+      <h2 id="resist-calc-title" data-i18n="resist_calc">Resistir Hechizo</h2>
+
+      <div class="spell-calculator">
+        <div class="grid-row">
+          <div class="input-group">
+            <label for="resist-will-points" data-i18n="will_points">Will:</label>
+            <div class="control-buttons">
+              <button type="button" id="resist-will-decrease">-</button>
+              <input type="number" id="resist-will-points" min="0" value="1" inputmode="numeric" pattern="[0-9]*" />
+              <button type="button" id="resist-will-increase">+</button>
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label for="resist-might-points" data-i18n="might_points">Might:</label>
+            <div class="control-buttons">
+              <button type="button" id="resist-might-decrease">-</button>
+              <input type="number" id="resist-might-points" min="0" max="6" value="0" readonly />
+              <button type="button" id="resist-might-increase">+</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-row">
+          <div class="input-group">
+            <label for="rival-spell-result" data-i18n="rival_spell_result">Rival:</label>
+            <div class="control-buttons">
+              <button type="button" id="rival-result-decrease">-</button>
+              <input type="number" id="rival-spell-result" min="2" max="6" value="4" readonly />
+              <button type="button" id="rival-result-increase">+</button>
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label class="checkbox-label" style="justify-content: center; height: 100%;">
+              <input type="checkbox" id="resist-magic-resistance" />
+              <span data-i18n="magic_resistance">Resist. Mágica</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="results">
+          <h3 data-i18n="results">Resultados:</h3>
+          <div class="probability-display">
+            <div class="main-probability" data-i18n="resist_probability">Probabilidad de Resistir:</div>
+            <span id="resist-success-rate">0%</span>
+          </div>
+
+          <div class="detailed-results">
+            <h4 data-i18n="resist_by_result">Resistir por Resultado:</h4>
+            <div id="resist-result-breakdown"></div>
+          </div>
+
+          <div class="chart-container">
+            <canvas id="resist-probability-chart" width="400" height="250"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</body>
+
+</html>

@@ -198,10 +198,10 @@
 <body>
   <main class="app" role="main" aria-label="Pantalla de inicio">
     <div class="layout-grid" id="layout-grid" aria-hidden="true"></div>
-    <div class="top-right">
-      <button class="flag-btn" id="lang-es" style="background-image:url('https://flagcdn.com/w20/es.png');" data-i18n-aria="flag_es" aria-label="Español"></button>
-      <button class="flag-btn" id="lang-en" style="background-image:url('https://flagcdn.com/w20/gb.png');" data-i18n-aria="flag_en" aria-label="English"></button>
-    </div>
+    
+    <!-- Banderas de idioma posicionadas por cuadrícula -->
+    <button class="flag-btn" id="lang-es" style="background-image:url('https://flagcdn.com/w20/es.png');" data-i18n-aria="flag_es" aria-label="Español"></button>
+    <button class="flag-btn" id="lang-en" style="background-image:url('https://flagcdn.com/w20/gb.png');" data-i18n-aria="flag_en" aria-label="English"></button>
 
     <div class="home-shell">
       <div class="home-layout" aria-label="Destacados y accesos">
@@ -225,18 +225,27 @@
           </a>
         </section>
         
+        <section class="calculator-action" aria-label="Calculadora Estadística">
+          <a class="cta-card" id="btn-calculator" href="CalculadoraEstadisticas.html" target="_self" data-i18n-aria="calculator">
+            <span class="visually-hidden" data-i18n="calculator">Calculadora estadística</span>
+            <img src="images/CalculadoraEstadistica.png" alt="Calculadora Estadística" class="cta-card__img" data-i18n-src="calculator_img" />
+            <span class="cta-card__label" aria-hidden="true" data-i18n="calculator"></span>
+          </a>
+        </section>
+
         <section class="flyer-action" aria-label="Flyer 2026">
           <a class="cta-card" id="btn-flyer" href="SamVaLentin2026.html" target="_self">
             <img src="images/Flyer 2026.png" alt="Flyer 2026" class="cta-card__img" />
             <span class="cta-card__label" aria-hidden="true"></span>
           </a>
         </section>
+
+        <section class="about-action" aria-label="About">
+          <button class="btn btn-small" type="button" id="btn-about" data-i18n="about">Acerca de</button>
+        </section>
       </div>
     </div>
 
-    <div class="bottom" style="bottom: 14px;">
-      <button class="btn btn-small" type="button" id="btn-about" data-i18n="about">Acerca de</button>
-    </div>
 
     <div id="wip-backdrop" class="modal-backdrop" aria-hidden="true"></div>
     <div id="wip-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="wip-title" aria-describedby="wip-desc" aria-hidden="true">

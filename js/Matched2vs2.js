@@ -254,9 +254,9 @@
     modalCard.append(modalClose, modalFrame);
     modalBackdrop.appendChild(modalCard);
 
-    screen.append(banner, controls, content, footer);
+    screen.append(banner, controls, content, footer, modalBackdrop);
     phone.appendChild(screen);
-    stage.append(phone, modalBackdrop);
+    stage.append(phone);
     root.appendChild(stage);
 
     Object.assign(elements, {

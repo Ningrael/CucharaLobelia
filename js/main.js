@@ -532,27 +532,54 @@ window.APP_VERSION = APP_VERSION;
   function positionElements() {
     console.log('🎯 Posicionando elementos en la cuadrícula...');
     
+    // --- Posiciones específicas para PaginaInicio.html ---
+
     // Posicionar la galería de miniaturas (izquierda)
-    // A5:E15 = 5 columnas × 11 filas (más espacio para mejor visualización)
     const miniGallery = document.querySelector('.mini-gallery');
     if (miniGallery) {
-      positionInGrid(miniGallery, 'A5:E15', 10);
-      console.log('✅ Mini-gallery posicionada');
+      positionInGrid(miniGallery, 'A9:F17', 10);
+      console.log('✅ Mini-gallery posicionada en A9:F17');
     }
-    
-    // Posicionar la acción principal (derecha)
-    // H5:L6 = 5 columnas × 2 filas (botón más arriba)
+
+    // Posicionar Flyer (Sam Va Lentin)
+    const flyerSection = document.querySelector('.flyer-action');
+    if (flyerSection) {
+      positionInGrid(flyerSection, 'A2:E9', 10);
+      console.log('✅ Flyer posicionado en A2:E9');
+    }
+
+    // Posicionar botón Calculadora
+    const calculatorAction = document.querySelector('.calculator-action');
+    if (calculatorAction) {
+      positionInGrid(calculatorAction, 'H8:L9', 11);
+      console.log('✅ Calculadora posicionada en H8:L9');
+    }
+
+    // Posicionar botón About
+    const aboutAction = document.querySelector('.about-action');
+    if (aboutAction) {
+      positionInGrid(aboutAction, 'I19:L20', 11);
+      console.log('✅ About posicionado en I19:L20');
+    }
+
+    // Posicionar la acción principal (Misiones Matched Play)
     const mainAction = document.querySelector('.main-action');
     if (mainAction) {
       positionInGrid(mainAction, 'H5:L6', 10);
       console.log('✅ Main-action posicionada en H5:L6');
     }
-    
-    // Posicionar sección del flyer igual que otros contenedores
-    const flyerSection = document.querySelector('.flyer-action');
-    if (flyerSection) {
-      positionInGrid(flyerSection, 'H9:L15', 10);
-      console.log('✅ Flyer posicionado en H9:L15');
+
+    // Posicionar banderas de idioma
+    const flagEs = document.getElementById('lang-es');
+    if (flagEs) {
+      positionInGrid(flagEs, 'K1', 15);
+      console.log('✅ Bandera española posicionada en K1');
+    }
+
+    const flagEn = document.getElementById('lang-en');
+    if (flagEn) {
+      positionInGrid(flagEn, 'L1', 15);
+      console.log('✅ Bandera inglesa posicionada en L1');
     }
 
     // --- Posiciones específicas para SamVaLentin2026 ---
@@ -578,6 +605,32 @@ window.APP_VERSION = APP_VERSION;
     if (regCatAction) {
       positionInGrid(regCatAction, 'I12:K13', 11);
       console.log('✅ Reglament CAT posicionado en I12:K13');
+    }
+
+    // --- Posiciones específicas para CalculadoraEstadisticas.html ---
+    const spellCalcAction = document.querySelector('.spell-calc-action');
+    if (spellCalcAction) {
+      positionInGrid(spellCalcAction, 'B4:F8', 11);
+      console.log('✅ Lanzar Spell posicionado en B4:F8');
+    }
+
+    const resistCalcAction = document.querySelector('.resist-calc-action');
+    if (resistCalcAction) {
+      positionInGrid(resistCalcAction, 'H4:L8', 11);
+      console.log('✅ Resistir Hechizo posicionado en H4:L8');
+    }
+
+    // Banderas para CalculadoraEstadisticas.html
+    const flagEsCalc = document.getElementById('lang-es');
+    if (flagEsCalc) {
+      positionInGrid(flagEsCalc, 'K1', 15);
+      console.log('✅ Bandera española posicionada en K1 (Calculadora)');
+    }
+
+    const flagEnCalc = document.getElementById('lang-en');
+    if (flagEnCalc) {
+      positionInGrid(flagEnCalc, 'L1', 15);
+      console.log('✅ Bandera inglesa posicionada en L1 (Calculadora)');
     }
   }
   
@@ -728,6 +781,276 @@ window.APP_VERSION = APP_VERSION;
       });
     }
 
+    // --- Listeners específicos de CalculadoraEstadisticas.html ---
+    const spellCalcBtn = doc.getElementById('btn-spell-calc');
+    if (spellCalcBtn) {
+      spellCalcBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        openSpellCalculator();
+      });
+      console.log('✅ Spell Calculator button listener attached');
+    }
+
+    const resistCalcBtn = doc.getElementById('btn-resist-calc');
+    if (resistCalcBtn) {
+      resistCalcBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        openResistCalculator();
+      });
+      console.log('✅ Resist Calculator button listener attached');
+    }
+
+    // Modal spell calculator
+    const spellCalcClose = doc.getElementById('spell-calc-close');
+    const spellCalcBackdrop = doc.getElementById('spell-calc-backdrop');
+    
+    if (spellCalcClose) {
+      spellCalcClose.addEventListener('click', closeSpellCalculator);
+    }
+    
+    if (spellCalcBackdrop) {
+      spellCalcBackdrop.addEventListener('click', closeSpellCalculator);
+    }
+
+    // Modal resist calculator
+    const resistCalcClose = doc.getElementById('resist-calc-close');
+    const resistCalcBackdrop = doc.getElementById('resist-calc-backdrop');
+    
+    if (resistCalcClose) {
+      resistCalcClose.addEventListener('click', closeResistCalculator);
+    }
+    
+    if (resistCalcBackdrop) {
+      resistCalcBackdrop.addEventListener('click', closeResistCalculator);
+    }
+
+    // Controls for resist calculator
+    const resistWillDecrease = doc.getElementById('resist-will-decrease');
+    const resistWillIncrease = doc.getElementById('resist-will-increase');
+    const resistWillPoints = doc.getElementById('resist-will-points');
+    
+    const rivalResultDecrease = doc.getElementById('rival-result-decrease');
+    const rivalResultIncrease = doc.getElementById('rival-result-increase');
+    const rivalSpellResult = doc.getElementById('rival-spell-result');
+    
+    const resistMightDecrease = doc.getElementById('resist-might-decrease');
+    const resistMightIncrease = doc.getElementById('resist-might-increase');
+    const resistMightPoints = doc.getElementById('resist-might-points');
+
+    // Will controls for resist calculator
+    if (resistWillDecrease && resistWillPoints) {
+      resistWillDecrease.addEventListener('click', () => {
+        const currentValue = parseInt(resistWillPoints.value) || 0;
+        if (currentValue > 0) {
+          resistWillPoints.value = currentValue - 1;
+          updateResistCalculator();
+        }
+      });
+    }
+
+    if (resistWillIncrease && resistWillPoints) {
+      resistWillIncrease.addEventListener('click', () => {
+        const currentValue = parseInt(resistWillPoints.value) || 0;
+        if (currentValue < 99) { // Límite práctico alto en lugar de 6
+          resistWillPoints.value = currentValue + 1;
+          updateResistCalculator();
+        }
+      });
+    }
+
+    // Rival result controls
+    if (rivalResultDecrease && rivalSpellResult) {
+      rivalResultDecrease.addEventListener('click', () => {
+        const currentValue = parseInt(rivalSpellResult.value) || 2;
+        if (currentValue > 2) {
+          rivalSpellResult.value = currentValue - 1;
+          updateResistCalculator();
+        }
+      });
+    }
+
+    if (rivalResultIncrease && rivalSpellResult) {
+      rivalResultIncrease.addEventListener('click', () => {
+        const currentValue = parseInt(rivalSpellResult.value) || 2;
+        if (currentValue < 6) {
+          rivalSpellResult.value = currentValue + 1;
+          updateResistCalculator();
+        }
+      });
+    }
+
+    // Might controls for resist calculator
+    if (resistMightDecrease && resistMightPoints) {
+      resistMightDecrease.addEventListener('click', () => {
+        const currentValue = parseInt(resistMightPoints.value) || 0;
+        if (currentValue > 0) {
+          resistMightPoints.value = currentValue - 1;
+          updateResistCalculator();
+        }
+      });
+    }
+
+    if (resistMightIncrease && resistMightPoints) {
+      resistMightIncrease.addEventListener('click', () => {
+        const currentValue = parseInt(resistMightPoints.value) || 0;
+        if (currentValue < 6) {
+          resistMightPoints.value = currentValue + 1;
+          updateResistCalculator();
+        }
+      });
+    }
+
+    // Input changes for resist calculator
+    [resistWillPoints, rivalSpellResult, resistMightPoints].forEach(input => {
+      if (input) {
+        input.addEventListener('change', updateResistCalculator);
+        input.addEventListener('input', updateResistCalculator);
+        
+        // Validación para solo permitir números
+        input.addEventListener('keydown', (e) => {
+          // Permitir: backspace, delete, tab, escape, enter
+          if ([8, 9, 27, 13].indexOf(e.keyCode) !== -1 ||
+              // Permitir: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+              (e.keyCode === 65 && (e.ctrlKey || e.metaKey)) ||
+              (e.keyCode === 67 && (e.ctrlKey || e.metaKey)) ||
+              (e.keyCode === 86 && (e.ctrlKey || e.metaKey)) ||
+              (e.keyCode === 88 && (e.ctrlKey || e.metaKey)) ||
+              // Permitir: home, end, left, right
+              (e.keyCode >= 35 && e.keyCode <= 39)) {
+            return;
+          }
+          
+          // Asegurar que solo sea números
+          if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105)) {
+            e.preventDefault();
+          }
+        });
+        
+        // Validación al pegar
+        input.addEventListener('paste', (e) => {
+          e.preventDefault();
+          const pastedData = e.clipboardData.getData('text');
+          const numericData = pastedData.replace(/[^0-9]/g, '');
+          document.execCommand('insertText', false, numericData);
+        });
+      }
+    });
+
+    // Magic resistance checkbox for resist calculator
+    const resistMagicResistance = doc.getElementById('resist-magic-resistance');
+    if (resistMagicResistance) {
+      resistMagicResistance.addEventListener('change', updateResistCalculator);
+    }
+
+    // Might controls
+    const mightDecrease = doc.getElementById('might-decrease');
+    const mightIncrease = doc.getElementById('might-increase');
+    const willDecrease = doc.getElementById('will-decrease');
+    const willIncrease = doc.getElementById('will-increase');
+    const difficultyDecrease = doc.getElementById('difficulty-decrease');
+    const difficultyIncrease = doc.getElementById('difficulty-increase');
+    const willPoints = doc.getElementById('will-points');
+    const spellDifficulty = doc.getElementById('spell-difficulty');
+    const mightPoints = doc.getElementById('might-points');
+
+    // Will controls
+    if (willDecrease && willPoints) {
+      willDecrease.addEventListener('click', () => {
+        const currentValue = parseInt(willPoints.value) || 0;
+        if (currentValue > 0) {
+          willPoints.value = currentValue - 1;
+          updateSpellCalculator();
+        }
+      });
+    }
+
+    if (willIncrease && willPoints) {
+      willIncrease.addEventListener('click', () => {
+        const currentValue = parseInt(willPoints.value) || 0;
+        if (currentValue < 99) { // Límite práctico alto en lugar de 6
+          willPoints.value = currentValue + 1;
+          updateSpellCalculator();
+        }
+      });
+    }
+
+    // Difficulty controls
+    if (difficultyDecrease && spellDifficulty) {
+      difficultyDecrease.addEventListener('click', () => {
+        const currentValue = parseInt(spellDifficulty.value) || 2;
+        if (currentValue > 2) {
+          spellDifficulty.value = currentValue - 1;
+          updateSpellCalculator();
+        }
+      });
+    }
+
+    if (difficultyIncrease && spellDifficulty) {
+      difficultyIncrease.addEventListener('click', () => {
+        const currentValue = parseInt(spellDifficulty.value) || 2;
+        if (currentValue < 6) {
+          spellDifficulty.value = currentValue + 1;
+          updateSpellCalculator();
+        }
+      });
+    }
+
+    if (mightDecrease && mightPoints) {
+      mightDecrease.addEventListener('click', () => {
+        const currentValue = parseInt(mightPoints.value) || 0;
+        if (currentValue > 0) {
+          mightPoints.value = currentValue - 1;
+          updateSpellCalculator();
+        }
+      });
+    }
+
+    if (mightIncrease && mightPoints) {
+      mightIncrease.addEventListener('click', () => {
+        const currentValue = parseInt(mightPoints.value) || 0;
+        if (currentValue < 6) {
+          mightPoints.value = currentValue + 1;
+          updateSpellCalculator();
+        }
+      });
+    }
+
+    // Input changes
+    [willPoints, spellDifficulty, mightPoints].forEach(input => {
+      if (input) {
+        input.addEventListener('change', updateSpellCalculator);
+        input.addEventListener('input', updateSpellCalculator);
+        
+        // Validación para solo permitir números
+        input.addEventListener('keydown', (e) => {
+          // Permitir: backspace, delete, tab, escape, enter
+          if ([8, 9, 27, 13].indexOf(e.keyCode) !== -1 ||
+              // Permitir: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+              (e.keyCode === 65 && (e.ctrlKey || e.metaKey)) ||
+              (e.keyCode === 67 && (e.ctrlKey || e.metaKey)) ||
+              (e.keyCode === 86 && (e.ctrlKey || e.metaKey)) ||
+              (e.keyCode === 88 && (e.ctrlKey || e.metaKey)) ||
+              // Permitir: home, end, left, right
+              (e.keyCode >= 35 && e.keyCode <= 39)) {
+            return;
+          }
+          
+          // Asegurar que solo sea números
+          if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105)) {
+            e.preventDefault();
+          }
+        });
+        
+        // Validación al pegar
+        input.addEventListener('paste', (e) => {
+          e.preventDefault();
+          const pastedData = e.clipboardData.getData('text');
+          const numericData = pastedData.replace(/[^0-9]/g, '');
+          document.execCommand('insertText', false, numericData);
+        });
+      }
+    });
+
     // Reposicionar elementos al cambiar el tamaño de la ventana
     let resizeTimeout;
     window.addEventListener('resize', () => {
@@ -744,6 +1067,448 @@ window.APP_VERSION = APP_VERSION;
   /**
    * Inicializa el diseño de la aplicación, posicionando los elementos en la cuadrícula
    */
+
+  // --- Funciones para la Calculadora de Spells ---
+  
+  function openSpellCalculator() {
+    const backdrop = document.getElementById('spell-calc-backdrop');
+    const modal = document.getElementById('spell-calc-modal');
+    
+    if (backdrop && modal) {
+      backdrop.style.display = 'block';
+      backdrop.setAttribute('aria-hidden', 'false');
+      modal.setAttribute('aria-hidden', 'false');
+      updateSpellCalculator();
+    }
+  }
+
+  function closeSpellCalculator() {
+    const backdrop = document.getElementById('spell-calc-backdrop');
+    const modal = document.getElementById('spell-calc-modal');
+    
+    if (backdrop && modal) {
+      backdrop.style.display = 'none';
+      backdrop.setAttribute('aria-hidden', 'true');
+      modal.setAttribute('aria-hidden', 'true');
+    }
+  }
+
+  function calculateSpellProbability(willPoints, difficulty, mightPoints, hasMagicResistance) {
+    const numDice = parseInt(willPoints) || 0;
+    const targetValue = parseInt(difficulty) || 4;
+    const might = parseInt(mightPoints) || 0;
+    const magicResistance = hasMagicResistance || false;
+    
+    // Añadir dado extra por Resistencia Mágica si está activada
+    const totalDice = numDice + (magicResistance ? 1 : 0);
+    
+    // Si no hay dados, probabilidad 0
+    if (totalDice === 0) {
+      return {
+        totalProbability: 0,
+        distribution: {}
+      };
+    }
+    
+    // Calcular probabilidad de éxito con múltiples dados
+    // Con might, un dado puede mejorar su resultado en +might
+    let singleDieSuccessProb = 0;
+    
+    // Para cada resultado posible del dado (1-6)
+    for (let dieResult = 1; dieResult <= 6; dieResult++) {
+      // Aplicar might al resultado más bajo posible
+      const modifiedResult = Math.min(6, dieResult + might);
+      
+      // Si el resultado modificado es >= dificultad, es éxito
+      if (modifiedResult >= targetValue) {
+        singleDieSuccessProb += 1/6; // Cada resultado tiene 1/6 de probabilidad
+      }
+    }
+    
+    // Calcular probabilidad de que al menos un dado tenga éxito
+    // 1 - probabilidad de que todos fallen
+    const singleDieFailProb = 1 - singleDieSuccessProb;
+    const totalFailProb = Math.pow(singleDieFailProb, totalDice);
+    const totalSuccessProb = (1 - totalFailProb) * 100;
+    
+    // Calcular distribución por resultado (probabilidad de obtener cada valor o superior)
+    const resultDistribution = {};
+    for (let result = 1; result <= 6; result++) {
+      let probability = 0;
+      
+      // Calcular probabilidad de obtener este resultado o superior
+      for (let threshold = result; threshold <= 6; threshold++) {
+        let thresholdProb = 0;
+        
+        // Para cada resultado original del dado
+        for (let dieResult = 1; dieResult <= 6; dieResult++) {
+          const modifiedResult = Math.min(6, dieResult + might);
+          if (modifiedResult === threshold) {
+            thresholdProb += 1/6;
+          }
+        }
+        
+        probability += thresholdProb;
+      }
+      
+      // Probabilidad de que al menos un dado alcance este resultado o superior
+      const atLeastOneSuccess = 1 - Math.pow(1 - probability, totalDice);
+      resultDistribution[result] = atLeastOneSuccess * 100;
+    }
+    
+    return {
+      totalProbability: totalSuccessProb,
+      distribution: resultDistribution
+    };
+  }
+
+  function updateSpellCalculator() {
+    const willPoints = document.getElementById('will-points').value;
+    const spellDifficulty = document.getElementById('spell-difficulty').value;
+    const mightPoints = document.getElementById('might-points').value;
+    
+    const result = calculateSpellProbability(willPoints, spellDifficulty, mightPoints, false);
+    
+    // Actualizar probabilidad principal
+    const successRateElement = document.getElementById('success-rate');
+    if (successRateElement) {
+      successRateElement.textContent = result.totalProbability.toFixed(1) + '%';
+    }
+    
+    // Actualizar desglose por resultado
+    const breakdownElement = document.getElementById('result-breakdown');
+    if (breakdownElement) {
+      breakdownElement.innerHTML = '';
+      
+      for (let resultValue = 1; resultValue <= 6; resultValue++) {
+        const prob = result.distribution[resultValue] || 0;
+        const item = document.createElement('div');
+        item.className = 'result-item';
+        item.innerHTML = `
+          <div class="result-value">${resultValue}+</div>
+          <div class="result-probability">${prob.toFixed(1)}%</div>
+        `;
+        breakdownElement.appendChild(item);
+      }
+    }
+    
+    // Actualizar gráfico
+    updateProbabilityChart(result.distribution);
+  }
+
+  function updateProbabilityChart(distribution) {
+    const canvas = document.getElementById('probability-chart');
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+    
+    // Limpiar canvas
+    ctx.clearRect(0, 0, width, height);
+    
+    // Configuración del gráfico
+    const padding = 40;
+    const chartWidth = width - padding * 2;
+    const chartHeight = height - padding * 2;
+    
+    // Obtener datos para el gráfico (solo dificultades 2+ a 6+)
+    const thresholds = [2, 3, 4, 5, 6];
+    const data = thresholds.map(t => distribution[t] || 0);
+    const maxValue = Math.max(...data, 100); // Mínimo 100 para buena escala
+    
+    // Dibujar fondo y ejes
+    ctx.fillStyle = '#f5f5f5';
+    ctx.fillRect(padding, padding, chartWidth, chartHeight);
+    
+    // Dibujar líneas de grid
+    ctx.strokeStyle = '#e0e0e0';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 5; i++) {
+      const y = padding + (chartHeight / 5) * i;
+      ctx.beginPath();
+      ctx.moveTo(padding, y);
+      ctx.lineTo(width - padding, y);
+      ctx.stroke();
+      
+      // Etiquetas de porcentaje en el eje Y
+      ctx.fillStyle = '#666';
+      ctx.font = '10px Arial';
+      ctx.textAlign = 'right';
+      const percentage = 100 - (100 / 5) * i;
+      ctx.fillText(percentage + '%', padding - 5, y + 3);
+    }
+    
+    // Dibujar barras
+    const barWidth = chartWidth / thresholds.length * 0.6;
+    const barSpacing = chartWidth / thresholds.length;
+    
+    thresholds.forEach((threshold, index) => {
+      const value = data[index];
+      const barHeight = (value / maxValue) * chartHeight;
+      const x = padding + barSpacing * index + (barSpacing - barWidth) / 2;
+      const y = height - padding - barHeight;
+      
+      // Color de la barra según umbral
+      if (threshold <= 3) {
+        ctx.fillStyle = '#4CAF50'; // Verde para fácil
+      } else if (threshold === 4) {
+        ctx.fillStyle = '#FF9800'; // Naranja para medio
+      } else {
+        ctx.fillStyle = '#F44336'; // Rojo para difícil
+      }
+      
+      // Dibujar barra
+      ctx.fillRect(x, y, barWidth, barHeight);
+      
+      // Etiqueta del umbral
+      ctx.fillStyle = '#333';
+      ctx.font = '12px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText(threshold + '+', x + barWidth / 2, height - padding + 20);
+      
+      // Etiqueta de valor sobre la barra
+      ctx.fillStyle = '#000';
+      ctx.font = 'bold 11px Arial';
+      ctx.fillText(value.toFixed(1) + '%', x + barWidth / 2, y - 5);
+    });
+    
+    // Dibujar ejes principales
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(padding, padding);
+    ctx.lineTo(padding, height - padding);
+    ctx.lineTo(width - padding, height - padding);
+    ctx.stroke();
+    
+    // Título del gráfico
+    ctx.fillStyle = '#333';
+    ctx.font = 'bold 14px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('Probabilidad de Éxito por Dificultad', width / 2, 20);
+  }
+
+  // --- Funciones para la Calculadora de Resistir Spell ---
+  
+  function openResistCalculator() {
+    const backdrop = document.getElementById('resist-calc-backdrop');
+    const modal = document.getElementById('resist-calc-modal');
+    
+    if (backdrop && modal) {
+      backdrop.style.display = 'block';
+      backdrop.setAttribute('aria-hidden', 'false');
+      modal.setAttribute('aria-hidden', 'false');
+      updateResistCalculator();
+    }
+  }
+
+  function closeResistCalculator() {
+    const backdrop = document.getElementById('resist-calc-backdrop');
+    const modal = document.getElementById('resist-calc-modal');
+    
+    if (backdrop && modal) {
+      backdrop.style.display = 'none';
+      backdrop.setAttribute('aria-hidden', 'true');
+      modal.setAttribute('aria-hidden', 'true');
+    }
+  }
+
+  function calculateResistProbability(willPoints, rivalResult, mightPoints, hasMagicResistance) {
+    const numDice = parseInt(willPoints) || 0;
+    const targetValue = parseInt(rivalResult) || 4;
+    const might = parseInt(mightPoints) || 0;
+    const magicResistance = hasMagicResistance || false;
+    
+    // Añadir dado extra por Resistencia Mágica si está activada
+    const totalDice = numDice + (magicResistance ? 1 : 0);
+    
+    // Si no hay dados, probabilidad 0
+    if (totalDice === 0) {
+      return {
+        totalProbability: 0,
+        distribution: {}
+      };
+    }
+    
+    // Calcular probabilidad de éxito con múltiples dados
+    // Con might, un dado puede mejorar su resultado en +might
+    let singleDieSuccessProb = 0;
+    
+    // Para cada resultado posible del dado (1-6)
+    for (let dieResult = 1; dieResult <= 6; dieResult++) {
+      // Aplicar might al resultado más bajo posible
+      const modifiedResult = Math.min(6, dieResult + might);
+      
+      // Si el resultado modificado es >= dificultad del rival, es éxito
+      if (modifiedResult >= targetValue) {
+        singleDieSuccessProb += 1/6; // Cada resultado tiene 1/6 de probabilidad
+      }
+    }
+    
+    // Con múltiples dados, la probabilidad de éxito es 1 - probabilidad de que todos fallen
+    const allFailProb = Math.pow(1 - singleDieSuccessProb, totalDice);
+    const successProbability = (1 - allFailProb) * 100;
+    
+    // Calcular distribución por resultado (probabilidad de obtener cada valor o superior)
+    const resultDistribution = {};
+    for (let result = 1; result <= 6; result++) {
+      let probability = 0;
+      
+      // Calcular probabilidad de obtener este resultado o superior
+      for (let threshold = result; threshold <= 6; threshold++) {
+        let thresholdProb = 0;
+        
+        // Para cada resultado original del dado
+        for (let dieResult = 1; dieResult <= 6; dieResult++) {
+          const modifiedResult = Math.min(6, dieResult + might);
+          if (modifiedResult === threshold) {
+            thresholdProb += 1/6;
+          }
+        }
+        
+        probability += thresholdProb;
+      }
+      
+      // Probabilidad de que al menos un dado alcance este resultado o superior
+      const atLeastOneSuccess = 1 - Math.pow(1 - probability, totalDice);
+      resultDistribution[result] = atLeastOneSuccess * 100;
+    }
+    
+    return {
+      totalProbability: successProbability,
+      distribution: resultDistribution
+    };
+  }
+
+  function updateResistCalculator() {
+    const resistWillPoints = document.getElementById('resist-will-points').value;
+    const rivalSpellResult = document.getElementById('rival-spell-result').value;
+    const resistMightPoints = document.getElementById('resist-might-points').value;
+    const resistMagicResistance = document.getElementById('resist-magic-resistance').checked;
+    
+    const result = calculateResistProbability(resistWillPoints, rivalSpellResult, resistMightPoints, resistMagicResistance);
+    
+    // Actualizar probabilidad principal
+    const resistSuccessRateElement = document.getElementById('resist-success-rate');
+    if (resistSuccessRateElement) {
+      resistSuccessRateElement.textContent = result.totalProbability.toFixed(1) + '%';
+    }
+    
+    // Actualizar desglose por resultado
+    const resistBreakdownElement = document.getElementById('resist-result-breakdown');
+    if (resistBreakdownElement) {
+      resistBreakdownElement.innerHTML = '';
+      
+      for (let resultValue = 1; resultValue <= 6; resultValue++) {
+        const prob = result.distribution[resultValue] || 0;
+        const item = document.createElement('div');
+        item.className = 'result-item';
+        item.innerHTML = `
+          <div class="result-value">${resultValue}+</div>
+          <div class="result-probability">${prob.toFixed(1)}%</div>
+        `;
+        resistBreakdownElement.appendChild(item);
+      }
+    }
+    
+    // Actualizar gráfico
+    updateResistProbabilityChart(result.distribution);
+  }
+
+  function updateResistProbabilityChart(distribution) {
+    const canvas = document.getElementById('resist-probability-chart');
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+    
+    // Limpiar canvas
+    ctx.clearRect(0, 0, width, height);
+    
+    // Configuración del gráfico
+    const padding = 40;
+    const chartWidth = width - padding * 2;
+    const chartHeight = height - padding * 2;
+    
+    // Obtener datos para el gráfico (solo dificultades 2+ a 6+)
+    const thresholds = [2, 3, 4, 5, 6];
+    const data = thresholds.map(t => distribution[t] || 0);
+    const maxValue = Math.max(...data, 100); // Mínimo 100 para buena escala
+    
+    // Dibujar fondo y ejes
+    ctx.fillStyle = '#f5f5f5';
+    ctx.fillRect(padding, padding, chartWidth, chartHeight);
+    
+    // Dibujar líneas de grid
+    ctx.strokeStyle = '#e0e0e0';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 5; i++) {
+      const y = padding + (chartHeight / 5) * i;
+      ctx.beginPath();
+      ctx.moveTo(padding, y);
+      ctx.lineTo(width - padding, y);
+      ctx.stroke();
+      
+      // Etiquetas de porcentaje en el eje Y
+      ctx.fillStyle = '#666';
+      ctx.font = '10px Arial';
+      ctx.textAlign = 'right';
+      const percentage = 100 - (100 / 5) * i;
+      ctx.fillText(percentage + '%', padding - 5, y + 3);
+    }
+    
+    // Dibujar barras
+    const barWidth = chartWidth / thresholds.length * 0.6;
+    const barSpacing = chartWidth / thresholds.length;
+    
+    thresholds.forEach((threshold, index) => {
+      const value = data[index];
+      const barHeight = (value / maxValue) * chartHeight;
+      const x = padding + barSpacing * index + (barSpacing - barWidth) / 2;
+      const y = height - padding - barHeight;
+      
+      // Color de la barra según umbral (invertido para resistir)
+      if (threshold <= 3) {
+        ctx.fillStyle = '#F44336'; // Rojo para fácil de resistir
+      } else if (threshold === 4) {
+        ctx.fillStyle = '#FF9800'; // Naranja para medio
+      } else {
+        ctx.fillStyle = '#4CAF50'; // Verde para difícil de resistir
+      }
+      
+      // Dibujar barra
+      ctx.fillRect(x, y, barWidth, barHeight);
+      
+      // Etiqueta del umbral
+      ctx.fillStyle = '#333';
+      ctx.font = '12px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText(threshold + '+', x + barWidth / 2, height - padding + 20);
+      
+      // Etiqueta de valor sobre la barra
+      ctx.fillStyle = '#000';
+      ctx.font = 'bold 11px Arial';
+      ctx.fillText(value.toFixed(1) + '%', x + barWidth / 2, y - 5);
+    });
+    
+    // Dibujar ejes principales
+    ctx.strokeStyle = '#333';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(padding, padding);
+    ctx.lineTo(padding, height - padding);
+    ctx.lineTo(width - padding, height - padding);
+    ctx.stroke();
+    
+    // Título del gráfico
+    ctx.fillStyle = '#333';
+    ctx.font = 'bold 14px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('Probabilidad de Resistir por Dificultad', width / 2, 20);
+  }
+
   function init() {
     // Re-query video cards now that the DOM is ready
     window.videoCards = Array.from(doc.querySelectorAll('.mini-card[data-video-slot]'));

@@ -142,7 +142,7 @@
   function buildLayout() {
     // Limpiar el contenedor raÃƒÆ’Ã‚Â­z
     root.innerHTML = '';
-    
+
     // Crear elementos principales
     const stage = create('div', 'stage');
     const phone = create('div', 'phone');
@@ -161,7 +161,7 @@
 
     // Crear controles
     const controls = create('div', 'controls');
-    const randomBtn = create('button', 'btn-gold', { 
+    const randomBtn = create('button', 'btn-gold', {
       type: 'button',
       'data-i18n': 'random',
       'aria-label': 'Seleccionar misiÃƒÆ’Ã‚Â³n aleatoria'
@@ -171,28 +171,28 @@
     const roundsGroup = create('div', 'rounds-group', { role: 'group', 'aria-label': 'NÃƒÆ’Ã‚Âºmero de rondas' });
     const roundsLabel = create('span', 'rounds-label', { 'data-i18n': 'rounds' });
     const stepper = create('div', 'stepper');
-    const decBtn = create('button', 'btn-circle', { 
+    const decBtn = create('button', 'btn-circle', {
       type: 'button',
       'aria-label': 'Reducir nÃƒÆ’Ã‚Âºmero de rondas',
       'data-i18n-aria': 'stepper_dec'
     });
     decBtn.textContent = '-';
-    
-    const roundsInput = create('input', 'rounds-input', { 
-      type: 'text', 
+
+    const roundsInput = create('input', 'rounds-input', {
+      type: 'text',
       inputmode: 'numeric',
       'aria-label': 'NÃƒÆ’Ã‚Âºmero de rondas',
       value: state.rounds
     });
-    
-    const incBtn = create('button', 'btn-circle', { 
+
+    const incBtn = create('button', 'btn-circle', {
       type: 'button',
       'aria-label': 'Aumentar nÃƒÆ’Ã‚Âºmero de rondas',
       'data-i18n-aria': 'stepper_inc'
     });
     incBtn.textContent = '+';
-    
-    const generateBtn = create('button', 'btn-secondary btn-sm', { 
+
+    const generateBtn = create('button', 'btn-secondary btn-sm', {
       type: 'button',
       'data-i18n': 'generate'
     });
@@ -213,16 +213,16 @@
 
       (pool.items || []).forEach((mission, missionIndex) => {
         const item = create('li');
-        const button = create('button', 'item', { 
-          type: 'button', 
-          'data-mission': mission, 
+        const button = create('button', 'item', {
+          type: 'button',
+          'data-mission': mission,
           'aria-label': mission,
           'data-i18n': `mission_${poolIndex}_${missionIndex}`
         });
         const label = create('span', 'label', { text: mission });
-        const badge = create('span', 'badge', { 
+        const badge = create('span', 'badge', {
           'aria-hidden': 'true',
-          style: { display: 'none' } 
+          style: { display: 'none' }
         });
         button.append(label, badge);
         item.appendChild(button);
@@ -254,36 +254,36 @@
     footer.append(twoVsTwoBtn, backBtn);
 
     // Modal para PDF
-    const modalBackdrop = create('div', 'modal-backdrop', { 
-      role: 'dialog', 
+    const modalBackdrop = create('div', 'modal-backdrop', {
+      role: 'dialog',
       'aria-modal': 'true',
       'aria-hidden': 'true',
       'aria-label': 'Vista previa del PDF',
       tabindex: '-1'
     });
-    
+
     modalBackdrop.style.display = 'none';
     const modalCard = create('div', 'modal-card');
-    const modalClose = create('button', 'modal-close', { 
+    const modalClose = create('button', 'modal-close', {
       type: 'button',
       'aria-label': 'Cerrar modal',
       'data-i18n-aria': 'close'
     });
-    
-    const modalFrame = create('iframe', 'modal-iframe', { 
+
+    const modalFrame = create('iframe', 'modal-iframe', {
       title: 'Vista previa del PDF de la misiÃƒÆ’Ã‚Â³n',
       referrerpolicy: 'no-referrer',
       'aria-label': 'Contenido de la misiÃƒÆ’Ã‚Â³n'
     });
     modalFrame.src = 'about:blank';
-    
+
     modalCard.append(modalClose, modalFrame);
     modalBackdrop.appendChild(modalCard);
 
     // Construir la estructura del DOM
-    screen.append(banner, controls, content, footer);
+    screen.append(banner, controls, content, footer, modalBackdrop);
     phone.appendChild(screen);
-    stage.append(phone, modalBackdrop);
+    stage.append(phone);
     root.appendChild(stage);
 
     // Inicializar elementos en el objeto elements
@@ -296,12 +296,12 @@
       controls,
       footer,
       screen,
-      
+
       // Botones y controles
       randomBtn,
       twoVsTwoBtn,
       backBtn,
-      
+
       // Elementos de rondas
       roundsGroup,
       roundsLabel,
@@ -309,10 +309,10 @@
       incBtn,
       roundsInput,
       generateBtn,
-      
+
       // Grid de misiones
       poolsGrid,
-      
+
       // Elementos del modal
       modalBackdrop,
       modalClose,
