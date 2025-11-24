@@ -372,27 +372,83 @@ body {
 #resist-calc-modal {
   position: absolute;
   inset: 0;
-  padding: 10px;
+  padding: 12px;
+  padding-bottom: 16px;
   max-height: 100%;
   height: 100%;
   width: 100% !important;
   max-width: 100% !important;
   border-radius: 0;
   overflow-y: auto;
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
   transform: none;
   left: 0;
   top: 0;
+  background: url('../images/Choma.png') center/cover no-repeat;
+  background-blend-mode: normal;
+  -webkit-overflow-scrolling: touch;
+}
+
+#spell-calc-modal::before,
+#resist-calc-modal::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: rgba(30, 20, 10, 0.85);
+  z-index: 0;
+}
+
+#spell-calc-modal>*,
+#resist-calc-modal>* {
+  position: relative;
+  z-index: 1;
 }
 
 #spell-calc-modal h2,
 #resist-calc-modal h2 {
-  margin: 0 0 10px;
-  font-size: 1rem;
+  margin: 0 0 12px;
+  padding: 10px 14px;
+  font-size: 1.05rem;
   font-weight: 700;
-  color: var(--text-primary);
+  color: #f5e6d3;
   text-align: center;
+  background: rgba(207, 161, 91, 0.15);
+  border-radius: 8px;
+  border: 1px solid rgba(207, 161, 91, 0.3);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+#spell-calc-modal .modal-close,
+#resist-calc-modal .modal-close {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(40, 30, 20, 0.9);
+  color: #f5e6d3;
+  font-size: 1.6rem;
+  font-weight: bold;
+  cursor: pointer;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  border: 2px solid rgba(207, 161, 91, 0.4);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.5);
+}
+
+#spell-calc-modal .modal-close:hover,
+#resist-calc-modal .modal-close:hover {
+  background: rgba(207, 161, 91, 0.4);
+  border-color: rgba(207, 161, 91, 0.7);
+  transform: scale(1.08);
 }
 
 .spell-calculator {
@@ -402,34 +458,37 @@ body {
 }
 
 .spell-calculator .input-group {
-  margin-bottom: 0;
-  padding: 6px;
-  background: rgba(255, 255, 255, 0.1);
+  margin-bottom: 6px;
+  padding: 8px 10px;
+  background: rgba(40, 30, 20, 0.6);
   border-radius: 8px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(207, 161, 91, 0.2);
   display: flex;
   align-items: center;
   justify-content: space-between;
+  transition: all 0.2s ease;
 }
 
 .spell-calculator .grid-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin-bottom: 8px;
+  gap: 6px;
+  margin-bottom: 6px;
 }
 
 .spell-calculator .input-group:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(40, 30, 20, 0.75);
+  border-color: rgba(207, 161, 91, 0.35);
 }
 
 .spell-calculator label {
   display: block;
   margin-bottom: 0;
   font-weight: 600;
-  font-size: 0.85rem;
-  color: var(--text-primary);
+  font-size: 0.9rem;
+  color: #f5e6d3;
   flex: 1;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .spell-calculator input[type="number"],
@@ -484,10 +543,11 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
-  color: var(--text-primary);
+  color: #f5e6d3;
   font-size: 0.9rem;
   cursor: pointer;
   padding: 4px 0;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .spell-calculator .checkbox-label input[type="checkbox"] {
@@ -498,28 +558,34 @@ body {
 }
 
 .spell-calculator .results {
-  margin-top: 10px;
+  margin-top: 8px;
   padding: 10px;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: rgba(40, 30, 20, 0.7);
+  border-radius: 10px;
+  border: 1px solid rgba(207, 161, 91, 0.3);
   flex: 1;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .spell-calculator .results h3 {
   margin: 0 0 8px;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   font-weight: 600;
-  color: var(--text-primary);
+  color: #f5e6d3;
   text-align: center;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .spell-calculator .probability-display {
   text-align: center;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
+  padding: 8px;
+  background: rgba(207, 161, 91, 0.1);
+  border-radius: 8px;
+  border: 1px solid rgba(207, 161, 91, 0.25);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -527,64 +593,94 @@ body {
 }
 
 .spell-calculator .main-probability {
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   font-weight: 600;
-  color: var(--text-primary);
+  color: #f5e6d3;
   margin-bottom: 0;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
-.spell-calculator #success-rate {
-  font-size: 1.8rem;
+.spell-calculator #success-rate,
+.spell-calculator #resist-success-rate {
+  font-size: 2rem;
   font-weight: bold;
-  color: rgba(207, 161, 91, 0.9);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  color: #cfa15b;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
 }
 
 .spell-calculator .detailed-results {
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .spell-calculator .detailed-results h4 {
-  margin: 0 0 10px;
+  margin: 0 0 8px;
   font-size: 0.9rem;
   font-weight: 600;
-  color: var(--text-primary);
+  color: #f5e6d3;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
-.spell-calculator #result-breakdown {
+.spell-calculator #result-breakdown,
+.spell-calculator #resist-result-breakdown {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
 }
 
 .spell-calculator .result-item {
   text-align: center;
   padding: 8px 4px;
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(60, 45, 30, 0.5);
   border-radius: 6px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(207, 161, 91, 0.2);
+  transition: all 0.2s ease;
+}
+
+.spell-calculator .result-item:hover {
+  background: rgba(60, 45, 30, 0.7);
+  border-color: rgba(207, 161, 91, 0.35);
 }
 
 .spell-calculator .result-value {
   font-size: 1rem;
   font-weight: bold;
-  color: var(--text-primary);
-  margin-bottom: 4px;
+  color: #f5e6d3;
+  margin-bottom: 3px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .spell-calculator .result-probability {
-  font-size: 0.8rem;
-  color: rgba(207, 161, 91, 0.8);
+  font-size: 0.85rem;
+  color: #cfa15b;
+  font-weight: 600;
 }
 
 .spell-calculator .chart-container {
-  margin-top: 10px;
+  margin-top: 8px;
+  padding: 10px;
+  background: rgba(60, 45, 30, 0.4);
+  border-radius: 8px;
+  border: 1px solid rgba(207, 161, 91, 0.2);
   text-align: center;
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+}
+
+.spell-calculator .chart-container h4 {
+  margin: 0 0 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #f5e6d3;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.spell-calculator #probability-chart,
+.spell-calculator #resist-probability-chart {
+  max-width: 100%;
+  height: auto;
+  max-height: 180px;
+  border-radius: 6px;
+  background: rgba(250, 245, 235, 0.95);
+  padding: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
 .spell-calculator canvas {
