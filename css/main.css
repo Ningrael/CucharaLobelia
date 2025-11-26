@@ -204,6 +204,9 @@ body {
   padding: 20px;
   display: none;
   z-index: 1000;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .modal h2 {
@@ -232,7 +235,10 @@ body {
   cursor: pointer;
 }
 
-.modal-open .modal,
+.modal-open .modal {
+  display: flex;
+}
+
 .modal-open .modal-backdrop {
   display: block;
 }
@@ -739,9 +745,10 @@ body {
 
 /* Modal styles for events */
 #event-modal-content {
-  max-height: 300px;
+  flex: 1;
   overflow-y: auto;
   text-align: left;
+  min-height: 0;
 }
 
 .modal-event-item {
