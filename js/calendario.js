@@ -191,7 +191,7 @@ function openEventModal(day, monthName, events) {
 
         let descHtml = '';
         if (event.description && event.description.trim() !== '') {
-            descHtml = `<p style="margin-top:8px; font-style:italic; font-size:0.85rem; border-top:1px solid #ccc; padding-top:4px;">${event.description}</p>`;
+            descHtml = `<p style="margin-top:8px; font-style:italic; font-size:0.9rem; white-space: pre-wrap; border-top:1px solid #ccc; padding-top:4px;">${event.description}</p>`;
         }
 
         item.innerHTML = `
@@ -209,7 +209,7 @@ function openEventModal(day, monthName, events) {
         window.LobeliaI18n.applyDomTranslations(window.LobeliaI18n.detectInitialLang(), content);
     }
 
-    modal.style.display = 'block';
+    modal.style.display = 'flex';
     backdrop.style.display = 'block';
     modal.setAttribute('aria-hidden', 'false');
 
@@ -232,10 +232,60 @@ function getEventColor(type) {
 }
 
 function parseCSV(text) {
-    const lines = text.split('\n').filter(line => line.trim() !== '');
+    const rows = [];
+    let currentRow = [];
+    let currentVal = '';
+    let inQuotes = false;
+
+    for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        const nextChar = text[i + 1];
+
+        if (char === '"') {
+            if (inQuotes && nextChar === '"') {
+                // Escaped quote "" -> "
+                currentVal += '"';
+                i++; // Skip next quote
+            } else {
+                // Toggle quote state
+                inQuotes = !inQuotes;
+            }
+        } else if (char === ',' && !inQuotes) {
+            // End of cell
+            currentRow.push(currentVal);
+            currentVal = '';
+        } else if ((char === '\r' || char === '\n') && !inQuotes) {
+            // End of row
+            // Handle CRLF or just LF
+            if (char === '\r' && nextChar === '\n') {
+                i++;
+            }
+
+            // Push cell and row
+            currentRow.push(currentVal);
+            // Only push non-empty rows (ignoring empty lines at end of file)
+            if (currentRow.length > 1 || (currentRow.length === 1 && currentRow[0] !== '')) {
+                rows.push(currentRow);
+            }
+            currentRow = [];
+            currentVal = '';
+        } else {
+            currentVal += char;
+        }
+    }
+
+    // Push last row if exists and not empty
+    if (currentRow.length > 0) {
+        currentRow.push(currentVal);
+        if (currentRow.length > 1 || (currentRow.length === 1 && currentRow[0] !== '')) {
+            rows.push(currentRow);
+        }
+    }
+
     const events = [];
-    for (let i = 1; i < lines.length; i++) {
-        const row = parseCSVLine(lines[i]);
+    // Start from i=1 to skip header
+    for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
         if (row.length >= 6) {
             events.push({
                 timestamp: row[0],
@@ -250,26 +300,6 @@ function parseCSV(text) {
         }
     }
     return events;
-}
-
-function parseCSVLine(text) {
-    const result = [];
-    let startValue = 0;
-    let inQuotes = false;
-    for (let i = 0; i < text.length; i++) {
-        if (text[i] === '"') {
-            inQuotes = !inQuotes;
-        } else if (text[i] === ',' && !inQuotes) {
-            let val = text.substring(startValue, i).trim();
-            if (val.startsWith('"') && val.endsWith('"')) val = val.slice(1, -1);
-            result.push(val);
-            startValue = i + 1;
-        }
-    }
-    let lastVal = text.substring(startValue).trim();
-    if (lastVal.startsWith('"') && lastVal.endsWith('"')) lastVal = lastVal.slice(1, -1);
-    result.push(lastVal);
-    return result;
 }
 
 function parseDate(dateStr) {
