@@ -1,0 +1,30 @@
+﻿<!-- misiones/MisionesMatched.html
+     Vanilla JS screen for browsing matched play missions and opening their PDF references. -->
+<!doctype html>
+<html lang="es">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Misiones Matched &#8211; @cucharalobelia</title>
+  <link rel="stylesheet" href="../css/misiones.css?v=2.0" />
+  <script src="../js/i18n.js"></script>
+  <script>
+    // Asegurarse de que LobeliaI18n estÃ© disponible globalmente
+    document.addEventListener('DOMContentLoaded', function () {
+      if (window.LobeliaI18n) {
+        // Inicializar el idioma
+        const lang = window.LobeliaI18n.detectInitialLang();
+        document.documentElement.lang = lang;
+      } else {
+        console.error('LobeliaI18n no se ha cargado correctamente');
+      }
+    });
+  </script>
+  <script src="../js/MisionesMatched.js?v=2.1" defer></script>
+
+</head>
+
+<body>
+  <div id="root"></div>
+</body>
