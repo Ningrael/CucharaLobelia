@@ -1507,7 +1507,7 @@ window.APP_VERSION = APP_VERSION;
 
   function calculateDuelProbability(friendly, enemy) {
     console.log('calculateDuelProbability called with:', friendly, enemy);
-    const iterations = 50000;
+    const iterations = 200000;
     let friendlyWins = 0;
     let enemyWins = 0;
     let draws = 0;
