@@ -1074,6 +1074,31 @@ body {
   .spell-calculator .result-probability {
     font-size: 0.75rem;
   }
+
+  /* Specific adjustments for Duel Calculator to prevent overflow */
+  .duel-calculator .grid-row {
+    gap: 5px;
+  }
+
+  .duel-calculator .input-group {
+    padding: 4px;
+  }
+
+  .duel-calculator .control-buttons button {
+    width: 26px;
+    height: 26px;
+    font-size: 0.9rem;
+  }
+
+  .duel-calculator .control-buttons input[type="number"] {
+    width: 35px;
+    font-size: 0.85rem;
+    padding: 2px;
+  }
+
+  .duel-calculator label {
+    font-size: 0.8rem;
+  }
 }
 
 /* Estilos para el layout principal */
