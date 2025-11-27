@@ -190,7 +190,7 @@ window.APP_VERSION = APP_VERSION;
 
     card.href = cleanUrl;
     card.dataset.videoUrl = cleanUrl;
-    card.setAttribute('title', rawTitle || fallbackTitle);
+    // card.setAttribute('title', rawTitle || fallbackTitle); // Tooltip removed per user request
 
     // Limpiar contenido previo (si lo hubiera)
     const existingImg = card.querySelector('img');
