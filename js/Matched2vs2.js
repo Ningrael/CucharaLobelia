@@ -143,11 +143,10 @@
     }
   }
   function buildLayout() {
-    const stage = create('div', 'stage stage-2v2');
-    const phone = create('div', 'phone');
-    const screen = create('div', 'screen');
+    const app = create('div', 'mission-app');
 
     const banner = create('div', 'banner');
+    banner.style.display = 'none'; // Hide banner in 2vs2
     const brand = create('div', 'brand');
     const topRight = create('div', 'top-right', { role: 'group', 'aria-label': 'Language' });
     const flagEs = create('button', 'flag-btn', { type: 'button', 'aria-label': 'Español' });
@@ -254,10 +253,8 @@
     modalCard.append(modalClose, modalFrame);
     modalBackdrop.appendChild(modalCard);
 
-    screen.append(banner, controls, content, footer);
-    phone.appendChild(screen);
-    stage.append(phone, modalBackdrop);
-    root.appendChild(stage);
+    app.append(banner, controls, content, footer, modalBackdrop);
+    root.appendChild(app);
 
     Object.assign(elements, {
       brand,
@@ -276,7 +273,8 @@
       modalBackdrop,
       modalCard,
       modalClose,
-      modalFrame
+      modalFrame,
+      app // Replaces screen
     });
   }
 

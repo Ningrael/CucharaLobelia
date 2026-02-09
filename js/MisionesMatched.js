@@ -139,60 +139,54 @@
       history.pushState(nextState, '', '#pdf');
     }
   }
-  function buildLayout() {
-    // Limpiar el contenedor raÃƒÆ’Ã‚Â­z
-    root.innerHTML = '';
-    
-    // Crear elementos principales
-    const stage = create('div', 'stage');
-    const phone = create('div', 'phone');
-    const screen = create('div', 'screen');
 
-    // Crear banner superior
+  function buildLayout() {
+    root.innerHTML = '';
+
+    const app = create('div', 'mission-app');
+
     const banner = create('div', 'banner');
     const brand = create('div', 'brand');
     const topRight = create('div', 'top-right', { role: 'group', 'aria-label': 'Language' });
-    const flagEs = create('button', 'flag-btn', { type: 'button', 'aria-label': 'EspaÃƒÆ’Ã‚Â±ol' });
+    const flagEs = create('button', 'flag-btn', { type: 'button', 'aria-label': 'Español' });
     flagEs.style.backgroundImage = "url('https://flagcdn.com/w20/es.png')";
     const flagEn = create('button', 'flag-btn', { type: 'button', 'aria-label': 'English' });
     flagEn.style.backgroundImage = "url('https://flagcdn.com/w20/gb.png')";
     topRight.append(flagEs, flagEn);
     banner.append(brand, topRight);
 
-    // Crear controles
     const controls = create('div', 'controls');
-    const randomBtn = create('button', 'btn-gold', { 
+    const randomBtn = create('button', 'btn-gold', {
       type: 'button',
       'data-i18n': 'random',
-      'aria-label': 'Seleccionar misiÃƒÆ’Ã‚Â³n aleatoria'
+      'aria-label': 'Seleccionar misión aleatoria'
     });
 
-    // Grupo de rondas
-    const roundsGroup = create('div', 'rounds-group', { role: 'group', 'aria-label': 'NÃƒÆ’Ã‚Âºmero de rondas' });
+    const roundsGroup = create('div', 'rounds-group', { role: 'group', 'aria-label': 'Número de rondas' });
     const roundsLabel = create('span', 'rounds-label', { 'data-i18n': 'rounds' });
     const stepper = create('div', 'stepper');
-    const decBtn = create('button', 'btn-circle', { 
+    const decBtn = create('button', 'btn-circle', {
       type: 'button',
-      'aria-label': 'Reducir nÃƒÆ’Ã‚Âºmero de rondas',
+      'aria-label': 'Reducir número de rondas',
       'data-i18n-aria': 'stepper_dec'
     });
     decBtn.textContent = '-';
-    
-    const roundsInput = create('input', 'rounds-input', { 
-      type: 'text', 
+
+    const roundsInput = create('input', 'rounds-input', {
+      type: 'text',
       inputmode: 'numeric',
-      'aria-label': 'NÃƒÆ’Ã‚Âºmero de rondas',
+      'aria-label': 'Número de rondas',
       value: state.rounds
     });
-    
-    const incBtn = create('button', 'btn-circle', { 
+
+    const incBtn = create('button', 'btn-circle', {
       type: 'button',
-      'aria-label': 'Aumentar nÃƒÆ’Ã‚Âºmero de rondas',
+      'aria-label': 'Aumentar número de rondas',
       'data-i18n-aria': 'stepper_inc'
     });
     incBtn.textContent = '+';
-    
-    const generateBtn = create('button', 'btn-secondary btn-sm', { 
+
+    const generateBtn = create('button', 'btn-secondary btn-sm', {
       type: 'button',
       'data-i18n': 'generate'
     });
@@ -201,28 +195,26 @@
     roundsGroup.append(roundsLabel, stepper, generateBtn);
     controls.append(randomBtn, roundsGroup);
 
-    // Contenido principal - Grid de misiones
     const content = create('div', 'content');
     const poolsContainer = create('div', 'pools');
     const poolsGrid = create('div', 'pools-grid');
 
-    // Crear tarjetas de misiones
     POOLS.forEach((pool, poolIndex) => {
       const poolCard = create('section', 'pool-card');
       const list = create('ul', 'missions');
 
       (pool.items || []).forEach((mission, missionIndex) => {
         const item = create('li');
-        const button = create('button', 'item', { 
-          type: 'button', 
-          'data-mission': mission, 
+        const button = create('button', 'item', {
+          type: 'button',
+          'data-mission': mission,
           'aria-label': mission,
           'data-i18n': `mission_${poolIndex}_${missionIndex}`
         });
         const label = create('span', 'label', { text: mission });
-        const badge = create('span', 'badge', { 
+        const badge = create('span', 'badge', {
           'aria-hidden': 'true',
-          style: { display: 'none' } 
+          style: { display: 'none' }
         });
         button.append(label, badge);
         item.appendChild(button);
@@ -237,7 +229,6 @@
     poolsContainer.appendChild(poolsGrid);
     content.appendChild(poolsContainer);
 
-    // Pie de pÃƒÆ’Ã‚Â¡gina
     const footer = create('footer', 'footer');
     const twoVsTwoBtn = create('button', 'btn-footer', {
       type: 'button',
@@ -253,67 +244,53 @@
     });
     footer.append(twoVsTwoBtn, backBtn);
 
-    // Modal para PDF
-    const modalBackdrop = create('div', 'modal-backdrop', { 
-      role: 'dialog', 
+    const modalBackdrop = create('div', 'modal-backdrop', {
+      role: 'dialog',
       'aria-modal': 'true',
       'aria-hidden': 'true',
       'aria-label': 'Vista previa del PDF',
       tabindex: '-1'
     });
-    
+
     modalBackdrop.style.display = 'none';
     const modalCard = create('div', 'modal-card');
-    const modalClose = create('button', 'modal-close', { 
+    const modalClose = create('button', 'modal-close', {
       type: 'button',
       'aria-label': 'Cerrar modal',
       'data-i18n-aria': 'close'
     });
-    
-    const modalFrame = create('iframe', 'modal-iframe', { 
-      title: 'Vista previa del PDF de la misiÃƒÆ’Ã‚Â³n',
+
+    const modalFrame = create('iframe', 'modal-iframe', {
+      title: 'Vista previa del PDF de la misión',
       referrerpolicy: 'no-referrer',
-      'aria-label': 'Contenido de la misiÃƒÆ’Ã‚Â³n'
+      'aria-label': 'Contenido de la misión'
     });
     modalFrame.src = 'about:blank';
-    
+
     modalCard.append(modalClose, modalFrame);
     modalBackdrop.appendChild(modalCard);
 
-    // Construir la estructura del DOM
-    screen.append(banner, controls, content, footer);
-    phone.appendChild(screen);
-    stage.append(phone, modalBackdrop);
-    root.appendChild(stage);
+    app.append(banner, controls, content, footer, modalBackdrop);
+    root.appendChild(app);
 
-    // Inicializar elementos en el objeto elements
     Object.assign(elements, {
-      // Elementos de la interfaz
       brand,
       flagEs,
       flagEn,
       banner,
       controls,
       footer,
-      screen,
-      
-      // Botones y controles
+      app,
       randomBtn,
       twoVsTwoBtn,
       backBtn,
-      
-      // Elementos de rondas
       roundsGroup,
       roundsLabel,
       decBtn,
       incBtn,
       roundsInput,
       generateBtn,
-      
-      // Grid de misiones
       poolsGrid,
-      
-      // Elementos del modal
       modalBackdrop,
       modalClose,
       modalFrame,
@@ -482,16 +459,16 @@
       const bannerNode = elements.banner;
       const controlsNode = elements.controls;
       const footerNode = elements.footer;
-      const screenNode = elements.screen;
+      const appNode = elements.app; // Changed from screen
       const grid = elements.poolsGrid;
 
       // Verificar que todos los elementos necesarios existan
-      if (!bannerNode || !controlsNode || !footerNode || !screenNode || !grid) {
+      if (!bannerNode || !controlsNode || !footerNode || !appNode || !grid) {
         console.warn('Algunos elementos del DOM no se encontraron:', {
           banner: !!bannerNode,
           controls: !!controlsNode,
           footer: !!footerNode,
-          screen: !!screenNode,
+          app: !!appNode,
           grid: !!grid
         });
         return;
@@ -505,12 +482,14 @@
       const cols = 2;
       const rows = 3;
 
-      const availH = screenNode.clientHeight - bannerH - controlsH - footerH - 8;
-      const availW = screenNode.clientWidth - 16;
+      // Use appNode dimensions
+      const availH = appNode.clientHeight - bannerH - controlsH - footerH - 8;
+      const availW = appNode.clientWidth - 16;
 
       const sizeByH = Math.floor((availH - gap * (rows + 1)) / rows);
       const sizeByW = Math.floor((availW - gap * (cols + 1)) / cols);
       const tile = Math.max(0, Math.min(sizeByH, sizeByW));
+
 
       const pad = 6;
       const innerW = tile - pad * 2;

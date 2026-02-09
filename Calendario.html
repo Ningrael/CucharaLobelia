@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="Calendario de eventos de la comunidad MESBG">
+    <meta name="theme-color" content="#2f3b2b">
+    <title data-i18n="calendar_title">Calendario de la Comunidad</title>
+    <link rel="icon" type="image/png" href="images/Favicon.png">
+    <link rel="stylesheet" href="css/main.css">
+    <!-- Dependencies -->
+    <script src="js/i18n.js"></script>
+    <script src="js/calendario.js" defer></script>
+</head>
+
+<body>
+    <main class="app" role="main" aria-label="Calendario">
+        <!-- Background overlay -->
+        <div class="layout-grid" aria-hidden="true"></div>
+
+        <!-- Top Right Flags -->
+        <div class="top-right">
+            <button class="flag-btn" id="lang-es" style="background-image:url('https://flagcdn.com/w20/es.png');"
+                data-i18n-aria="flag_es" aria-label="Español"></button>
+            <button class="flag-btn" id="lang-en" style="background-image:url('https://flagcdn.com/w20/gb.png');"
+                data-i18n-aria="flag_en" aria-label="English"></button>
+        </div>
+
+        <!-- Main Content Wrapper -->
+        <div class="calendar-wrapper">
+            <h1 class="calendar-page-title" data-i18n="calendar_title">Calendario</h1>
+
+            <!-- Calendar Controls (Month Navigation) -->
+            <div class="calendar-controls">
+                <button id="prev-month" class="cal-nav-btn">&lt;</button>
+                <h2 id="current-month-year">Month Year</h2>
+                <button id="next-month" class="cal-nav-btn">&gt;</button>
+                <button id="go-today" class="cal-today-btn" data-i18n="today">Hoy</button>
+            </div>
+
+            <!-- Calendar Grid Header (Days of Week) -->
+            <div class="calendar-grid-header">
+                <div data-i18n="sun">Dom</div>
+                <div data-i18n="mon">Lun</div>
+                <div data-i18n="tue">Mar</div>
+                <div data-i18n="wed">Mié</div>
+                <div data-i18n="thu">Jue</div>
+                <div data-i18n="fri">Vie</div>
+                <div data-i18n="sat">Sáb</div>
+            </div>
+
+            <!-- Calendar Days Container (Filled by JS) -->
+            <div id="calendar-days" class="calendar-days">
+                <!-- Days will be generated here by renderCalendar() in calendario.js -->
+            </div>
+
+            <!-- Legend (Event Types) -->
+            <div class="calendar-legend">
+                <div class="legend-item"><span class="dot type-tournament"></span> <span
+                        data-i18n="type_tournament">Torneo</span></div>
+                <div class="legend-item"><span class="dot type-league"></span> <span data-i18n="type_league">Liga</span>
+                </div>
+                <div class="legend-item"><span class="dot type-journey"></span> <span
+                        data-i18n="type_journey">Jornada</span></div>
+                <div class="legend-item"><span class="dot type-other"></span> <span data-i18n="type_other">Otro</span>
+                </div>
+            </div>
+        </div>
+        <!-- End of Calendar Wrapper -->
+
+        <!-- Add Event Image Button (Centered below calendar) -->
+        <!-- Placed outside wrapper to avoid overlap and ensure correct stacking -->
+        <div style="display:flex; justify-content:center; margin-top:15px; margin-bottom: 60px;">
+            <a href="https://forms.gle/UpZQL1P7LkjcaruY8" target="_blank" rel="noopener noreferrer">
+                <img id="btn-add-event-img" src="images/AñadirEvento.png" alt="Añadir Evento" class="add-event-btn">
+            </a>
+        </div>
+
+        <!-- Bottom Back Button -->
+        <div class="bottom" style="bottom: 14px;">
+            <a href="PaginaInicio.html" class="btn btn-small" id="btn-back" data-i18n="back"
+                style="text-decoration:none; display:flex; align-items:center; justify-content:center;">Volver</a>
+        </div>
+
+        <!-- Event Details Modal (Popup for day events) -->
+        <div id="event-modal" class="modal" role="dialog" aria-hidden="true">
+            <h2 id="event-modal-title">Eventos</h2>
+            <div id="event-modal-content"></div>
+            <div class="actions">
+                <button id="event-modal-close" class="btn-ok" data-i18n="close">Cerrar</button>
+            </div>
+        </div>
+
+        <!-- Backdrop for Modals -->
+        <div id="event-backdrop" class="modal-backdrop" aria-hidden="true"></div>
+
+    </main>
+</body>
+
+</html>
