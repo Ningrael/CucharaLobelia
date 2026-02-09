@@ -1,4 +1,4 @@
-const APP_VERSION = "1.0.9";
+const APP_VERSION = "1.10";
 window.APP_VERSION = APP_VERSION;
 // main.js
 // Behaviour for the landing screen: language switcher and work-in-progress modal handling.

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es" data-i18n-lang="es">
+
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
@@ -9,16 +10,19 @@
   <link rel="stylesheet" href="css/main.css" />
   <link rel="stylesheet" href="css/misiones.css" />
   <script src="js/i18n.js"></script>
-  <script src="js/main.js?v=flyer3" defer></script>
+  <script src="js/main.js?v=1.10" defer></script>
 </head>
+
 <body>
   <main class="app" role="main" aria-label="Sam VaLentin 2026">
     <div class="layout-grid" id="layout-grid" aria-hidden="true"></div>
 
     <!-- Contenido del menú Sam VaLentin 2026 -->
     <div class="top-right">
-      <button class="flag-btn" id="lang-es" style="background-image:url('https://flagcdn.com/w20/es.png');" aria-label="Español"></button>
-      <button class="flag-btn" id="lang-en" style="background-image:url('https://flagcdn.com/w20/gb.png');" aria-label="English"></button>
+      <button class="flag-btn" id="lang-es" style="background-image:url('https://flagcdn.com/w20/es.png');"
+        aria-label="Español"></button>
+      <button class="flag-btn" id="lang-en" style="background-image:url('https://flagcdn.com/w20/gb.png');"
+        aria-label="English"></button>
     </div>
 
     <div class="home-shell">
@@ -32,7 +36,8 @@
 
         <!-- Botón QR WhatsApp -->
         <section class="qr-action" aria-label="WhatsApp QR">
-          <a class="cta-card" id="btn-whatsapp" href="#" target="_self" data-url="https://chat.whatsapp.com/CbwMm3CPait9BocchQE7lX">
+          <a class="cta-card" id="btn-whatsapp" href="#" target="_self"
+            data-url="https://chat.whatsapp.com/CbwMm3CPait9BocchQE7lX">
             <img src="images/QR.png" alt="Grupo de WhatsApp" class="cta-card__img" />
             <span class="cta-card__label" aria-hidden="true"></span>
           </a>
@@ -40,7 +45,8 @@
 
         <!-- Botón Inscripción Amonsul -->
         <section class="amonsul-action" aria-label="Inscribirse Amonsul">
-          <a class="cta-card" id="btn-amonsul" href="#" target="_self" data-url="https://amonsul.netlify.app/detalle-torneo/121">
+          <a class="cta-card" id="btn-amonsul" href="#" target="_self"
+            data-url="https://amonsul.netlify.app/detalle-torneo/121">
             <img src="images/InscribirseAmonsul.png" alt="Inscribirse en Amonsul" class="cta-card__img" />
             <span class="cta-card__label" aria-hidden="true"></span>
           </a>
@@ -69,7 +75,8 @@
     </div>
 
     <div id="wip-backdrop" class="modal-backdrop" aria-hidden="true"></div>
-    <div id="wip-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="wip-title" aria-describedby="wip-desc" aria-hidden="true">
+    <div id="wip-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="wip-title"
+      aria-describedby="wip-desc" aria-hidden="true">
       <h2 id="wip-title" data-i18n="modalTitleGeneric">Función en construcción</h2>
       <p id="wip-desc" data-i18n="modalDescGeneric">Estamos trabajando en esta sección. Vuelve en un tiempo.</p>
       <div class="actions">
@@ -80,11 +87,13 @@
   </main>
 
   <!-- Modal PDF (flotante) fuera de .app para ocupar toda la ventana -->
-  <div id="pdf-backdrop" class="modal-backdrop" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Vista previa del PDF" style="display:none;">
+  <div id="pdf-backdrop" class="modal-backdrop" aria-hidden="true" role="dialog" aria-modal="true"
+    aria-label="Vista previa del PDF" style="display:none;">
     <div class="modal-card">
       <button id="pdf-close" class="modal-close" type="button" aria-label="Cerrar">×</button>
       <iframe id="pdf-frame" class="modal-iframe" title="Vista previa del PDF" referrerpolicy="no-referrer"></iframe>
     </div>
   </div>
 </body>
+
 </html>
