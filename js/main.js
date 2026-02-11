@@ -523,6 +523,13 @@ window.APP_VERSION = APP_VERSION;
       console.log('✅ Calculadora Duelo posicionada en B10:F14');
     }
 
+    // Posicionar botón Listas de Ejército (SamVaLentin2026)
+    const armyListsAction = document.querySelector('.army-lists-action');
+    if (armyListsAction) {
+      positionInGrid(armyListsAction, 'H8:L9', 11);
+      console.log('✅ Listas de Ejército posicionadas en H8:L9');
+    }
+
     // Banderas para CalculadoraEstadisticas.html
     const flagEsCalc = document.getElementById('lang-es');
     if (flagEsCalc) {
@@ -560,6 +567,12 @@ window.APP_VERSION = APP_VERSION;
     } catch (_) { /* noop */ }
     frame.src = viewer;
     backdrop.style.display = 'flex';
+    backdrop.style.position = 'fixed'; // Ensure it covers the viewport even if misiones.css says absolute
+    backdrop.style.top = '0';
+    backdrop.style.left = '0';
+    backdrop.style.width = '100vw'; // Ensure full width
+    backdrop.style.height = '100dvh'; // Ensure full viewport height
+    backdrop.style.zIndex = '9999'; // Ensure it is on top
     backdrop.setAttribute('aria-hidden', 'false');
     const onBackdrop = () => closePdfModal();
     const onClose = () => closePdfModal();
@@ -683,6 +696,36 @@ window.APP_VERSION = APP_VERSION;
         openPdfModal(pdf);
       });
     }
+
+    // --- Listeners específicos de Listas de Ejército ---
+    const armyListsBtn = doc.getElementById('btn-army-lists');
+    if (armyListsBtn) {
+      armyListsBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        openArmyListsModal();
+      });
+      console.log('✅ Army Lists button listener attached');
+    }
+
+    const armyListsClose = doc.getElementById('army-lists-close');
+    const armyListsBackdrop = doc.getElementById('army-lists-backdrop');
+    if (armyListsClose) armyListsClose.addEventListener('click', closeArmyListsModal);
+    if (armyListsBackdrop) armyListsBackdrop.addEventListener('click', closeArmyListsModal);
+
+    // Dropdowns de listas de ejército
+    const armySelects = ['army-light', 'army-dark', 'army-wildcard'];
+    armySelects.forEach(id => {
+      const select = doc.getElementById(id);
+      if (select) {
+        select.addEventListener('change', (e) => {
+          const pdfPath = e.target.value;
+          if (pdfPath) {
+            openPdfModal(pdfPath);
+            e.target.value = ""; // Reset selector
+          }
+        });
+      }
+    });
 
     // --- Listeners específicos de CalculadoraEstadisticas.html ---
     const spellCalcBtn = doc.getElementById('btn-spell-calc');
@@ -1472,7 +1515,7 @@ window.APP_VERSION = APP_VERSION;
 
   function updateDuelCalculator() {
     console.log('updateDuelCalculator called');
-    // Obtener valores
+    // ... code truncated for brevity, calling existing updateDuelCalculator ...
     const friendly = {
       attacks: parseInt(document.getElementById('friendly-attacks').value) || 1,
       fv: parseInt(document.getElementById('friendly-fv').value) || 1,
@@ -1489,20 +1532,91 @@ window.APP_VERSION = APP_VERSION;
       elven: document.getElementById('enemy-elven').checked
     };
 
-    // Calcular
-    // Nota: Pasamos rerollOnes a la función de simulación si decidimos implementarlo ahí
-    // Por ahora, modifiquemos calculateDuelProbability para aceptar rerollOnes en el objeto
-    // (Ya lo hace, pero necesitamos actualizar la llamada a rollDice dentro de la simulación)
-
-    // Pequeño hack: redefinir calculateDuelProbability para usar rerollOnes correctamente
-    // O mejor, actualizar la función calculateDuelProbability arriba para usar friendly.rerollOnes
-
     const result = calculateDuelProbability(friendly, enemy);
 
-    // Actualizar UI
     document.getElementById('duel-win-rate').textContent = result.friendlyWin.toFixed(1) + '%';
     document.getElementById('duel-loss-rate').textContent = result.enemyWin.toFixed(1) + '%';
     document.getElementById('duel-draw-rate').textContent = result.draw.toFixed(1) + '%';
+  }
+
+  // --- Funciones para Listas de Ejército ---
+
+  const armyListsData = {
+    light: [
+      { name: "2 Frikis", pdf: "pdfs/Sam Va lentin 2026/Luz/2 Frikis.pdf" },
+      { name: "AmonCat", pdf: "pdfs/Sam Va lentin 2026/Luz/AmonCat.pdf" },
+      { name: "BCN Reapers", pdf: "pdfs/Sam Va lentin 2026/Luz/BCN Reapers.pdf" },
+      { name: "Berretina", pdf: "pdfs/Sam Va lentin 2026/Luz/Berretina.pdf" },
+      { name: "Colinas de plástico", pdf: "pdfs/Sam Va lentin 2026/Luz/Colinas de plastico.pdf" },
+      { name: "En casa de herrero", pdf: "pdfs/Sam Va lentin 2026/Luz/En casa de herrero.pdf" },
+      { name: "Esta edición es una mierda", pdf: "pdfs/Sam Va lentin 2026/Luz/Esta edicion es una mierda.pdf" },
+      { name: "Lleida Hobbits 2", pdf: "pdfs/Sam Va lentin 2026/Luz/Lleida Hobbit 2.pdf" },
+      { name: "Los Cráneos", pdf: "pdfs/Sam Va lentin 2026/Luz/Los Craneos.pdf" },
+      { name: "Portos Grises", pdf: "pdfs/Sam Va lentin 2026/Luz/Portos grisos.pdf" },
+      { name: "Remember", pdf: "pdfs/Sam Va lentin 2026/Luz/Remember the day brothers.pdf" }
+    ],
+    dark: [
+      { name: "BadaGuldur", pdf: "pdfs/Sam Va lentin 2026/Oscuridad/BadaGuldur.pdf" },
+      { name: "Dos Cervezas", pdf: "pdfs/Sam Va lentin 2026/Oscuridad/Dos cervezas por favor.pdf" },
+      { name: "It's a March", pdf: "pdfs/Sam Va lentin 2026/Oscuridad/It's a March.pdf" },
+      { name: "Montaña Solitaria", pdf: "pdfs/Sam Va lentin 2026/Oscuridad/La montaña solitaria.pdf" },
+      { name: "Lleida Hobbits", pdf: "pdfs/Sam Va lentin 2026/Oscuridad/Lleida Hobbit.pdf" },
+      { name: "Valle del Cabrón", pdf: "pdfs/Sam Va lentin 2026/Oscuridad/Los del valle del cabron.pdf" },
+      { name: "Senyors dels Panellets", pdf: "pdfs/Sam Va lentin 2026/Oscuridad/Seyors del panellets.pdf" },
+      { name: "Toia Team", pdf: "pdfs/Sam Va lentin 2026/Oscuridad/Toia Team.pdf" }
+    ],
+    wildcard: [
+      { name: "Tessen Team", pdf: "pdfs/Sam Va lentin 2026/Comodin/Tessen Team.pdf" },
+      { name: "Voteless United", pdf: "pdfs/Sam Va lentin 2026/Comodin/Voteless United.pdf" }
+    ]
+  };
+
+  function populateArmyLists() {
+    const categories = [
+      { id: 'army-light', data: armyListsData.light },
+      { id: 'army-dark', data: armyListsData.dark },
+      { id: 'army-wildcard', data: armyListsData.wildcard }
+    ];
+
+    categories.forEach(cat => {
+      const select = document.getElementById(cat.id);
+      if (!select) return;
+
+      // Mantener la opción por defecto
+      const defaultOption = select.options[0];
+      select.innerHTML = '';
+      select.appendChild(defaultOption);
+
+      cat.data.forEach(player => {
+        const option = document.createElement('option');
+        option.value = player.pdf;
+        option.textContent = player.name;
+        select.appendChild(option);
+      });
+    });
+  }
+
+  function openArmyListsModal() {
+    const backdrop = document.getElementById('army-lists-backdrop');
+    const modal = document.getElementById('army-lists-modal');
+
+    if (backdrop && modal) {
+      populateArmyLists(); // Refrescar listas al abrir
+      backdrop.style.display = 'block';
+      backdrop.setAttribute('aria-hidden', 'false');
+      modal.setAttribute('aria-hidden', 'false');
+    }
+  }
+
+  function closeArmyListsModal() {
+    const backdrop = document.getElementById('army-lists-backdrop');
+    const modal = document.getElementById('army-lists-modal');
+
+    if (backdrop && modal) {
+      backdrop.style.display = 'none';
+      backdrop.setAttribute('aria-hidden', 'true');
+      modal.setAttribute('aria-hidden', 'true');
+    }
   }
 
   function calculateDuelProbability(friendly, enemy) {

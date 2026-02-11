@@ -67,6 +67,18 @@
             <span class="cta-card__label" aria-hidden="true"></span>
           </a>
         </section>
+
+        <!-- Botón Listas de Ejército -->
+        <section class="army-lists-action" aria-label="Listas de Ejército">
+          <a class="cta-card" id="btn-army-lists" href="#">
+            <span class="visually-hidden">Listas de Ejército</span>
+            <!-- Placeholder style until image is provided, or reuse an existing one temporarily -->
+            <div
+              style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:rgba(40,30,20,0.8); color:#efe5cf; font-weight:bold; text-align:center; padding:5px; border-radius:16px; border: 2px solid #cfa15b;">
+              Listas de Ejército
+            </div>
+          </a>
+        </section>
       </div>
     </div>
 
@@ -84,14 +96,49 @@
       </div>
     </div>
 
+    <!-- Modal Listas de Ejército -->
+    <div id="army-lists-backdrop" class="modal-backdrop" aria-hidden="true"></div>
+    <div id="army-lists-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="army-lists-title"
+      aria-hidden="true">
+      <button id="army-lists-close" class="modal-close" type="button" aria-label="Cerrar">×</button>
+      <h2 id="army-lists-title">Listas de ejército Sam Va Lentin 2026</h2>
+
+      <div class="spell-calculator" style="display: flex; flex-direction: column; height: 100%;">
+        <div class="grid-row">
+          <div class="input-group" style="flex-direction: column; align-items: stretch;">
+            <label for="army-light">Ejércitos de Luz</label>
+            <select id="army-light">
+              <option value="">Seleccionar...</option>
+            </select>
+          </div>
+          <div class="input-group" style="flex-direction: column; align-items: stretch;">
+            <label for="army-dark">Ejércitos de Oscuridad</label>
+            <select id="army-dark">
+              <option value="">Seleccionar...</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="input-group"
+          style="width: 80%; align-self: center; flex-direction: column; align-items: stretch; margin-top: 12px;">
+          <label for="army-wildcard">Comodines</label>
+          <select id="army-wildcard">
+            <option value="">Seleccionar...</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
   </main>
 
   <!-- Modal PDF (flotante) fuera de .app para ocupar toda la ventana -->
   <div id="pdf-backdrop" class="modal-backdrop" aria-hidden="true" role="dialog" aria-modal="true"
-    aria-label="Vista previa del PDF" style="display:none;">
-    <div class="modal-card">
+    aria-label="Vista previa del PDF"
+    style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.8);">
+    <div class="modal-card" style="width:100%; height:100%;">
       <button id="pdf-close" class="modal-close" type="button" aria-label="Cerrar">×</button>
-      <iframe id="pdf-frame" class="modal-iframe" title="Vista previa del PDF" referrerpolicy="no-referrer"></iframe>
+      <iframe id="pdf-frame" class="modal-iframe" title="Vista previa del PDF" referrerpolicy="no-referrer"
+        style="width:100%; height:100%; border:0;"></iframe>
     </div>
   </div>
 </body>

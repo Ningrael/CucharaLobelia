@@ -376,7 +376,8 @@ body {
 /* Estilos para la Calculadora de Spells y Resistir Spell */
 #spell-calc-modal,
 #resist-calc-modal,
-#duel-calc-modal {
+#duel-calc-modal,
+#army-lists-modal {
   position: absolute;
   inset: 0;
   padding: 12px;
@@ -400,7 +401,8 @@ body {
 
 #spell-calc-modal::before,
 #resist-calc-modal::before,
-#duel-calc-modal::before {
+#duel-calc-modal::before,
+#army-lists-modal::before {
   content: '';
   position: absolute;
   inset: 0;
@@ -411,14 +413,16 @@ body {
 
 #spell-calc-modal>*,
 #resist-calc-modal>*,
-#duel-calc-modal>* {
+#duel-calc-modal>*,
+#army-lists-modal>* {
   position: relative;
   z-index: 1;
 }
 
 #spell-calc-modal h2,
 #resist-calc-modal h2,
-#duel-calc-modal h2 {
+#duel-calc-modal h2,
+#army-lists-modal h2 {
   margin: 0 0 12px;
   padding: 10px 14px;
   font-size: 1.05rem;
@@ -433,7 +437,8 @@ body {
 
 #spell-calc-modal .modal-close,
 #resist-calc-modal .modal-close,
-#duel-calc-modal .modal-close {
+#duel-calc-modal .modal-close,
+#army-lists-modal .modal-close {
   position: fixed;
   top: 20px;
   right: 20px;
