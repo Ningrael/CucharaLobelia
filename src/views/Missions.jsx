@@ -95,7 +95,8 @@ export default function Missions({ lang, translations }) {
     // Ruta del PDF (portada estáticamente en public/pdfs)
     const folder = mode === '1vs1' ? 'pdfs/' : 'pdfs/2vs2/';
     const filename = `${missionName.toUpperCase()}.pdf`;
-    const relativePath = `/${folder}${filename}`;
+    const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+    const relativePath = `${base}/${folder}${filename}`;
     
     setActivePdfUrl(relativePath);
   };

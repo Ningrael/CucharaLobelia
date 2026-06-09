@@ -1948,12 +1948,13 @@ export default function League({ lang, translations, user, profile, isAdmin: isG
 
     setSelectedMissionPdf(missionName);
     const upperName = missionName.trim().toUpperCase();
-    let relativePath = `/pdfs/placeholder.pdf`;
+    const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+    let relativePath = `${base}/pdfs/placeholder.pdf`;
 
     if (STANDARD_MISSIONS.has(upperName)) {
-      relativePath = `/pdfs/${upperName}.pdf`;
+      relativePath = `${base}/pdfs/${upperName}.pdf`;
     } else if (STANDARD_2VS2_MISSIONS.has(upperName)) {
-      relativePath = `/pdfs/2vs2/${upperName}.pdf`;
+      relativePath = `${base}/pdfs/2vs2/${upperName}.pdf`;
     }
     
     setActivePdfUrl(relativePath);
