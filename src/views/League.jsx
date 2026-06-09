@@ -518,25 +518,7 @@ export default function League({ lang, translations, user, profile, isAdmin: isG
         });
       }
 
-      // Auto-inicializar "liga_cuchara_prueba" para sosamatias o admin
-      if (user && (user.email === 'sosamatias@gmail.com' || user.email === 'admin@cucharalobelia.com') && !activeLeaguesList["liga_cuchara_prueba"]) {
-        console.log("Auto-initializing 'liga_cuchara_prueba'...");
-        const testLeague = {
-          name: "liga cuchara de prueba",
-          status: 'registration',
-          registrationDeadline: '2025-06-08',
-          creatorUid: user.uid,
-          creatorName: profile?.name || user.email.split('@')[0],
-          totalRounds: 0,
-          missions: []
-        };
-        await setDoc(doc(db, "players", user.uid), {
-          createdLeagues: {
-            ["liga_cuchara_prueba"]: testLeague
-          }
-        }, { merge: true });
-        activeLeaguesList["liga_cuchara_prueba"] = testLeague;
-      }
+      // (auto-init de liga de prueba eliminado)
 
       setLeaguesList(activeLeaguesList);
     } catch (e) {
@@ -1971,14 +1953,27 @@ export default function League({ lang, translations, user, profile, isAdmin: isG
   };
 
   const executeLeagueDeletion = async (leagueId, creatorUid) => {
-    if (!leagueId || !creatorUid) return;
+    if (!leagueId) return;
     
     setLoadingData(true);
     try {
       // 1. Delete league config from the creator's profile document in /players
-      await updateDoc(doc(db, "players", creatorUid), {
-        [`createdLeagues.${leagueId}`]: deleteField()
-      });
+      // Si no tenemos creatorUid (liga vieja), buscar en todos los jugadores quién la tiene
+      let resolvedCreatorUid = creatorUid;
+      if (!resolvedCreatorUid) {
+        const allPlayersSnap = await getDocs(collection(db, "players"));
+        allPlayersSnap.forEach(d => {
+          const pData = d.data();
+          if (pData.createdLeagues && pData.createdLeagues[leagueId]) {
+            resolvedCreatorUid = d.id;
+          }
+        });
+      }
+      if (resolvedCreatorUid) {
+        await updateDoc(doc(db, "players", resolvedCreatorUid), {
+          [`createdLeagues.${leagueId}`]: deleteField()
+        });
+      }
       
       // 2. Delete matches in the /matches collection that have leagueId === leagueId (Optimizado)
       const matchesSnap = await getDocs(query(collection(db, "matches"), where("leagueId", "==", leagueId)));
