@@ -752,8 +752,8 @@ export default function App() {
       setIsAuthModalOpen(false);
       alert(
         lang === 'es'
-          ? "Registro exitoso. Se ha enviado un correo de verificación. Por favor, verifica tu cuenta para unirte a las ligas."
-          : "Registration successful. A verification email has been sent. Please verify your account to join leagues."
+          ? "Registro exitoso. Se ha enviado un correo de verificación a tu email. ⚠️ Revisa tu carpeta de SPAM si no lo ves en tu bandeja de entrada (remitente: noreply@mesbg-liga.firebaseapp.com). Verifica tu cuenta para unirte a las ligas."
+          : "Registration successful. A verification email has been sent. ⚠️ Check your SPAM folder if you don't see it in your inbox (sender: noreply@mesbg-liga.firebaseapp.com). Please verify your account to join leagues."
       );
     } catch (err) {
       console.error(err);
@@ -786,12 +786,19 @@ export default function App() {
       const uid = auth.currentUser.uid;
       
       try {
-        // 1. Delete player document in Firestore first
-        const docRef = doc(db, 'players', uid);
-        await deleteDoc(docRef);
-        
-        // 2. Delete Firebase Auth user
+        // 1. Delete Firebase Auth user FIRST (requires recent login)
+        // If this fails, nothing gets deleted (safe rollback)
         await deleteUser(auth.currentUser);
+        
+        // 2. Delete player document in Firestore (Auth user is already gone)
+        const docRef = doc(db, 'players', uid);
+        try {
+          await deleteDoc(docRef);
+        } catch (firestoreErr) {
+          console.warn("Auth deleted but Firestore doc cleanup failed:", firestoreErr.message);
+          // Auth user is already gone, so the email is freed up
+          // The orphan Firestore doc will be ignored since no Auth user matches
+        }
         
         // 3. Clear local states
         setUser(null);

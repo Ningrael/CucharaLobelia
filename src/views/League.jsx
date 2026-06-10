@@ -582,9 +582,16 @@ export default function League({ lang, translations, user, profile, isAdmin: isG
             const creatorStatus = playerStatuses[d.id];
             const overrides = playerOverrides[d.id] || {};
             
-            const resolvedStatus = creatorStatus || leagueData.status || 'pending';
+            // If player was removed/rejected but re-applied (their own status is 'pending'),
+            // show them as pending so admin can re-approve
+            let resolvedStatus;
+            if ((creatorStatus === 'removed' || creatorStatus === 'rejected') && leagueData.status === 'pending') {
+              resolvedStatus = 'pending'; // Re-applied, override creator's removal
+            } else {
+              resolvedStatus = creatorStatus || leagueData.status || 'pending';
+            }
             
-            // If marked as removed or rejected by the creator, they are excluded from the league
+            // If still removed or rejected after resolution, exclude from league
             if (resolvedStatus === 'removed' || resolvedStatus === 'rejected') return;
 
             const p = {
@@ -2752,7 +2759,7 @@ export default function League({ lang, translations, user, profile, isAdmin: isG
               {lang === 'es' ? 'Clasificación Regular' : 'Regular Standings'}
             </h3>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
-              Amoncat MESBG
+              {configData?.name || ''}
             </span>
           </div>
 
