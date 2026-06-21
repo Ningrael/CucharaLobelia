@@ -1598,6 +1598,80 @@ export default function League({ lang, translations, user, profile, isAdmin: isG
     setIsSubmittingReport(false);
   };
 
+  // Eliminar mi propio reporte (solo si aún no fue verificado)
+  const handleDeleteOwnReport = async (match, isBracket = false, bracketId = '', roundIdx = 0, matchIdx = 0) => {
+    showConfirm(
+      lang === 'es' 
+        ? "¿Eliminar tu reporte? El resultado volverá al estado sin reportar." 
+        : "Delete your report? The result will go back to unreported status.",
+      async () => {
+        setLoadingData(true);
+        try {
+          if (!isBracket) {
+            const matchId = match.id;
+            if (profile?.isAdmin) {
+              try {
+                const mRef = doc(db, "matches", matchId);
+                await updateDoc(mRef, {
+                  reportedBy: "", reportedVpP1: 0, reportedVpP2: 0,
+                  reportedKilledLeaderP1: false, reportedKilledLeaderP2: false, verified: false
+                });
+              } catch (err) {
+                console.warn("Direct update failed on own report delete:", err.message);
+                await setDoc(doc(db, "players", user.uid), {
+                  matchReports: {
+                    [matchId]: {
+                      reportedBy: "",
+                      reportedVpP1: 0, reportedVpP2: 0,
+                      reportedKilledLeaderP1: false, reportedKilledLeaderP2: false,
+                      timestamp: serverTimestamp()
+                    }
+                  }
+                }, { merge: true });
+              }
+            } else {
+              await setDoc(doc(db, "players", user.uid), {
+                matchReports: {
+                  [matchId]: {
+                    reportedBy: "",
+                    reportedVpP1: 0, reportedVpP2: 0,
+                    reportedKilledLeaderP1: false, reportedKilledLeaderP2: false,
+                    timestamp: serverTimestamp()
+                  }
+                }
+              }, { merge: true });
+            }
+          } else {
+            const matchDocId = match.id || `playoff_${selectedLeagueId}_${bracketId}_${roundIdx}_${matchIdx}`;
+            if (profile?.isAdmin) {
+              try {
+                await deleteDoc(doc(db, "matches", matchDocId));
+              } catch (e) {
+                console.warn("Could not delete playoff match document:", e.message);
+              }
+            }
+            await setDoc(doc(db, "players", user.uid), {
+              matchReports: {
+                [matchDocId]: {
+                  reportedBy: "",
+                  reportedVpP1: 0, reportedVpP2: 0,
+                  reportedKilledLeaderP1: false, reportedKilledLeaderP2: false,
+                  timestamp: serverTimestamp()
+                }
+              }
+            }, { merge: true });
+          }
+          alert(lang === 'es' ? "Reporte eliminado." : "Report deleted.");
+          loadLeagueData();
+        } catch (e) {
+          console.error(e);
+          alert(`Error: ${e.message}`);
+        }
+        setLoadingData(false);
+      }
+    );
+  };
+
   // Validar reporte
   const handleValidateReport = async (match, isBracket = false, bracketId = '', roundIdx = 0, matchIdx = 0) => {
     showConfirm("¿Validar este resultado?", async () => {
@@ -3051,8 +3125,18 @@ export default function League({ lang, translations, user, profile, isAdmin: isG
                                 <button className="btn btn-primary btn-small" onClick={() => openReportModal(m)} style={{ width: '100%', minHeight: '34px' }}>📝 Cargar Resultados</button>
                               )}
                               {m.reportedBy === user?.uid && (
-                                <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', border: '1px dashed var(--warning-color)', padding: '8px', borderRadius: '6px', textAlign: 'center' }}>
-                                  ⏳ Pendiente de verificar por rival. (Reportado: {user.uid === m.player1 ? m.reportedVpP1 : m.reportedVpP2} - {user.uid === m.player1 ? m.reportedVpP2 : m.reportedVpP1})
+                                <div style={{ border: '1px dashed var(--warning-color)', padding: '10px', borderRadius: '6px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                  <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', textAlign: 'center' }}>
+                                    ⏳ {lang === 'es' ? 'Pendiente de verificar por rival.' : 'Pending opponent verification.'} ({lang === 'es' ? 'Reportado' : 'Reported'}: {user.uid === m.player1 ? m.reportedVpP1 : m.reportedVpP2} - {user.uid === m.player1 ? m.reportedVpP2 : m.reportedVpP1})
+                                  </div>
+                                  <div style={{ display: 'flex', gap: '8px' }}>
+                                    <button className="btn btn-primary btn-small" onClick={() => openReportModal(m)} style={{ flex: 1, minHeight: '32px', fontSize: '0.75rem' }}>
+                                      ✏️ {lang === 'es' ? 'Editar' : 'Edit'}
+                                    </button>
+                                    <button className="btn btn-danger btn-small" onClick={() => handleDeleteOwnReport(m)} style={{ flex: 1, minHeight: '32px', fontSize: '0.75rem' }}>
+                                      🗑️ {lang === 'es' ? 'Eliminar' : 'Delete'}
+                                    </button>
+                                  </div>
                                 </div>
                               )}
                               {m.reportedBy !== "" && m.reportedBy !== user?.uid && isMyMatch && (
