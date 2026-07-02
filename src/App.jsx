@@ -14,7 +14,9 @@ import {
   updateEmail,
   updatePassword,
   sendPasswordResetEmail,
-  deleteUser
+  deleteUser,
+  GoogleAuthProvider,
+  signInWithPopup
 } from 'firebase/auth';
 import UserManagement from './components/UserManagement';
 import { 
@@ -86,7 +88,8 @@ export default function App() {
 
   // Estados del Modal de Perfil/Login
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [authMode, setAuthMode] = useState('login'); // 'login' | 'register' | 'forgot_password'
+  const [authMode, setAuthMode] = useState('login'); // 'login' | 'register' | 'forgot_password' | 'google_complete'
+  const [googleUser, setGoogleUser] = useState(null); // Temporary Google user during registration completion
   
   // Inputs del formulario de Auth
   const [usernameInput, setUsernameInput] = useState('');
@@ -256,28 +259,36 @@ export default function App() {
             }
           }
         } else {
-          const baseName = currentUser.email.split('@')[0];
-          const defaultProfile = {
-            username: baseName,
-            name: baseName,
-            phone: '',
-            faction: 'Desconocida',
-            alignment: 'luz',
-            status: 'pending',
-            isAdmin: false,
-            points: 0,
-            matchesPlayed: 0,
-            wins: 0,
-            draws: 0,
-            losses: 0,
-            vpScored: 0,
-            vpConceded: 0,
-            leadersKilled: 0,
-            leadersLost: 0
-          };
-          await setDoc(docRef, defaultProfile);
-          setProfile(defaultProfile);
-          setIsAdmin(ADMIN_USERNAMES.includes(baseName.toLowerCase()));
+          // Check if user came from Google sign-in (no profile yet → let google_complete form handle it)
+          const isGoogleProvider = currentUser.providerData?.some(p => p.providerId === 'google.com');
+          if (isGoogleProvider) {
+            // Don't auto-create profile for Google users — they need to complete the form first
+            setProfile(null);
+            setIsAdmin(false);
+          } else {
+            const baseName = currentUser.email.split('@')[0];
+            const defaultProfile = {
+              username: baseName,
+              name: baseName,
+              phone: '',
+              faction: 'Desconocida',
+              alignment: 'luz',
+              status: 'pending',
+              isAdmin: false,
+              points: 0,
+              matchesPlayed: 0,
+              wins: 0,
+              draws: 0,
+              losses: 0,
+              vpScored: 0,
+              vpConceded: 0,
+              leadersKilled: 0,
+              leadersLost: 0
+            };
+            await setDoc(docRef, defaultProfile);
+            setProfile(defaultProfile);
+            setIsAdmin(ADMIN_USERNAMES.includes(baseName.toLowerCase()));
+          }
         }
       } else {
         setProfile(null);
@@ -766,6 +777,111 @@ export default function App() {
       } else {
         alert(lang === 'es' ? `Error al registrar: ${err.message}` : `Registration error: ${err.message}`);
       }
+    }
+    setIsSubmittingAuth(false);
+  };
+
+  // Google Sign-In: si ya tiene perfil → login directo, si no → mostrar mini-formulario
+  const handleGoogleSignIn = async () => {
+    setIsSubmittingAuth(true);
+    try {
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      const gUser = result.user;
+
+      // Check if profile already exists in Firestore
+      const docRef = doc(db, 'players', gUser.uid);
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        // Profile exists → login complete
+        setIsAuthModalOpen(false);
+      } else {
+        // No profile → show completion form
+        setGoogleUser(gUser);
+        setEmailInput(gUser.email || '');
+        setNickInput(gUser.displayName || '');
+        setAuthMode('google_complete');
+      }
+    } catch (err) {
+      console.error("Google sign-in error:", err);
+      if (err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request') {
+        alert(lang === 'es' ? `Error al iniciar con Google: ${err.message}` : `Google sign-in error: ${err.message}`);
+      }
+    }
+    setIsSubmittingAuth(false);
+  };
+
+  // Completar registro de usuario que entró con Google (solo pide datos faltantes)
+  const handleGoogleComplete = async (e) => {
+    e.preventDefault();
+    const sanitizedUsername = usernameInput.trim().toLowerCase();
+    const sanitizedNick = nickInput.trim();
+
+    if (!sanitizedUsername || !sanitizedNick || !locationInput.trim()) {
+      alert(lang === 'es' ? "Completa todos los campos obligatorios." : "Please fill out all required fields.");
+      return;
+    }
+
+    setIsSubmittingAuth(true);
+    try {
+      // Check username uniqueness
+      const qUser = query(collection(db, "players"), where("username", "==", sanitizedUsername));
+      const qSnap = await getDocs(qUser);
+      if (!qSnap.empty) {
+        alert(lang === 'es' ? "El usuario ya existe." : "Username already exists.");
+        setIsSubmittingAuth(false);
+        return;
+      }
+
+      const currentUser = googleUser || auth.currentUser;
+      if (!currentUser) {
+        alert(lang === 'es' ? "Error: sesión expirada. Intenta de nuevo." : "Error: session expired. Try again.");
+        setIsSubmittingAuth(false);
+        return;
+      }
+
+      const isMatias = sanitizedUsername === 'matias';
+      const newProfile = {
+        username: sanitizedUsername,
+        name: sanitizedNick,
+        email: currentUser.email || emailInput.trim(),
+        phone: phoneInput.trim(),
+        location: locationInput.trim(),
+        status: 'approved',
+        isAdmin: isMatias || ADMIN_USERNAMES.includes(sanitizedUsername),
+        isSuperAdmin: isMatias,
+        points: 0,
+        matchesPlayed: 0,
+        wins: 0,
+        draws: 0,
+        losses: 0,
+        vpScored: 0,
+        vpConceded: 0,
+        leadersKilled: 0,
+        leadersLost: 0,
+        emailNotifications: true
+      };
+
+      await setDoc(doc(db, "players", currentUser.uid), newProfile);
+      setProfile(newProfile);
+      setIsAdmin(newProfile.isAdmin);
+
+      setUsernameInput('');
+      setNickInput('');
+      setEmailInput('');
+      setPhoneInput('');
+      setLocationInput('');
+      setGoogleUser(null);
+      setIsAuthModalOpen(false);
+      alert(
+        lang === 'es'
+          ? "¡Registro exitoso! Tu cuenta de Google ha sido vinculada."
+          : "Registration successful! Your Google account has been linked."
+      );
+    } catch (err) {
+      console.error(err);
+      alert(lang === 'es' ? `Error al completar registro: ${err.message}` : `Registration error: ${err.message}`);
     }
     setIsSubmittingAuth(false);
   };
@@ -1348,6 +1464,22 @@ export default function App() {
                 <button type="submit" className="btn btn-primary" disabled={isSubmittingAuth} style={{ marginTop: '6px' }}>
                   {isSubmittingAuth ? (lang === 'es' ? 'Entrando...' : 'Logging in...') : (lang === 'es' ? 'Iniciar Sesión' : 'Login')}
                 </button>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '4px 0' }}>
+                  <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)' }} />
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{lang === 'es' ? 'o' : 'or'}</span>
+                  <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)' }} />
+                </div>
+
+                <button type="button" onClick={handleGoogleSignIn} disabled={isSubmittingAuth} style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
+                  background: '#fff', color: '#333', border: 'none', borderRadius: 'var(--radius-sm)',
+                  padding: '12px', fontSize: '0.88rem', fontWeight: '600', cursor: 'pointer',
+                  transition: 'opacity 0.2s', opacity: isSubmittingAuth ? 0.5 : 1
+                }}>
+                  <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+                  {lang === 'es' ? 'Entrar con Google' : 'Sign in with Google'}
+                </button>
                 
                 <button type="button" onClick={() => setAuthMode('register')} style={{ background: 'transparent', border: 'none', color: 'var(--gold-primary)', cursor: 'pointer', textDecoration: 'underline', fontSize: '0.82rem', alignSelf: 'center', marginTop: '4px' }}>
                   {lang === 'es' ? '¿No tienes cuenta? Regístrate aquí' : "Don't have an account? Register here"}
@@ -1377,7 +1509,7 @@ export default function App() {
                   {lang === 'es' ? 'Volver al Inicio de Sesión' : 'Back to Login'}
                 </button>
               </form>
-            ) : (
+            ) : authMode === 'register' ? (
               /* FORMULARIO REGISTRO */
               <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                 <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', textAlign: 'center', marginBottom: '4px' }}>
@@ -1484,12 +1616,98 @@ export default function App() {
                 <button type="submit" className="btn btn-primary" disabled={isSubmittingAuth} style={{ marginTop: '8px' }}>
                   {isSubmittingAuth ? (lang === 'es' ? 'Registrando...' : 'Registering...') : (lang === 'es' ? 'Crear Cuenta' : 'Create Account')}
                 </button>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '4px 0' }}>
+                  <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)' }} />
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{lang === 'es' ? 'o' : 'or'}</span>
+                  <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)' }} />
+                </div>
+
+                <button type="button" onClick={handleGoogleSignIn} disabled={isSubmittingAuth} style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
+                  background: '#fff', color: '#333', border: 'none', borderRadius: 'var(--radius-sm)',
+                  padding: '12px', fontSize: '0.88rem', fontWeight: '600', cursor: 'pointer',
+                  transition: 'opacity 0.2s', opacity: isSubmittingAuth ? 0.5 : 1
+                }}>
+                  <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+                  {lang === 'es' ? 'Registrarse con Google' : 'Sign up with Google'}
+                </button>
                 
                 <button type="button" onClick={() => setAuthMode('login')} style={{ background: 'transparent', border: 'none', color: 'var(--gold-primary)', cursor: 'pointer', textDecoration: 'underline', fontSize: '0.82rem', alignSelf: 'center', marginTop: '4px' }}>
                   {lang === 'es' ? '¿Ya tienes cuenta? Inicia sesión' : 'Already have an account? Login'}
                 </button>
               </form>
-            )}
+            ) : authMode === 'google_complete' ? (
+              /* FORMULARIO COMPLETAR REGISTRO GOOGLE */
+              <form onSubmit={handleGoogleComplete} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px', background: 'rgba(66,133,244,0.08)', border: '1px solid rgba(66,133,244,0.2)', borderRadius: '8px' }}>
+                  <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontSize: '0.8rem', color: '#fff' }}>{googleUser?.displayName || ''}</span>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{googleUser?.email || ''}</span>
+                  </div>
+                </div>
+
+                <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', textAlign: 'center', marginBottom: '4px' }}>
+                  {lang === 'es' ? '¡Casi listo! Completa estos datos para crear tu perfil de jugador.' : 'Almost there! Complete these details to create your player profile.'}
+                </p>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>{lang === 'es' ? 'Nombre de Usuario (Login):' : 'Username (Login):'}</label>
+                  <input type="text" value={usernameInput} onChange={(e) => setUsernameInput(e.target.value)} placeholder="frodo88"
+                    style={{ background: 'rgba(0,0,0,0.3)', border: 'var(--border-glass)', borderRadius: 'var(--radius-sm)', color: '#fff', padding: '10px', outline: 'none', fontSize: '0.85rem' }} required
+                  />
+                  <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
+                    {lang === 'es' ? '🔒 Privado: Nombre único para tu perfil.' : '🔒 Private: Unique name for your profile.'}
+                  </span>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>{lang === 'es' ? 'Nick / Nombre Público:' : 'Nick / Display Name:'}</label>
+                  <input type="text" value={nickInput} onChange={(e) => setNickInput(e.target.value)} placeholder="Frodo"
+                    style={{ background: 'rgba(0,0,0,0.3)', border: 'var(--border-glass)', borderRadius: 'var(--radius-sm)', color: '#fff', padding: '10px', outline: 'none', fontSize: '0.85rem' }} required
+                  />
+                  <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
+                    {lang === 'es' ? '🌍 Público: El nombre que verán los demás.' : '🌍 Public: The name others will see.'}
+                  </span>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>{lang === 'es' ? 'País - Ciudad:' : 'Country - City:'}</label>
+                  <input type="text" value={locationInput} onChange={(e) => setLocationInput(e.target.value)} placeholder={lang === 'es' ? "España - Madrid" : "Spain - Madrid"}
+                    style={{ background: 'rgba(0,0,0,0.3)', border: 'var(--border-glass)', borderRadius: 'var(--radius-sm)', color: '#fff', padding: '10px', outline: 'none', fontSize: '0.85rem' }} required
+                  />
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <label style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>{lang === 'es' ? 'Teléfono (WhatsApp):' : 'Phone (WhatsApp):'}</label>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>({lang === 'es' ? 'Opcional' : 'Optional'})</span>
+                  </div>
+                  <input type="tel" value={phoneInput} onChange={(e) => setPhoneInput(e.target.value)} placeholder={lang === 'es' ? "Ej. +34 666 555 444" : "e.g. +34 666 555 444"}
+                    style={{ background: 'rgba(0,0,0,0.3)', border: 'var(--border-glass)', borderRadius: 'var(--radius-sm)', color: '#fff', padding: '10px', outline: 'none', fontSize: '0.85rem' }}
+                  />
+                </div>
+
+                {/* GDPR */}
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', margin: '4px 0' }}>
+                  <input type="checkbox" id="gdpr_consent_google" required style={{ marginTop: '3px', cursor: 'pointer' }} />
+                  <label htmlFor="gdpr_consent_google" style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', lineHeight: '1.3', cursor: 'pointer' }}>
+                    {lang === 'es' 
+                      ? 'Acepto el tratamiento de mis datos personales (nombre, correo y teléfono opcional) para la gestión del torneo conforme al RGPD.' 
+                      : 'I consent to the processing of my personal data (name, email, and optional phone) for tournament management under GDPR.'}
+                  </label>
+                </div>
+
+                <button type="submit" className="btn btn-primary" disabled={isSubmittingAuth} style={{ marginTop: '4px' }}>
+                  {isSubmittingAuth ? (lang === 'es' ? 'Creando perfil...' : 'Creating profile...') : (lang === 'es' ? 'Completar Registro' : 'Complete Registration')}
+                </button>
+                
+                <button type="button" onClick={() => { setAuthMode('login'); setGoogleUser(null); signOut(auth); }} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', textDecoration: 'underline', fontSize: '0.78rem', alignSelf: 'center' }}>
+                  {lang === 'es' ? 'Cancelar' : 'Cancel'}
+                </button>
+              </form>
+            ) : null}
           </div>
         )}
       </Modal>
