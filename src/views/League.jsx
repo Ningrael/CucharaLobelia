@@ -408,6 +408,22 @@ export default function League({ lang, translations, user, profile, isAdmin: isG
   // Modal para Visor de PDF (Misiones)
   const [selectedMissionPdf, setSelectedMissionPdf] = useState(null);
   const [activePdfUrl, setActivePdfUrl] = useState(null);
+  const [pdfLang, setPdfLang] = useState(() => {
+    try {
+      const stored = localStorage.getItem('lobelia_pdf_lang');
+      if (stored === 'es' || stored === 'en') return stored;
+    } catch (_) {}
+    return lang;
+  });
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('lobelia_pdf_lang');
+      if (!stored) {
+        setPdfLang(lang);
+      }
+    } catch (_) {}
+  }, [lang]);
 
   // Estados de Multiligas
   const [selectedLeagueId, setSelectedLeagueId] = useState(null);
@@ -1993,8 +2009,15 @@ export default function League({ lang, translations, user, profile, isAdmin: isG
   // --- VISORES ---
 
   const openPdf = (missionName) => {
-    if (!missionName) return;
-    
+    setSelectedMissionPdf(missionName);
+  };
+
+  useEffect(() => {
+    if (!selectedMissionPdf) {
+      setActivePdfUrl(null);
+      return;
+    }
+
     const STANDARD_MISSIONS = new Set([
       'DOMINATION', 'CAPTURE & CONTROL', 'BREAKTHROUGH', 'STAKE A CLAIM',
       'TO THE DEATH!', 'LORDS OF BATTLE', 'ASSASSINATION', 'CONTEST OF CHAMPIONS',
@@ -2009,19 +2032,18 @@ export default function League({ lang, translations, user, profile, isAdmin: isG
       'CORNERED', 'DUEL OF WITS'
     ]);
 
-    setSelectedMissionPdf(missionName);
-    const upperName = missionName.trim().toUpperCase();
+    const upperName = selectedMissionPdf.trim().toUpperCase();
     const base = import.meta.env.BASE_URL.replace(/\/$/, '');
     let relativePath = `${base}/pdfs/placeholder.pdf`;
 
     if (STANDARD_MISSIONS.has(upperName)) {
-      relativePath = `${base}/pdfs/${upperName}.pdf`;
+      relativePath = `${base}/pdfs/${upperName}_${pdfLang.toUpperCase()}.pdf`;
     } else if (STANDARD_2VS2_MISSIONS.has(upperName)) {
-      relativePath = `${base}/pdfs/2vs2/${upperName}.pdf`;
+      relativePath = `${base}/pdfs/2vs2/${upperName}_${pdfLang.toUpperCase()}.pdf`;
     }
     
     setActivePdfUrl(relativePath);
-  };
+  }, [selectedMissionPdf, pdfLang]);
 
   // Helper para obtener nombres legibles de rondas eliminatorias
   const getRoundLabel = (rIdx, totalRounds) => {
@@ -4368,9 +4390,18 @@ export default function League({ lang, translations, user, profile, isAdmin: isG
 
       {/* --- MODAL D: VISOR DE PDF --- */}
       {selectedMissionPdf && activePdfUrl && (
-        <Modal isOpen={true} onClose={() => { setSelectedMissionPdf(null); setActivePdfUrl(null); }} title={lang === 'es' ? `Reglas de Escenario: ${selectedMissionPdf}` : `Scenario Rules: ${selectedMissionPdf}`}>
-          <div style={{ width: '100%', height: '70vh', borderRadius: 'var(--radius-sm)' }}>
-            <PdfCanvasViewer url={activePdfUrl} lang={lang} />
+        <Modal isOpen={true} size="large" onClose={() => { setSelectedMissionPdf(null); setActivePdfUrl(null); }} title={lang === 'es' ? `Reglas de Escenario: ${selectedMissionPdf}` : `Scenario Rules: ${selectedMissionPdf}`}>
+          <div className="pdf-modal-container">
+            <PdfCanvasViewer 
+              url={activePdfUrl} 
+              lang={pdfLang} 
+              onChangeLang={(newLang) => {
+                setPdfLang(newLang);
+                try {
+                  localStorage.setItem('lobelia_pdf_lang', newLang);
+                } catch (_) {}
+              }} 
+            />
           </div>
         </Modal>
       )}

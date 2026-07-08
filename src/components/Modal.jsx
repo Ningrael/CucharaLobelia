@@ -1,7 +1,7 @@
 // src/components/Modal.jsx
 import React, { useEffect } from 'react';
 
-export default function Modal({ isOpen, onClose, title, children }) {
+export default function Modal({ isOpen, onClose, title, size, children }) {
   // Manejar el cierre del modal al pulsar la tecla Escape
   useEffect(() => {
     if (!isOpen) return;
@@ -35,7 +35,7 @@ export default function Modal({ isOpen, onClose, title, children }) {
       
       {/* Contenido del modal (Híbrido: cajón inferior en móvil / tarjeta en PC) */}
       <div 
-        className="modal-content" 
+        className={`modal-content ${size === 'large' ? 'modal-large' : ''}`}
         role="dialog" 
         aria-modal="true" 
         aria-labelledby="modal-title"

@@ -1,7 +1,7 @@
 // src/components/PdfCanvasViewer.jsx
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 
-export default function PdfCanvasViewer({ url, lang }) {
+export default function PdfCanvasViewer({ url, lang, onChangeLang }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [zoom, setZoom] = useState(1);
@@ -155,30 +155,79 @@ export default function PdfCanvasViewer({ url, lang }) {
       {/* Zoom controls */}
       {!loading && !error && (
         <div style={{ 
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-          padding: '8px', borderBottom: '1px solid rgba(255,255,255,0.08)',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '8px 16px', borderBottom: '1px solid rgba(255,255,255,0.08)',
           position: 'sticky', top: 0, zIndex: 2,
           background: 'rgba(10, 17, 11, 0.95)', backdropFilter: 'blur(8px)'
         }}>
-          <button onClick={zoomOut} disabled={zoom <= 0.5} style={{
-            background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)',
-            color: zoom <= 0.5 ? 'rgba(255,255,255,0.2)' : 'var(--gold-primary)',
-            borderRadius: '6px', width: '36px', height: '36px', fontSize: '1.2rem',
-            cursor: zoom <= 0.5 ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
-          }}>−</button>
-          
-          <button onClick={zoomReset} style={{
-            background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
-            color: 'var(--text-secondary)', borderRadius: '6px', padding: '4px 12px',
-            fontSize: '0.8rem', cursor: 'pointer', minWidth: '60px'
-          }}>{Math.round(zoom * 100)}%</button>
-          
-          <button onClick={zoomIn} disabled={zoom >= 4} style={{
-            background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)',
-            color: zoom >= 4 ? 'rgba(255,255,255,0.2)' : 'var(--gold-primary)',
-            borderRadius: '6px', width: '36px', height: '36px', fontSize: '1.2rem',
-            cursor: zoom >= 4 ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
-          }}>+</button>
+          {/* Flag Left: ES */}
+          <button 
+            onClick={() => onChangeLang && onChangeLang('es')}
+            style={{
+              background: 'transparent',
+              border: lang === 'es' ? '2.5px solid var(--gold-primary)' : '2.5px solid transparent',
+              borderRadius: '4px',
+              padding: '2px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              opacity: lang === 'es' ? 1 : 0.35,
+              transition: 'opacity 0.2s, border-color 0.2s'
+            }}
+            title="Español"
+          >
+            <img 
+              src="https://flagcdn.com/w20/es.png" 
+              alt="Español" 
+              style={{ display: 'block', width: '22px', height: 'auto', borderRadius: '1.5px' }} 
+            />
+          </button>
+
+          {/* Zoom controls in center */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button onClick={zoomOut} disabled={zoom <= 0.5} style={{
+              background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)',
+              color: zoom <= 0.5 ? 'rgba(255,255,255,0.2)' : 'var(--gold-primary)',
+              borderRadius: '6px', width: '36px', height: '36px', fontSize: '1.2rem',
+              cursor: zoom <= 0.5 ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
+            }}>−</button>
+            
+            <button onClick={zoomReset} style={{
+              background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+              color: 'var(--text-secondary)', borderRadius: '6px', padding: '4px 12px',
+              fontSize: '0.8rem', cursor: 'pointer', minWidth: '60px'
+            }}>{Math.round(zoom * 100)}%</button>
+            
+            <button onClick={zoomIn} disabled={zoom >= 4} style={{
+              background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)',
+              color: zoom >= 4 ? 'rgba(255,255,255,0.2)' : 'var(--gold-primary)',
+              borderRadius: '6px', width: '36px', height: '36px', fontSize: '1.2rem',
+              cursor: zoom >= 4 ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
+            }}>+</button>
+          </div>
+
+          {/* Flag Right: EN */}
+          <button 
+            onClick={() => onChangeLang && onChangeLang('en')}
+            style={{
+              background: 'transparent',
+              border: lang === 'en' ? '2.5px solid var(--gold-primary)' : '2.5px solid transparent',
+              borderRadius: '4px',
+              padding: '2px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              opacity: lang === 'en' ? 1 : 0.35,
+              transition: 'opacity 0.2s, border-color 0.2s'
+            }}
+            title="English"
+          >
+            <img 
+              src="https://flagcdn.com/w20/gb.png" 
+              alt="English" 
+              style={{ display: 'block', width: '22px', height: 'auto', borderRadius: '1.5px' }} 
+            />
+          </button>
         </div>
       )}
 

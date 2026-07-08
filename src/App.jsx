@@ -77,6 +77,20 @@ export default function App() {
     } catch (_) {}
   }, [lang]);
 
+  // Estado del Modal de Selección de Idioma Inicial (solo para españoles)
+  const [isLangPromptOpen, setIsLangPromptOpen] = useState(() => {
+    try {
+      const stored = localStorage.getItem('lobelia_lang');
+      if (!stored) {
+        const navLang = navigator.language || navigator.userLanguage || '';
+        if (!navLang.startsWith('en')) {
+          return true;
+        }
+      }
+    } catch (_) {}
+    return false;
+  });
+
   // 3. Estado del Modal "Acerca de"
   const [isAboutOpen, setIsAboutOpen] = useState(false);
 
@@ -967,7 +981,7 @@ export default function App() {
       case 'calculator':
         return <Calculator lang={lang} translations={translations} />;
       case 'missions':
-        return <Missions lang={lang} translations={translations} />;
+        return <Missions lang={lang} translations={translations} setLang={setLang} />;
       case 'calendar':
         return <Calendar lang={lang} translations={translations} />;
       case 'league':
@@ -1914,6 +1928,44 @@ export default function App() {
               style={{ minWidth: '100px', background: 'rgba(255,255,255,0.05)', color: '#fff', border: 'var(--border-glass)' }}
             >
               {lang === 'es' ? 'Cancelar' : 'Cancel'}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Modal de Selección de Idioma Inicial (solo para españoles) */}
+      <Modal
+        isOpen={isLangPromptOpen}
+        onClose={() => setIsLangPromptOpen(false)}
+        title="Idioma / Language"
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center', textAlign: 'center', padding: '10px 0' }}>
+          <p style={{ fontSize: '0.92rem', color: 'var(--text-primary)', lineHeight: '1.4' }}>
+            Hemos detectado tu idioma en Español. ¿Deseas mantener la aplicación en Español o prefieres verla en Inglés?<br/><br/>
+            We detected your language is Spanish. Would you like to keep the app in Spanish or change it to English?
+          </p>
+          <div style={{ display: 'flex', gap: '10px', width: '100%', justifyContent: 'center' }}>
+            <button 
+              className="btn btn-primary" 
+              onClick={() => {
+                setLang('es');
+                try { localStorage.setItem('lobelia_lang', 'es'); } catch (_) {}
+                setIsLangPromptOpen(false);
+              }}
+              style={{ minWidth: '120px', fontWeight: 'bold' }}
+            >
+              Español
+            </button>
+            <button 
+              className="btn btn-secondary" 
+              onClick={() => {
+                setLang('en');
+                try { localStorage.setItem('lobelia_lang', 'en'); } catch (_) {}
+                setIsLangPromptOpen(false);
+              }}
+              style={{ minWidth: '120px', background: 'rgba(255,255,255,0.05)', color: '#fff', border: 'var(--border-glass)', fontWeight: 'bold' }}
+            >
+              English
             </button>
           </div>
         </div>

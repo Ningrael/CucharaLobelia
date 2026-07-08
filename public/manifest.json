@@ -1,0 +1,23 @@
+{
+  "name": "La Cuchara de Lobelia",
+  "short_name": "Lobelia",
+  "description": "Herramienta de consulta rápida y generador de PDFs de escenarios para Middle-earth Strategy Battle Game.",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#0a110b",
+  "theme_color": "#0a110b",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

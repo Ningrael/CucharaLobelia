@@ -1,5 +1,5 @@
 // src/views/Missions.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Modal from '../components/Modal';
 import PdfCanvasViewer from '../components/PdfCanvasViewer';
 
@@ -21,13 +21,30 @@ const MISSIONS_2VS2 = [
   'Duel of Wits'
 ];
 
-export default function Missions({ lang, translations }) {
+export default function Missions({ lang, translations, setLang }) {
   const t = translations[lang];
 
   const [mode, setMode] = useState('1vs1'); // '1vs1' o '2vs2'
   const [rounds, setRounds] = useState(3);
   const [selectedMission, setSelectedMission] = useState(null);
   const [activePdfUrl, setActivePdfUrl] = useState(null);
+  const [pdfLang, setPdfLang] = useState(() => {
+    try {
+      const stored = localStorage.getItem('lobelia_pdf_lang');
+      if (stored === 'es' || stored === 'en') return stored;
+    } catch (_) {}
+    return lang;
+  });
+
+  // Sincronizar pdfLang con lang si no se ha guardado una preferencia explícita
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('lobelia_pdf_lang');
+      if (!stored) {
+        setPdfLang(lang);
+      }
+    } catch (_) {}
+  }, [lang]);
   
   // Guardamos las rondas generadas en el estado: { missionName: roundNumber }
   const [roundBadges, setRoundBadges] = useState({});
@@ -91,15 +108,36 @@ export default function Missions({ lang, translations }) {
   // 3. Abrir visor de PDF
   const openPdf = (missionName) => {
     setSelectedMission(missionName);
+  };
+
+  useEffect(() => {
+    if (!selectedMission) {
+      setActivePdfUrl(null);
+      return;
+    }
     
-    // Ruta del PDF (portada estáticamente en public/pdfs)
+    const fanmadeMissions = [
+      'Domination', 'Capture & Control', 'Breakthrough', 'Stake a Claim',
+      'Destroy the Supplies', 'Retrieval', 'Seize the Prizes', 'Treasure Hoard',
+      'To the Death!', 'Lords of Battle', 'Assassination', 'Contest of Champions',
+      'Hold Ground', 'Heirloom of Ages Past', 'Sites of Power', 'Command the Battlefield',
+      'Reconnoitre', 'Storm the Camp', 'Divide & Conquer', 'Escort the Wounded',
+      'Fog of War', 'Clash by Moonlight', 'Lead from the Front', 'Convergence',
+      'No Escape', 'Total Conquest', 'Take & Hold', 'Clash of Champions', 'Cornered', 'Duel of Wits'
+    ];
+    
     const folder = mode === '1vs1' ? 'pdfs/' : 'pdfs/2vs2/';
-    const filename = `${missionName.toUpperCase()}.pdf`;
+    
+    let filename = `${selectedMission.toUpperCase()}.pdf`;
+    if (fanmadeMissions.includes(selectedMission)) {
+      filename = `${selectedMission.toUpperCase()}_${pdfLang.toUpperCase()}.pdf`;
+    }
+    
     const base = import.meta.env.BASE_URL.replace(/\/$/, '');
     const relativePath = `${base}/${folder}${filename}`;
     
     setActivePdfUrl(relativePath);
-  };
+  }, [selectedMission, pdfLang, mode]);
 
   // 4. Compartir Rondas (Mobile Native Share / Fallback Clipboard)
   const handleShare = async () => {
@@ -365,14 +403,23 @@ export default function Missions({ lang, translations }) {
         </div>
       )}
 
-      {/* Visor de PDF embebido mediante el componente Modal */}
       <Modal 
         isOpen={!!activePdfUrl} 
-        onClose={() => setActivePdfUrl(null)}
+        onClose={() => { setSelectedMission(null); setActivePdfUrl(null); }}
         title={selectedMission}
+        size="large"
       >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%', height: '65vh' }}>
-          <PdfCanvasViewer url={activePdfUrl} lang={lang} />
+        <div className="pdf-modal-container">
+          <PdfCanvasViewer 
+            url={activePdfUrl} 
+            lang={pdfLang} 
+            onChangeLang={(newLang) => {
+              setPdfLang(newLang);
+              try {
+                localStorage.setItem('lobelia_pdf_lang', newLang);
+              } catch (_) {}
+            }} 
+          />
           <div style={{ textAlign: 'center', fontSize: '0.8rem' }}>
             <a 
               href={activePdfUrl || '#'} 
