@@ -91,6 +91,31 @@ export default function App() {
     return false;
   });
 
+  // Estado del Prompt de Instalación PWA (Móvil / Escritorio)
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [showInstallBanner, setShowInstallBanner] = useState(false);
+
+  useEffect(() => {
+    const handleBeforeInstall = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setShowInstallBanner(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+  }, []);
+
+  const handleInstallPWA = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setShowInstallBanner(false);
+    }
+    setDeferredPrompt(null);
+  };
+
   // 3. Estado del Modal "Acerca de"
   const [isAboutOpen, setIsAboutOpen] = useState(false);
 
@@ -1970,6 +1995,53 @@ export default function App() {
           </div>
         </div>
       </Modal>
+
+      {/* Banner flotante de instalación PWA (estilo Senda) */}
+      {showInstallBanner && deferredPrompt && (
+        <div style={{
+          position: 'fixed',
+          bottom: '75px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: '92%',
+          maxWidth: '420px',
+          background: 'rgba(17, 33, 20, 0.96)',
+          backdropFilter: 'blur(12px)',
+          border: '1.5px solid #cba135',
+          borderRadius: '14px',
+          padding: '12px 16px',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
+          zIndex: 9999,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px'
+        }}>
+          <img src="/icon-192.png" alt="App Icon" style={{ width: '42px', height: '42px', borderRadius: '10px', flexShrink: 0 }} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: '0.88rem', fontWeight: 'bold', color: '#fff', fontFamily: 'var(--font-title)' }}>
+              {lang === 'es' ? '¿Instalar La Cuchara de Lobelia?' : 'Install La Cuchara de Lobelia?'}
+            </div>
+            <div style={{ fontSize: '0.75rem', color: '#bbb', marginTop: '2px' }}>
+              {lang === 'es' ? 'Añade la app a tu inicio para entrar directo sin navegador.' : 'Add app to home screen for direct access.'}
+            </div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flexShrink: 0 }}>
+            <button 
+              className="btn btn-primary" 
+              onClick={handleInstallPWA}
+              style={{ fontSize: '0.75rem', padding: '6px 12px', borderRadius: '8px' }}
+            >
+              {lang === 'es' ? 'Instalar' : 'Install'}
+            </button>
+            <button 
+              onClick={() => setShowInstallBanner(false)}
+              style={{ background: 'transparent', border: 'none', color: '#999', fontSize: '0.7rem', cursor: 'pointer' }}
+            >
+              {lang === 'es' ? 'Ahora no' : 'Not now'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Barra de Navegación inferior fija */}
       <Navbar 
