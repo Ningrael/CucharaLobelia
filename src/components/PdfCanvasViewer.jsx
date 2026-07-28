@@ -8,7 +8,22 @@ export default function PdfCanvasViewer({ url, lang, onChangeLang }) {
   const [pdfDoc, setPdfDoc] = useState(null);
   const containerRef = useRef(null);
   const scrollRef = useRef(null);
-  const pinchRef = useRef({ startDist: 0, startZoom: 1 });
+
+  const zoomRef = useRef(zoom);
+  useEffect(() => {
+    zoomRef.current = zoom;
+  }, [zoom]);
+
+  const touchStateRef = useRef({
+    isPinching: false,
+    startDist: 0,
+    startZoom: 1,
+    startFocalX: 0,
+    startFocalY: 0,
+    startOffsetX: 0,
+    startOffsetY: 0,
+    lastTap: 0
+  });
 
   // Load pdf.js and the document
   useEffect(() => {
@@ -52,103 +67,227 @@ export default function PdfCanvasViewer({ url, lang, onChangeLang }) {
     return () => { active = false; };
   }, [url, lang]);
 
-  // Render pages when pdfDoc or zoom changes
+  // Render pages ONCE when pdfDoc changes (crisp high-res rendering)
   useEffect(() => {
     if (!pdfDoc || !containerRef.current) return;
     let active = true;
 
     async function renderPages() {
+      if (!containerRef.current) return;
       containerRef.current.innerHTML = '';
       
+      const availableWidth = scrollRef.current ? (scrollRef.current.clientWidth || 360) : 360;
+      const containerWidth = Math.max(availableWidth - 16, 280);
+
       for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
         if (!active) return;
         const page = await pdfDoc.getPage(pageNum);
         
+        const viewportDefault = page.getViewport({ scale: 1.0 });
+        const baseWidth = containerWidth;
+        const baseHeight = (containerWidth / viewportDefault.width) * viewportDefault.height;
+        
+        // High resolution render scale for sharp text even when zoomed in 2.5x - 3x
+        const dpr = window.devicePixelRatio || 1;
+        const renderScale = Math.max(2.5, (containerWidth / viewportDefault.width) * 2.5 * dpr);
+        const viewport = page.getViewport({ scale: renderScale });
+
         const canvas = document.createElement('canvas');
+        canvas.dataset.baseWidth = baseWidth;
+        canvas.dataset.baseHeight = baseHeight;
+
         canvas.style.display = 'block';
         canvas.style.margin = '10px auto';
         canvas.style.boxShadow = '0 4px 16px rgba(0,0,0,0.6)';
         canvas.style.borderRadius = '6px';
-        canvas.style.maxWidth = '100%';
-        canvas.style.height = 'auto';
         canvas.style.border = '1px solid rgba(255, 255, 255, 0.05)';
+        canvas.style.transition = 'width 0.05s ease-out, height 0.05s ease-out';
         
-        containerRef.current.appendChild(canvas);
-        
-        const containerWidth = scrollRef.current ? scrollRef.current.clientWidth || 360 : 360;
-        const viewportDefault = page.getViewport({ scale: 1.0 });
-        
-        // Apply zoom: base scale fills container width, then multiply by zoom
-        const baseScale = containerWidth / viewportDefault.width;
-        const renderScale = baseScale * zoom * (window.devicePixelRatio || 1);
-        const displayScale = baseScale * zoom;
-        
-        const viewport = page.getViewport({ scale: renderScale > 2 ? renderScale : 2 });
-        
-        const context = canvas.getContext('2d');
+        // Set physical pixel dimensions for high DPI rendering
         canvas.width = viewport.width;
         canvas.height = viewport.height;
-        
-        // CSS size = display scale (without devicePixelRatio)
-        const displayViewport = page.getViewport({ scale: displayScale });
-        canvas.style.width = displayViewport.width + 'px';
-        canvas.style.height = displayViewport.height + 'px';
-        if (zoom > 1) {
-          canvas.style.maxWidth = 'none';
-        } else {
-          canvas.style.maxWidth = '100%';
-        }
-        
+
+        // Set CSS display size based on current zoom
+        const currentZoom = zoomRef.current;
+        canvas.style.width = `${baseWidth * currentZoom}px`;
+        canvas.style.height = `${baseHeight * currentZoom}px`;
+        canvas.style.maxWidth = currentZoom > 1 ? 'none' : '100%';
+
+        containerRef.current.appendChild(canvas);
+
+        const context = canvas.getContext('2d');
         await page.render({ canvasContext: context, viewport }).promise;
       }
     }
 
     renderPages();
     return () => { active = false; };
-  }, [pdfDoc, zoom]);
+  }, [pdfDoc]);
 
-  // Pinch-to-zoom touch handlers
+  // Adjust canvas CSS size smoothly whenever `zoom` state changes
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const canvases = containerRef.current.querySelectorAll('canvas');
+    canvases.forEach(canvas => {
+      const baseW = parseFloat(canvas.dataset.baseWidth || 320);
+      const baseH = parseFloat(canvas.dataset.baseHeight || 450);
+      canvas.style.width = `${baseW * zoom}px`;
+      canvas.style.height = `${baseH * zoom}px`;
+      canvas.style.maxWidth = zoom > 1 ? 'none' : '100%';
+    });
+  }, [zoom]);
+
+  // Helper to measure distance between two touch points
   const getTouchDist = (touches) => {
     const dx = touches[0].clientX - touches[1].clientX;
     const dy = touches[0].clientY - touches[1].clientY;
     return Math.sqrt(dx * dx + dy * dy);
   };
 
+  // Touch event listeners with focal point tracking
   const handleTouchStart = useCallback((e) => {
+    const scrollEl = scrollRef.current;
     if (e.touches.length === 2) {
       e.preventDefault();
-      pinchRef.current.startDist = getTouchDist(e.touches);
-      pinchRef.current.startZoom = zoom;
-    }
-  }, [zoom]);
+      const dist = getTouchDist(e.touches);
+      const rect = scrollEl ? scrollEl.getBoundingClientRect() : { left: 0, top: 0, width: 360, height: 600 };
+      const centerX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+      const centerY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+      const offsetX = centerX - rect.left;
+      const offsetY = centerY - rect.top;
 
-  const handleTouchMove = useCallback((e) => {
-    if (e.touches.length === 2) {
-      e.preventDefault();
-      const currentDist = getTouchDist(e.touches);
-      const scale = currentDist / pinchRef.current.startDist;
-      const newZoom = Math.min(Math.max(pinchRef.current.startZoom * scale, 0.5), 4);
-      setZoom(Math.round(newZoom * 100) / 100);
+      touchStateRef.current = {
+        isPinching: true,
+        startDist: dist,
+        startZoom: zoomRef.current,
+        startFocalX: scrollEl ? scrollEl.scrollLeft + offsetX : 0,
+        startFocalY: scrollEl ? scrollEl.scrollTop + offsetY : 0,
+        startOffsetX: offsetX,
+        startOffsetY: offsetY,
+        lastTap: 0
+      };
+    } else if (e.touches.length === 1) {
+      const now = Date.now();
+      const tapX = e.touches[0].clientX;
+      const tapY = e.touches[0].clientY;
+
+      if (now - touchStateRef.current.lastTap < 300) {
+        // Double tap on touched spot!
+        e.preventDefault();
+        const oldZoom = zoomRef.current;
+        const nextZoom = oldZoom > 1.2 ? 1 : 2;
+
+        if (scrollEl) {
+          const rect = scrollEl.getBoundingClientRect();
+          const offsetX = tapX - rect.left;
+          const offsetY = tapY - rect.top;
+          const focalX = scrollEl.scrollLeft + offsetX;
+          const focalY = scrollEl.scrollTop + offsetY;
+
+          setZoom(nextZoom);
+
+          requestAnimationFrame(() => {
+            const ratio = nextZoom / oldZoom;
+            scrollEl.scrollLeft = Math.max(0, focalX * ratio - offsetX);
+            scrollEl.scrollTop = Math.max(0, focalY * ratio - offsetY);
+          });
+        } else {
+          setZoom(nextZoom);
+        }
+      }
+      touchStateRef.current.lastTap = now;
     }
   }, []);
 
-  // Attach touch listeners with { passive: false } to allow preventDefault
+  const handleTouchMove = useCallback((e) => {
+    if (touchStateRef.current.isPinching && e.touches.length === 2) {
+      e.preventDefault();
+      const currentDist = getTouchDist(e.touches);
+      if (touchStateRef.current.startDist > 0) {
+        const scaleRatio = currentDist / touchStateRef.current.startDist;
+        let targetZoom = touchStateRef.current.startZoom * scaleRatio;
+        targetZoom = Math.min(Math.max(targetZoom, 0.6), 4.0);
+        
+        const scrollEl = scrollRef.current;
+        if (containerRef.current) {
+          const canvases = containerRef.current.querySelectorAll('canvas');
+          canvases.forEach(canvas => {
+            const baseW = parseFloat(canvas.dataset.baseWidth || 320);
+            const baseH = parseFloat(canvas.dataset.baseHeight || 450);
+            canvas.style.width = `${baseW * targetZoom}px`;
+            canvas.style.height = `${baseH * targetZoom}px`;
+            canvas.style.maxWidth = targetZoom > 1 ? 'none' : '100%';
+          });
+        }
+
+        if (scrollEl && touchStateRef.current.startZoom > 0) {
+          const ratio = targetZoom / touchStateRef.current.startZoom;
+          scrollEl.scrollLeft = Math.max(0, touchStateRef.current.startFocalX * ratio - touchStateRef.current.startOffsetX);
+          scrollEl.scrollTop = Math.max(0, touchStateRef.current.startFocalY * ratio - touchStateRef.current.startOffsetY);
+        }
+        
+        zoomRef.current = targetZoom;
+      }
+    }
+  }, []);
+
+  const handleTouchEnd = useCallback((e) => {
+    if (touchStateRef.current.isPinching) {
+      if (e.touches.length < 2) {
+        touchStateRef.current.isPinching = false;
+        const finalZoom = Math.round(zoomRef.current * 100) / 100;
+        setZoom(finalZoom);
+      }
+    }
+  }, []);
+
+  // Attach non-passive touch listeners
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
     
     el.addEventListener('touchstart', handleTouchStart, { passive: false });
     el.addEventListener('touchmove', handleTouchMove, { passive: false });
+    el.addEventListener('touchend', handleTouchEnd, { passive: false });
+    el.addEventListener('touchcancel', handleTouchEnd, { passive: false });
     
     return () => {
       el.removeEventListener('touchstart', handleTouchStart);
       el.removeEventListener('touchmove', handleTouchMove);
+      el.removeEventListener('touchend', handleTouchEnd);
+      el.removeEventListener('touchcancel', handleTouchEnd);
     };
-  }, [handleTouchStart, handleTouchMove]);
+  }, [handleTouchStart, handleTouchMove, handleTouchEnd]);
 
-  const zoomIn = () => setZoom(z => Math.min(z + 0.25, 4));
-  const zoomOut = () => setZoom(z => Math.max(z - 0.25, 0.5));
-  const zoomReset = () => setZoom(1);
+  // Button zoom helpers centered on current screen middle
+  const changeZoomWithCenterFocal = (getNextZoom) => {
+    const oldZoom = zoomRef.current;
+    const nextZoom = getNextZoom(oldZoom);
+    if (nextZoom === oldZoom) return;
+
+    const scrollEl = scrollRef.current;
+    if (scrollEl) {
+      const rect = scrollEl.getBoundingClientRect();
+      const offsetX = rect.width / 2;
+      const offsetY = rect.height / 2;
+      const focalX = scrollEl.scrollLeft + offsetX;
+      const focalY = scrollEl.scrollTop + offsetY;
+
+      setZoom(nextZoom);
+
+      requestAnimationFrame(() => {
+        const ratio = nextZoom / oldZoom;
+        scrollEl.scrollLeft = Math.max(0, focalX * ratio - offsetX);
+        scrollEl.scrollTop = Math.max(0, focalY * ratio - offsetY);
+      });
+    } else {
+      setZoom(nextZoom);
+    }
+  };
+
+  const zoomIn = () => changeZoomWithCenterFocal(z => Math.min(Math.round((z + 0.25) * 100) / 100, 4));
+  const zoomOut = () => changeZoomWithCenterFocal(z => Math.max(Math.round((z - 0.25) * 100) / 100, 0.5));
+  const zoomReset = () => changeZoomWithCenterFocal(() => 1);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%' }}>
@@ -234,7 +373,8 @@ export default function PdfCanvasViewer({ url, lang, onChangeLang }) {
       {/* Scrollable PDF area */}
       <div ref={scrollRef} style={{ 
         flex: 1, overflowY: 'auto', overflowX: zoom > 1 ? 'auto' : 'hidden',
-        WebkitOverflowScrolling: 'touch', touchAction: 'pan-x pan-y'
+        WebkitOverflowScrolling: 'touch', touchAction: 'pan-x pan-y',
+        padding: '8px 0'
       }}>
         {loading && (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, padding: '40px', color: 'var(--text-secondary)' }}>
@@ -263,7 +403,7 @@ export default function PdfCanvasViewer({ url, lang, onChangeLang }) {
           </div>
         )}
         
-        <div ref={containerRef} style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '8px' }} />
+        <div ref={containerRef} style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }} />
       </div>
     </div>
   );
