@@ -48,6 +48,9 @@ import Calculator from './views/Calculator';
 import Missions from './views/Missions';
 import Calendar from './views/Calendar';
 import League from './views/League';
+import Ranking from './views/Ranking';
+import Battles from './views/Battles';
+import PdfCanvasViewer from './components/PdfCanvasViewer';
 import logoImg from './assets/hero.png';
 
 // Importar Traducciones
@@ -58,6 +61,8 @@ const ADMIN_USERNAMES = ['matias', 'admin'];
 export default function App() {
   // 1. Estado de Navegación ('home', 'missions', 'calculator', 'calendar', 'league')
   const [currentView, setView] = useState('home');
+  const [challengeTargetUser, setChallengeTargetUser] = useState(null);
+  const [battlePdfUrl, setBattlePdfUrl] = useState(null);
 
   // 2. Estado de Idioma (se detecta del navegador o localStorage, por defecto 'es')
   const [lang, setLang] = useState(() => {
@@ -1177,6 +1182,29 @@ export default function App() {
         return <Missions lang={lang} translations={translations} setLang={setLang} />;
       case 'calendar':
         return <Calendar lang={lang} translations={translations} />;
+      case 'ranking':
+        return (
+          <Ranking
+            user={user}
+            profile={profile}
+            lang={lang}
+            onStartChallenge={(targetUser) => {
+              setChallengeTargetUser(targetUser);
+              setView('battles');
+            }}
+          />
+        );
+      case 'battles':
+        return (
+          <Battles
+            user={user}
+            profile={profile}
+            lang={lang}
+            initialTargetUser={challengeTargetUser}
+            clearTargetUser={() => setChallengeTargetUser(null)}
+            onOpenPdf={(pdfPath) => setBattlePdfUrl(pdfPath)}
+          />
+        );
       case 'league':
         return (
           <League 
@@ -2378,6 +2406,19 @@ export default function App() {
             </button>
           </div>
         </div>
+      )}
+
+      {/* Modal PDF Misión de Batalla */}
+      {battlePdfUrl && (
+        <Modal
+          isOpen={!!battlePdfUrl}
+          onClose={() => setBattlePdfUrl(null)}
+          title={lang === 'es' ? '📄 Misión de Batalla' : '📄 Battle Mission PDF'}
+        >
+          <div style={{ minHeight: '400px' }}>
+            <PdfCanvasViewer pdfUrl={battlePdfUrl} />
+          </div>
+        </Modal>
       )}
 
       {/* Barra de Navegación inferior fija */}
