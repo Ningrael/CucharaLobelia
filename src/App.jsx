@@ -359,107 +359,113 @@ export default function App() {
   // Escucha del estado de autenticación
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setUser(currentUser);
-      if (currentUser) {
-        const docRef = doc(db, 'players', currentUser.uid);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          const profileData = docSnap.data();
-          
-          // Verify ban/block status
-          const isBlocked = profileData.status === 'blocked' || profileData.status === 'deleted';
-          const isSuspended = profileData.status === 'suspended' && profileData.banUntil && new Date(profileData.banUntil) > new Date();
-          
-          if (isBlocked || isSuspended) {
-            const reason = profileData.banReason || (lang === 'es' ? 'No especificado' : 'Not specified');
-            let banMessage = '';
-            if (isBlocked) {
-              banMessage = lang === 'es'
-                ? `Tu cuenta ha sido bloqueada permanentemente. Motivo: ${reason}`
-                : `Your account has been permanently blocked. Reason: ${reason}`;
-            } else {
-              banMessage = lang === 'es'
-                ? `Tu cuenta ha sido suspendida hasta el ${profileData.banUntil}. Motivo: ${reason}`
-                : `Your account has been suspended until ${profileData.banUntil}. Reason: ${reason}`;
-            }
-            
-            setUser(null);
-            setProfile(null);
-            setIsAdmin(false);
-            await signOut(auth);
-            showAlert(banMessage);
-            setAuthLoading(false);
-            return;
+      try {
+        setUser(currentUser);
+        if (currentUser) {
+          const docRef = doc(db, 'players', currentUser.uid);
+          let docSnap = null;
+          try {
+            docSnap = await getDoc(docRef);
+          } catch (getErr) {
+            console.warn("Could not fetch player profile doc:", getErr.message);
           }
 
-          setProfile(profileData);
-          const isUserSuperAdmin = profileData.username?.toLowerCase() === 'matias' || profileData.isSuperAdmin === true;
-          const isUserAdmin = ADMIN_USERNAMES.includes(profileData.username?.toLowerCase()) || profileData.isAdmin === true || isUserSuperAdmin;
-          setIsAdmin(isUserAdmin);
-
-          // Auto-fix invalid profile fields for Firestore schema compliance
-          if (
-            profileData.vpScored === null || profileData.vpScored === undefined || profileData.vpScored < 0 ||
-            profileData.vpConceded === null || profileData.vpConceded === undefined || profileData.vpConceded < 0 ||
-            profileData.leadersKilled === null || profileData.leadersKilled === undefined || profileData.leadersKilled < 0 ||
-            profileData.leadersLost === null || profileData.leadersLost === undefined || profileData.leadersLost < 0 ||
-            profileData.points === undefined || profileData.points === null || profileData.points < 0 ||
-            profileData.matchesPlayed === undefined || profileData.matchesPlayed === null || profileData.matchesPlayed < 0 ||
-            profileData.wins === undefined || profileData.wins === null || profileData.wins < 0 ||
-            profileData.draws === undefined || profileData.draws === null || profileData.draws < 0 ||
-            profileData.losses === undefined || profileData.losses === null || profileData.losses < 0 ||
-            profileData.isAdmin === undefined || profileData.isAdmin === null ||
-            profileData.isSuperAdmin === undefined || profileData.isSuperAdmin === null ||
-            (profileData.username?.toLowerCase() === 'matias' && (profileData.isAdmin !== true || profileData.isSuperAdmin !== true))
-          ) {
-            console.log("Auto-fixing invalid profile fields for Firestore schema compliance...");
-            const fixedFields = {};
-            if (profileData.points === undefined || profileData.points === null || profileData.points < 0) fixedFields.points = 0;
-            if (profileData.matchesPlayed === undefined || profileData.matchesPlayed === null || profileData.matchesPlayed < 0) fixedFields.matchesPlayed = 0;
-            if (profileData.wins === undefined || profileData.wins === null || profileData.wins < 0) fixedFields.wins = 0;
-            if (profileData.draws === undefined || profileData.draws === null || profileData.draws < 0) fixedFields.draws = 0;
-            if (profileData.losses === undefined || profileData.losses === null || profileData.losses < 0) fixedFields.losses = 0;
-            if (profileData.vpScored === null || profileData.vpScored === undefined || profileData.vpScored < 0) fixedFields.vpScored = 0;
-            if (profileData.vpConceded === null || profileData.vpConceded === undefined || profileData.vpConceded < 0) fixedFields.vpConceded = 0;
-            if (profileData.leadersKilled === null || profileData.leadersKilled === undefined || profileData.leadersKilled < 0) fixedFields.leadersKilled = 0;
-            if (profileData.leadersLost === null || profileData.leadersLost === undefined || profileData.leadersLost < 0) fixedFields.leadersLost = 0;
-            if (profileData.isAdmin === undefined || profileData.isAdmin === null) fixedFields.isAdmin = isUserAdmin;
-            if (profileData.isSuperAdmin === undefined || profileData.isSuperAdmin === null) fixedFields.isSuperAdmin = isUserSuperAdmin;
+          if (docSnap && docSnap.exists()) {
+            const profileData = docSnap.data();
             
-            // Explicitly force Matias's fields
-            if (profileData.username?.toLowerCase() === 'matias') {
-              fixedFields.isAdmin = true;
-              fixedFields.isSuperAdmin = true;
-            }
-
-            try {
-              await updateDoc(docRef, fixedFields);
-              console.log("Profile fields auto-fixed successfully!");
-              const freshSnap = await getDoc(docRef);
-              if (freshSnap.exists()) {
-                setProfile(freshSnap.data());
+            // Verify ban/block status
+            const isBlocked = profileData.status === 'blocked' || profileData.status === 'deleted';
+            const isSuspended = profileData.status === 'suspended' && profileData.banUntil && new Date(profileData.banUntil) > new Date();
+            
+            if (isBlocked || isSuspended) {
+              const reason = profileData.banReason || (lang === 'es' ? 'No especificado' : 'Not specified');
+              let banMessage = '';
+              if (isBlocked) {
+                banMessage = lang === 'es'
+                  ? `Tu cuenta ha sido bloqueada permanentemente. Motivo: ${reason}`
+                  : `Your account has been permanently blocked. Reason: ${reason}`;
+              } else {
+                banMessage = lang === 'es'
+                  ? `Tu cuenta ha sido suspendida hasta el ${profileData.banUntil}. Motivo: ${reason}`
+                  : `Your account has been suspended until ${profileData.banUntil}. Reason: ${reason}`;
               }
-            } catch (err) {
-              console.warn("Failed to auto-fix profile fields:", err.message);
+              
+              setUser(null);
+              setProfile(null);
+              setIsAdmin(false);
+              await signOut(auth);
+              showAlert(banMessage);
+              return;
             }
-          }
-        } else {
-          // Check if user came from Google sign-in (no profile yet → let google_complete form handle it)
-          const isGoogleProvider = currentUser.providerData?.some(p => p.providerId === 'google.com');
-          if (isGoogleProvider) {
-            // Don't auto-create profile for Google users — they need to complete the form first
-            setProfile(null);
-            setIsAdmin(false);
+
+            setProfile(profileData);
+            const isUserSuperAdmin = profileData.username?.toLowerCase() === 'matias' || profileData.isSuperAdmin === true;
+            const isUserAdmin = ADMIN_USERNAMES.includes(profileData.username?.toLowerCase()) || profileData.isAdmin === true || isUserSuperAdmin;
+            setIsAdmin(isUserAdmin);
+
+            // Auto-fix invalid profile fields for Firestore schema compliance
+            if (
+              profileData.vpScored === null || profileData.vpScored === undefined || profileData.vpScored < 0 ||
+              profileData.vpConceded === null || profileData.vpConceded === undefined || profileData.vpConceded < 0 ||
+              profileData.leadersKilled === null || profileData.leadersKilled === undefined || profileData.leadersKilled < 0 ||
+              profileData.leadersLost === null || profileData.leadersLost === undefined || profileData.leadersLost < 0 ||
+              profileData.points === undefined || profileData.points === null || profileData.points < 0 ||
+              profileData.matchesPlayed === undefined || profileData.matchesPlayed === null || profileData.matchesPlayed < 0 ||
+              profileData.wins === undefined || profileData.wins === null || profileData.wins < 0 ||
+              profileData.draws === undefined || profileData.draws === null || profileData.draws < 0 ||
+              profileData.losses === undefined || profileData.losses === null || profileData.losses < 0 ||
+              profileData.isAdmin === undefined || profileData.isAdmin === null ||
+              profileData.isSuperAdmin === undefined || profileData.isSuperAdmin === null ||
+              (profileData.username?.toLowerCase() === 'matias' && (profileData.isAdmin !== true || profileData.isSuperAdmin !== true))
+            ) {
+              console.log("Auto-fixing invalid profile fields for Firestore schema compliance...");
+              const fixedFields = {};
+              if (profileData.points === undefined || profileData.points === null || profileData.points < 0) fixedFields.points = 0;
+              if (profileData.matchesPlayed === undefined || profileData.matchesPlayed === null || profileData.matchesPlayed < 0) fixedFields.matchesPlayed = 0;
+              if (profileData.wins === undefined || profileData.wins === null || profileData.wins < 0) fixedFields.wins = 0;
+              if (profileData.draws === undefined || profileData.draws === null || profileData.draws < 0) fixedFields.draws = 0;
+              if (profileData.losses === undefined || profileData.losses === null || profileData.losses < 0) fixedFields.losses = 0;
+              if (profileData.vpScored === null || profileData.vpScored === undefined || profileData.vpScored < 0) fixedFields.vpScored = 0;
+              if (profileData.vpConceded === null || profileData.vpConceded === undefined || profileData.vpConceded < 0) fixedFields.vpConceded = 0;
+              if (profileData.leadersKilled === null || profileData.leadersKilled === undefined || profileData.leadersKilled < 0) fixedFields.leadersKilled = 0;
+              if (profileData.leadersLost === null || profileData.leadersLost === undefined || profileData.leadersLost < 0) fixedFields.leadersLost = 0;
+              if (profileData.isAdmin === undefined || profileData.isAdmin === null) fixedFields.isAdmin = isUserAdmin;
+              if (profileData.isSuperAdmin === undefined || profileData.isSuperAdmin === null) fixedFields.isSuperAdmin = isUserSuperAdmin;
+              
+              // Explicitly force Matias's fields
+              if (profileData.username?.toLowerCase() === 'matias') {
+                fixedFields.isAdmin = true;
+                fixedFields.isSuperAdmin = true;
+              }
+
+              try {
+                await updateDoc(docRef, fixedFields);
+                console.log("Profile fields auto-fixed successfully!");
+                const freshSnap = await getDoc(docRef);
+                if (freshSnap && freshSnap.exists()) {
+                  setProfile(freshSnap.data());
+                }
+              } catch (err) {
+                console.warn("Failed to auto-fix profile fields:", err.message);
+              }
+            }
           } else {
-            const baseName = currentUser.email.split('@')[0];
+            // New user without a profile doc in Firestore yet
+            const isGoogleProvider = currentUser.providerData?.some(p => p.providerId === 'google.com');
+            const baseName = currentUser.displayName || currentUser.email?.split('@')[0] || 'Jugador';
+            const cleanUsername = (currentUser.email?.split('@')[0] || baseName).replace(/[^a-zA-Z0-9_]/g, '_');
+            const isMatias = cleanUsername.toLowerCase() === 'matias';
+
             const defaultProfile = {
-              username: baseName,
-              name: baseName,
+              username: cleanUsername,
+              name: currentUser.displayName || baseName,
+              email: currentUser.email,
               phone: '',
               faction: 'Desconocida',
               alignment: 'luz',
               status: 'pending',
-              isAdmin: false,
+              isAdmin: isMatias || ADMIN_USERNAMES.includes(cleanUsername.toLowerCase()),
+              isSuperAdmin: isMatias,
               points: 0,
               matchesPlayed: 0,
               wins: 0,
@@ -470,16 +476,32 @@ export default function App() {
               leadersKilled: 0,
               leadersLost: 0
             };
-            await setDoc(docRef, defaultProfile);
-            setProfile(defaultProfile);
-            setIsAdmin(ADMIN_USERNAMES.includes(baseName.toLowerCase()));
+
+            try {
+              await setDoc(docRef, defaultProfile);
+              setProfile(defaultProfile);
+              setIsAdmin(defaultProfile.isAdmin);
+            } catch (setErr) {
+              console.warn("Could not create initial player profile:", setErr.message);
+              setProfile(defaultProfile);
+              setIsAdmin(defaultProfile.isAdmin);
+            }
+
+            if (isGoogleProvider) {
+              setGoogleUser(currentUser);
+              setAuthMode('google_complete');
+              setIsAuthModalOpen(true);
+            }
           }
+        } else {
+          setProfile(null);
+          setIsAdmin(false);
         }
-      } else {
-        setProfile(null);
-        setIsAdmin(false);
+      } catch (globalAuthErr) {
+        console.error("Error in onAuthStateChanged:", globalAuthErr);
+      } finally {
+        setAuthLoading(false);
       }
-      setAuthLoading(false);
     });
 
     return () => unsubscribe();
