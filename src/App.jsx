@@ -189,32 +189,7 @@ export default function App() {
       await addDoc(collection(db, 'bug_reports'), reportData);
 
       // Send email notification
-      const senderName = profile?.name || profile?.username || (bugReportEmail.trim() || 'Anónimo');
-      await addDoc(collection(db, 'mail'), {
-        to: 'sosamatias@gmail.com',
-        message: {
-          subject: `🐛 Bug Report - La Cuchara de Lobelia`,
-          text: `Nuevo reporte de bug de ${senderName}\n\nDescripción:\n"${bugReportText.trim()}"\n\nContacto: ${bugReportEmail.trim() || 'No proporcionado'}\n\nInfo técnica:\n- Vista: ${techInfo.currentView}\n- Navegador: ${techInfo.userAgent}\n- Pantalla: ${techInfo.screenSize}\n- Viewport: ${techInfo.viewport}\n- Plataforma: ${techInfo.platform}\n- Versión: ${techInfo.appVersion}\n- Fecha: ${techInfo.timestamp}`,
-          html: `<div style="font-family: sans-serif; padding: 20px; background-color: #112114; color: #fff; border-radius: 8px; border: 1px solid #e74c3c;">
-                   <h2 style="color: #e74c3c; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; margin-top: 0;">🐛 Bug Report - La Cuchara de Lobelia</h2>
-                   <p><strong>Reportado por:</strong> ${senderName}</p>
-                   ${bugReportEmail.trim() ? `<p><strong>Email de contacto:</strong> ${bugReportEmail.trim()}</p>` : ''}
-                   <blockquote style="background: rgba(0,0,0,0.3); padding: 12px; border-left: 4px solid #e74c3c; color: #ddd; margin: 15px 0; border-radius: 4px;">
-                     ${bugReportText.trim().replace(/\n/g, '<br/>')}
-                   </blockquote>
-                   ${screenshotData ? `<p><strong>📎 Captura de pantalla adjunta</strong> (ver en Firestore)</p>` : ''}
-                   <div style="background: rgba(0,0,0,0.3); padding: 12px; border-radius: 4px; margin-top: 15px; font-size: 0.82rem; color: #aaa;">
-                     <strong>Info técnica:</strong><br/>
-                     Vista: ${techInfo.currentView}<br/>
-                     Pantalla: ${techInfo.screenSize} | Viewport: ${techInfo.viewport}<br/>
-                     Plataforma: ${techInfo.platform}<br/>
-                     Versión: ${techInfo.appVersion}<br/>
-                     Fecha: ${techInfo.timestamp}<br/>
-                     <span style="font-size: 0.75rem; word-break: break-all;">UA: ${techInfo.userAgent}</span>
-                   </div>
-                 </div>`
-        }
-      });
+
 
       // Save rate limit timestamp
       try { localStorage.setItem('lobelia_last_bug_report', Date.now().toString()); } catch (_) {}
