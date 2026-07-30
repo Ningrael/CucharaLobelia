@@ -188,9 +188,55 @@ export default function App() {
       // Save to Firestore bug_reports collection
       await addDoc(collection(db, 'bug_reports'), reportData);
 
-      // Send email notification
+      // Si el usuario está registrado, enviar un Mensaje Privado (MP) interno al admin
+      if (user) {
+        const adminUid = 'xXhjkWRjh0hVBjcYr2qAAFRvGL82';
+        const senderUid = user.uid;
+        const recipientUid = adminUid;
+        const chatId = senderUid < recipientUid ? `${senderUid}_${recipientUid}` : `${recipientUid}_${senderUid}`;
+        const chatDocRef = doc(db, 'chats', chatId);
 
+        try {
+          const chatDoc = await getDoc(chatDocRef);
+          const senderNick = profile?.name || user.email?.split('@')[0] || 'Jugador';
+          const senderUsername = profile?.username || user.email?.split('@')[0] || 'jugador';
 
+          if (!chatDoc.exists()) {
+            await setDoc(chatDocRef, {
+              participants: [senderUid, recipientUid],
+              lastMessage: `🐛 [REPORTE DE BUG]: ${bugReportText.trim()}`,
+              lastUpdated: new Date(),
+              unread: {
+                [senderUid]: false,
+                [recipientUid]: true
+              },
+              nicks: {
+                [senderUid]: senderNick,
+                [recipientUid]: 'Matias'
+              },
+              usernames: {
+                [senderUid]: senderUsername,
+                [recipientUid]: 'matias'
+              }
+            });
+          } else {
+            await updateDoc(chatDocRef, {
+              lastMessage: `🐛 [REPORTE DE BUG]: ${bugReportText.trim()}`,
+              lastUpdated: new Date(),
+              [`unread.${recipientUid}`]: true
+            });
+          }
+
+          const messagesRef = collection(db, 'chats', chatId, 'messages');
+          await addDoc(messagesRef, {
+            senderId: senderUid,
+            text: `🐛 [REPORTE DE BUG]\n"${bugReportText.trim()}"\n\n📌 Vista: ${techInfo.currentView}\n🖥️ Navegador / Disp: ${techInfo.platform}\n📱 Pantalla: ${techInfo.screenSize}\n⚙️ App: v${techInfo.appVersion}`,
+            timestamp: new Date()
+          });
+        } catch (pmErr) {
+          console.warn('Could not send in-app PM for bug report:', pmErr.message);
+        }
+      }
       // Save rate limit timestamp
       try { localStorage.setItem('lobelia_last_bug_report', Date.now().toString()); } catch (_) {}
 

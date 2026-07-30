@@ -1,0 +1,154 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && (
+             get(/databases/$(database)/documents/players/$(request.auth.uid)).data.isAdmin == true ||
+             get(/databases/$(database)/documents/players/$(request.auth.uid)).data.isSuperAdmin == true ||
+             request.auth.uid == 'xXhjkWRjh0hVBjcYr2qAAFRvGL82'
+      );
+    }
+    
+    function isValidPlayerData(data) {
+      return data.keys().hasAll(['name', 'email', 'points', 'matchesPlayed', 'wins', 'draws', 'losses', 'vpScored', 'vpConceded', 'leadersKilled', 'leadersLost', 'isAdmin'])
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 50
+        && data.email is string && data.email.matches('.*@.*')
+        && data.points is int && data.points >= 0
+        && data.matchesPlayed is int && data.matchesPlayed >= 0
+        && data.wins is int && data.wins >= 0
+        && data.draws is int && data.draws >= 0
+        && data.losses is int && data.losses >= 0
+        && data.vpScored is int && data.vpScored >= 0
+        && data.vpConceded is int && data.vpConceded >= 0
+        && data.leadersKilled is int && data.leadersKilled >= 0
+        && data.leadersLost is int && data.leadersLost >= 0
+        && data.isAdmin is bool
+        && (!('isSuperAdmin' in data) || data.isSuperAdmin is bool)
+        && (!('status' in data) || data.status is string)
+        && (!('banUntil' in data) || data.banUntil is string)
+        && (!('banReason' in data) || data.banReason is string)
+        && (!('username' in data) || data.username is string);
+    }
+    
+    function isValidMatchData(data) {
+      return data.keys().hasAll(['player1', 'player2', 'date', 'result', 'vpScored', 'vpConceded', 'killedLeader', 'lostLeader', 'verified'])
+        && data.player1 is string && data.player1.size() > 0
+        && data.player2 is string && data.player2.size() > 0
+        && data.player1 != data.player2
+        && data.date is string && data.date.size() == 10
+        && data.result is string && data.result in ['win', 'loss', 'draw']
+        && data.vpScored is int && data.vpScored >= 0 && data.vpScored <= 20
+        && data.vpConceded is int && data.vpConceded >= 0 && data.vpConceded <= 20
+        && data.killedLeader is bool
+        && data.lostLeader is bool
+        && data.verified is bool;
+    }
+
+    match /players/{userId} {
+      allow read: if true;
+      
+      allow create: if isAuthenticated() 
+        && request.auth.uid == userId
+        && isValidPlayerData(request.resource.data)
+        && request.resource.data.points == 0
+        && request.resource.data.matchesPlayed == 0
+        && request.resource.data.wins == 0
+        && request.resource.data.draws == 0
+        && request.resource.data.losses == 0
+        && request.resource.data.vpScored == 0
+        && request.resource.data.vpConceded == 0
+        && request.resource.data.leadersKilled == 0
+        && request.resource.data.leadersLost == 0
+        && (
+          (request.auth.uid == 'xXhjkWRjh0hVBjcYr2qAAFRvGL82'
+            && request.resource.data.isAdmin == true 
+            && request.resource.data.isSuperAdmin == true)
+          ||
+          (request.auth.uid != 'xXhjkWRjh0hVBjcYr2qAAFRvGL82'
+            && request.resource.data.isAdmin == false 
+            && (!('isSuperAdmin' in request.resource.data) || request.resource.data.isSuperAdmin == false))
+        );
+      
+      allow update: if isAuthenticated() && (
+        // Case 1: Self-update de perfil (no stats sensibles)
+        (request.auth.uid == userId 
+         && !request.resource.data.diff(resource.data).affectedKeys()
+            .hasAny(['points', 'isAdmin', 'isSuperAdmin', 'wins', 'losses', 'draws', 'matchesPlayed', 
+                     'vpScored', 'vpConceded', 'leadersKilled', 'leadersLost', 'email', 'status', 'banUntil', 'banReason', 'username'])
+         && isValidPlayerData(request.resource.data))
+        // Case 2: Admin puede editar otras cuentas (no al SuperAdmin)
+        || (isAdmin() && userId != 'xXhjkWRjh0hVBjcYr2qAAFRvGL82')
+        // Case 3: SuperAdmin edita su propia cuenta
+        || (request.auth.uid == 'xXhjkWRjh0hVBjcYr2qAAFRvGL82' && userId == 'xXhjkWRjh0hVBjcYr2qAAFRvGL82')
+        // Case 4: Usuario inscribiéndose/saliendo de una liga (solo cambia 'leagues')
+        || (request.auth.uid == userId
+         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['leagues']))
+      );
+      
+      allow delete: if (isAdmin() && userId != 'xXhjkWRjh0hVBjcYr2qAAFRvGL82')
+        || (isAuthenticated() && request.auth.uid == userId);
+    }
+
+    match /matches/{matchId} {
+      allow read: if true;
+      
+      allow create: if isAuthenticated()
+        && isValidMatchData(request.resource.data)
+        && request.resource.data.player1 == request.auth.uid
+        && request.resource.data.verified == false
+        && request.resource.data.timestamp != null
+        && exists(/databases/$(database)/documents/players/$(request.resource.data.player2));
+      
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+    
+    match /chats/{chatId} {
+      allow read: if isAuthenticated() && 
+        (resource == null || request.auth.uid in resource.data.participants);
+      allow create: if isAuthenticated() && 
+        (request.auth.uid in request.resource.data.participants);
+      allow update: if isAuthenticated() && 
+        (request.auth.uid in resource.data.participants);
+    }
+    
+    match /chats/{chatId}/messages/{messageId} {
+      allow read: if isAuthenticated() && 
+        (request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants);
+      allow create: if isAuthenticated() && 
+        (request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants)
+        && request.resource.data.senderId == request.auth.uid;
+    }
+    
+    match /mail/{mailId} {
+      allow create: if isAuthenticated()
+        && request.resource.data.keys().hasAll(['to', 'recipientUid', 'message'])
+        && request.resource.data.to is string
+        && request.resource.data.recipientUid is string
+        && request.resource.data.message is map
+        && request.resource.data.message.keys().hasAll(['subject', 'text', 'html'])
+        && request.resource.data.to == get(/databases/$(database)/documents/players/$(request.resource.data.recipientUid)).data.email;
+      allow read, update, delete: if false;
+    }
+
+    // Bug Reports - cualquier usuario puede crear reportes
+    match /bug_reports/{reportId} {
+      allow create: if true;
+      allow read: if isAdmin();
+      allow update, delete: if isAdmin();
+    }
+
+    match /visitors/{visitorId} {
+      allow read, create: if true;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
