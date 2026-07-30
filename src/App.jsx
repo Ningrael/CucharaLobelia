@@ -604,7 +604,7 @@ export default function App() {
     setIsSendingMessage(true);
 
     try {
-      const recipientUid = activeChat.participants.find(uid => uid !== user.uid);
+      const recipientUid = activeChat.participants.find(uid => uid !== user.uid) || user.uid;
 
       const messagesRef = collection(db, "chats", activeChat.id, "messages");
       await addDoc(messagesRef, {
@@ -1916,7 +1916,7 @@ export default function App() {
           setActiveChat(null);
         }}
         title={activeChat 
-          ? (lang === 'es' ? `Chat con ${activeChat.nicks[activeChat.participants.find(uid => uid !== user?.uid)]}` : `Chat with ${activeChat.nicks[activeChat.participants.find(uid => uid !== user?.uid)]}`) 
+          ? (lang === 'es' ? `Chat con ${activeChat.nicks?.[activeChat.participants.find(uid => uid !== user?.uid) || user?.uid] || 'Admin'}` : `Chat with ${activeChat.nicks?.[activeChat.participants.find(uid => uid !== user?.uid) || user?.uid] || 'Admin'}`) 
           : (lang === 'es' ? "Mensajes Privados" : "Private Messages")}
       >
         {!activeChat ? (
@@ -1929,8 +1929,8 @@ export default function App() {
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {chats.map(chat => {
-                  const recipientId = chat.participants.find(uid => uid !== user?.uid);
-                  const recipientNick = chat.nicks?.[recipientId] || recipientId;
+                  const recipientId = chat.participants.find(uid => uid !== user?.uid) || user?.uid;
+                  const recipientNick = chat.nicks?.[recipientId] || recipientId || 'Admin';
                   const recipientUser = chat.usernames?.[recipientId] || '';
                   const hasUnread = chat.unread?.[user?.uid] === true;
                   const lastMsgTime = chat.lastUpdated?.toMillis 
