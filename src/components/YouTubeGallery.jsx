@@ -6,7 +6,7 @@ export default function YouTubeGallery({ lang }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/videos.txt')
+    fetch(`${import.meta.env.BASE_URL}videos.txt`)
       .then((res) => {
         if (!res.ok) throw new Error('Failed to load videos.txt');
         return res.text();
