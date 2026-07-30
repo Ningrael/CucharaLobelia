@@ -116,6 +116,131 @@ export default function App() {
     setDeferredPrompt(null);
   };
 
+  // Estados del Bug Report
+  const [isBugReportOpen, setIsBugReportOpen] = useState(false);
+  const [bugReportText, setBugReportText] = useState('');
+  const [bugReportScreenshot, setBugReportScreenshot] = useState(null);
+  const [bugReportEmail, setBugReportEmail] = useState('');
+  const [isSubmittingBug, setIsSubmittingBug] = useState(false);
+
+  const BUG_RATE_LIMIT_MS = 5 * 60 * 1000; // 5 minutos
+
+  const handleSubmitBugReport = async (e) => {
+    e.preventDefault();
+    if (!bugReportText.trim()) {
+      showAlert(lang === 'es' ? 'Por favor, describe el problema.' : 'Please describe the issue.');
+      return;
+    }
+
+    // Rate limit check
+    try {
+      const lastReport = localStorage.getItem('lobelia_last_bug_report');
+      if (lastReport) {
+        const elapsed = Date.now() - parseInt(lastReport);
+        if (elapsed < BUG_RATE_LIMIT_MS) {
+          const remaining = Math.ceil((BUG_RATE_LIMIT_MS - elapsed) / 60000);
+          showAlert(
+            lang === 'es'
+              ? `Debes esperar ${remaining} minuto(s) antes de enviar otro reporte.`
+              : `Please wait ${remaining} minute(s) before submitting another report.`
+          );
+          return;
+        }
+      }
+    } catch (_) {}
+
+    setIsSubmittingBug(true);
+    try {
+      // Gather tech info
+      const techInfo = {
+        userAgent: navigator.userAgent,
+        platform: navigator.platform || 'unknown',
+        language: navigator.language,
+        screenSize: `${window.screen.width}x${window.screen.height}`,
+        viewport: `${window.innerWidth}x${window.innerHeight}`,
+        currentView: currentView,
+        appVersion: '2.20.0',
+        timestamp: new Date().toISOString(),
+        url: window.location.href
+      };
+
+      // Convert screenshot to base64 data URL if provided
+      let screenshotData = null;
+      if (bugReportScreenshot) {
+        screenshotData = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result);
+          reader.readAsDataURL(bugReportScreenshot);
+        });
+      }
+
+      const reportData = {
+        description: bugReportText.trim(),
+        screenshot: screenshotData,
+        contactEmail: bugReportEmail.trim() || null,
+        reporterUid: user?.uid || null,
+        reporterName: profile?.name || profile?.username || (bugReportEmail.trim() || 'Anónimo'),
+        techInfo: techInfo,
+        status: 'new',
+        createdAt: new Date()
+      };
+
+      // Save to Firestore bug_reports collection
+      await addDoc(collection(db, 'bug_reports'), reportData);
+
+      // Send email notification
+      const senderName = profile?.name || profile?.username || (bugReportEmail.trim() || 'Anónimo');
+      await addDoc(collection(db, 'mail'), {
+        to: 'sosamatias@gmail.com',
+        message: {
+          subject: `🐛 Bug Report - La Cuchara de Lobelia`,
+          text: `Nuevo reporte de bug de ${senderName}\n\nDescripción:\n"${bugReportText.trim()}"\n\nContacto: ${bugReportEmail.trim() || 'No proporcionado'}\n\nInfo técnica:\n- Vista: ${techInfo.currentView}\n- Navegador: ${techInfo.userAgent}\n- Pantalla: ${techInfo.screenSize}\n- Viewport: ${techInfo.viewport}\n- Plataforma: ${techInfo.platform}\n- Versión: ${techInfo.appVersion}\n- Fecha: ${techInfo.timestamp}`,
+          html: `<div style="font-family: sans-serif; padding: 20px; background-color: #112114; color: #fff; border-radius: 8px; border: 1px solid #e74c3c;">
+                   <h2 style="color: #e74c3c; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px; margin-top: 0;">🐛 Bug Report - La Cuchara de Lobelia</h2>
+                   <p><strong>Reportado por:</strong> ${senderName}</p>
+                   ${bugReportEmail.trim() ? `<p><strong>Email de contacto:</strong> ${bugReportEmail.trim()}</p>` : ''}
+                   <blockquote style="background: rgba(0,0,0,0.3); padding: 12px; border-left: 4px solid #e74c3c; color: #ddd; margin: 15px 0; border-radius: 4px;">
+                     ${bugReportText.trim().replace(/\n/g, '<br/>')}
+                   </blockquote>
+                   ${screenshotData ? `<p><strong>📎 Captura de pantalla adjunta</strong> (ver en Firestore)</p>` : ''}
+                   <div style="background: rgba(0,0,0,0.3); padding: 12px; border-radius: 4px; margin-top: 15px; font-size: 0.82rem; color: #aaa;">
+                     <strong>Info técnica:</strong><br/>
+                     Vista: ${techInfo.currentView}<br/>
+                     Pantalla: ${techInfo.screenSize} | Viewport: ${techInfo.viewport}<br/>
+                     Plataforma: ${techInfo.platform}<br/>
+                     Versión: ${techInfo.appVersion}<br/>
+                     Fecha: ${techInfo.timestamp}<br/>
+                     <span style="font-size: 0.75rem; word-break: break-all;">UA: ${techInfo.userAgent}</span>
+                   </div>
+                 </div>`
+        }
+      });
+
+      // Save rate limit timestamp
+      try { localStorage.setItem('lobelia_last_bug_report', Date.now().toString()); } catch (_) {}
+
+      // Reset form
+      setBugReportText('');
+      setBugReportScreenshot(null);
+      setBugReportEmail('');
+      setIsBugReportOpen(false);
+
+      showAlert(
+        lang === 'es'
+          ? '¡Gracias! Tu reporte de bug ha sido enviado correctamente. Lo revisaremos lo antes posible.'
+          : 'Thank you! Your bug report has been submitted successfully. We will review it as soon as possible.'
+      );
+    } catch (err) {
+      console.error('Error submitting bug report:', err);
+      showAlert(
+        lang === 'es'
+          ? `Error al enviar el reporte: ${err.message}`
+          : `Error submitting report: ${err.message}`
+      );
+    }
+    setIsSubmittingBug(false);
+  };
+
   // 3. Estado del Modal "Acerca de"
   const [isAboutOpen, setIsAboutOpen] = useState(false);
 
@@ -1116,6 +1241,17 @@ export default function App() {
             </button>
           )}
 
+          {/* Botón Bug Report */}
+          <button 
+            className="lang-btn"
+            onClick={() => setIsBugReportOpen(true)}
+            aria-label={lang === 'es' ? 'Reportar un bug' : 'Report a bug'}
+            title={lang === 'es' ? 'Reportar bug' : 'Report bug'}
+            style={{ fontSize: '0.95rem' }}
+          >
+            🐛
+          </button>
+
           {/* Bandera ES */}
           <button 
             className={`lang-btn ${lang === 'es' ? 'active' : ''}`}
@@ -1994,6 +2130,164 @@ export default function App() {
             </button>
           </div>
         </div>
+      </Modal>
+      {/* Modal de Reporte de Bug */}
+      <Modal
+        isOpen={isBugReportOpen}
+        onClose={() => {
+          setIsBugReportOpen(false);
+          setBugReportText('');
+          setBugReportScreenshot(null);
+          setBugReportEmail('');
+        }}
+        title={lang === 'es' ? '🐛 Reportar un Bug' : '🐛 Report a Bug'}
+      >
+        <form onSubmit={handleSubmitBugReport} style={{ display: 'flex', flexDirection: 'column', gap: '14px', padding: '4px 0' }}>
+          <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: '1.4', margin: 0 }}>
+            {lang === 'es'
+              ? '¿Encontraste un problema? Descríbelo aquí y lo revisaremos lo antes posible.'
+              : 'Found an issue? Describe it here and we will review it as soon as possible.'}
+          </p>
+
+          {/* Descripción del bug */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 'bold' }}>
+              {lang === 'es' ? 'Descripción del problema *' : 'Problem description *'}
+            </label>
+            <textarea
+              value={bugReportText}
+              onChange={(e) => setBugReportText(e.target.value)}
+              placeholder={lang === 'es' ? 'Describe qué ha pasado, qué esperabas que ocurriera y los pasos para reproducirlo...' : 'Describe what happened, what you expected, and the steps to reproduce it...'}
+              rows={4}
+              maxLength={2000}
+              style={{
+                width: '100%',
+                padding: '10px',
+                borderRadius: '8px',
+                border: 'var(--border-glass)',
+                background: 'rgba(255,255,255,0.04)',
+                color: '#fff',
+                fontSize: '0.88rem',
+                fontFamily: 'inherit',
+                resize: 'vertical',
+                minHeight: '80px'
+              }}
+            />
+            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textAlign: 'right' }}>
+              {bugReportText.length}/2000
+            </span>
+          </div>
+
+          {/* Captura de pantalla */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 'bold' }}>
+              {lang === 'es' ? '📎 Captura de pantalla (opcional)' : '📎 Screenshot (optional)'}
+            </label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <label
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '6px 12px',
+                  borderRadius: '8px',
+                  border: 'var(--border-glass)',
+                  background: 'rgba(255,255,255,0.04)',
+                  color: 'var(--text-secondary)',
+                  fontSize: '0.82rem',
+                  cursor: 'pointer'
+                }}
+              >
+                📷 {lang === 'es' ? 'Elegir imagen' : 'Choose image'}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setBugReportScreenshot(e.target.files?.[0] || null)}
+                  style={{ display: 'none' }}
+                />
+              </label>
+              {bugReportScreenshot && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontSize: '0.78rem', color: 'var(--accent-color)', maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    ✅ {bugReportScreenshot.name}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setBugReportScreenshot(null)}
+                    style={{ background: 'transparent', border: 'none', color: 'var(--danger-color)', cursor: 'pointer', fontSize: '0.9rem', padding: '2px' }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Email de contacto (solo para anónimos) */}
+          {!user && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 'bold' }}>
+                {lang === 'es' ? '📧 Email de contacto (opcional)' : '📧 Contact email (optional)'}
+              </label>
+              <input
+                type="email"
+                value={bugReportEmail}
+                onChange={(e) => setBugReportEmail(e.target.value)}
+                placeholder={lang === 'es' ? 'Para que podamos responderte...' : 'So we can get back to you...'}
+                style={{
+                  width: '100%',
+                  padding: '8px 10px',
+                  borderRadius: '8px',
+                  border: 'var(--border-glass)',
+                  background: 'rgba(255,255,255,0.04)',
+                  color: '#fff',
+                  fontSize: '0.88rem'
+                }}
+              />
+            </div>
+          )}
+
+          {/* Info técnica auto */}
+          <div style={{
+            background: 'rgba(255,255,255,0.03)',
+            border: 'var(--border-glass)',
+            borderRadius: '8px',
+            padding: '8px 10px',
+            fontSize: '0.72rem',
+            color: 'var(--text-muted)',
+            lineHeight: '1.5'
+          }}>
+            <span style={{ fontWeight: 'bold' }}>{lang === 'es' ? 'ℹ️ Se adjuntará automáticamente:' : 'ℹ️ Will be automatically attached:'}</span><br/>
+            {lang === 'es' ? 'Navegador, dispositivo, pantalla, vista actual, versión de la app' : 'Browser, device, screen, current view, app version'}
+          </div>
+
+          {/* Botones */}
+          <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => {
+                setIsBugReportOpen(false);
+                setBugReportText('');
+                setBugReportScreenshot(null);
+                setBugReportEmail('');
+              }}
+              style={{ minWidth: '90px', background: 'rgba(255,255,255,0.05)', color: '#fff', border: 'var(--border-glass)' }}
+            >
+              {lang === 'es' ? 'Cancelar' : 'Cancel'}
+            </button>
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={isSubmittingBug || !bugReportText.trim()}
+              style={{ minWidth: '90px' }}
+            >
+              {isSubmittingBug
+                ? (lang === 'es' ? 'Enviando...' : 'Sending...')
+                : (lang === 'es' ? '🐛 Enviar' : '🐛 Send')}
+            </button>
+          </div>
+        </form>
       </Modal>
 
       {/* Banner flotante de instalación PWA (estilo Senda) */}
