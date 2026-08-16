@@ -2,7 +2,7 @@ import React from 'react';
 import HitsDisplay from '../components/HitsDisplay';
 import AiRulesWidget from '../components/AiRulesWidget';
 
-export default function Home({ setView, onOpenAbout, onOpenLegal, onShareApp, lang, translations, user, profile, onOpenAuthModal }) {
+export default function Home({ setView, onOpenAbout, onOpenLegal, onOpenBugReport, onShareApp, lang, translations, user, profile, onOpenAuthModal }) {
   const t = translations[lang] || translations['es'];
 
   return (
@@ -169,12 +169,14 @@ export default function Home({ setView, onOpenAbout, onOpenLegal, onShareApp, la
             transition: 'all 0.2s ease'
           }}
         >
-          <span>📤</span>
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" style={{ display: 'inline-block', verticalAlign: 'middle' }}>
+            <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/>
+          </svg>
           <span>{lang === 'es' ? 'Compartir La Cuchara de Lobelia con tu grupo' : 'Share La Cuchara de Lobelia with your group'}</span>
         </button>
       )}
 
-      {/* Footer Info, Legal & Acerca De */}
+      {/* Footer Info, Legal, Bug & Acerca De */}
       <div 
         style={{ 
           display: 'flex', 
@@ -207,6 +209,20 @@ export default function Home({ setView, onOpenAbout, onOpenLegal, onShareApp, la
           >
             {lang === 'es' ? 'Aviso Legal, Privacidad & Cookies' : 'Legal Notice, Privacy & Cookies'}
           </button>
+          {onOpenBugReport && (
+            <>
+              <span style={{ color: 'rgba(255,255,255,0.15)', fontSize: '0.75rem' }}>•</span>
+              <button 
+                className="btn btn-small" 
+                onClick={onOpenBugReport}
+                style={{ background: 'transparent', border: 'none', boxShadow: 'none', color: 'var(--text-muted)', fontSize: '0.78rem', cursor: 'pointer', padding: '4px 8px' }}
+                onMouseOver={(e) => e.currentTarget.style.color = 'var(--gold-primary)'}
+                onMouseOut={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
+              >
+                🐛 {lang === 'es' ? 'Reportar un error' : 'Report a bug'}
+              </button>
+            </>
+          )}
         </div>
         <HitsDisplay lang={lang} />
       </div>

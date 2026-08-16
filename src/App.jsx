@@ -1209,6 +1209,7 @@ export default function App() {
             setView={setView} 
             onOpenAbout={() => setIsAboutOpen(true)}
             onOpenLegal={() => setIsLegalOpen(true)}
+            onOpenBugReport={() => setIsBugReportOpen(true)}
             onShareApp={handleShareApp}
             lang={lang} 
             translations={translations}
@@ -1248,6 +1249,7 @@ export default function App() {
             setView={setView} 
             onOpenAbout={() => setIsAboutOpen(true)}
             onOpenLegal={() => setIsLegalOpen(true)}
+            onOpenBugReport={() => setIsBugReportOpen(true)}
             onShareApp={handleShareApp}
             lang={lang} 
             translations={translations}
@@ -1341,44 +1343,30 @@ export default function App() {
             </button>
           )}
 
-          {/* Botón Compartir App */}
+          {/* Botón Compartir App (Icono oficial de nodos/círculos de compartir) */}
           <button 
             className="lang-btn"
             onClick={handleShareApp}
             aria-label={lang === 'es' ? 'Compartir aplicación' : 'Share application'}
             title={lang === 'es' ? 'Compartir app' : 'Share app'}
-            style={{ fontSize: '1rem', background: 'rgba(203, 161, 53, 0.12)', borderColor: 'rgba(203, 161, 53, 0.4)', color: 'var(--gold-primary)' }}
+            style={{ background: 'rgba(203, 161, 53, 0.12)', borderColor: 'rgba(203, 161, 53, 0.4)', color: 'var(--gold-primary)' }}
           >
-            📤
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style={{ display: 'block' }}>
+              <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z"/>
+            </svg>
           </button>
 
-          {/* Botón Bug Report */}
+          {/* Selector de Idioma Unificado (Toggle ES / EN) */}
           <button 
-            className="lang-btn"
-            onClick={() => setIsBugReportOpen(true)}
-            aria-label={lang === 'es' ? 'Reportar un bug' : 'Report a bug'}
-            title={lang === 'es' ? 'Reportar bug' : 'Report bug'}
-            style={{ fontSize: '0.95rem' }}
+            className="lang-btn active"
+            onClick={() => setLang(lang === 'es' ? 'en' : 'es')}
+            aria-label={lang === 'es' ? 'Cambiar a Inglés' : 'Switch to Spanish'}
+            title={lang === 'es' ? 'Idioma: Español (Clic para Inglés)' : 'Language: English (Click for Spanish)'}
           >
-            🐛
-          </button>
-
-          {/* Bandera ES */}
-          <button 
-            className={`lang-btn ${lang === 'es' ? 'active' : ''}`}
-            onClick={() => setLang('es')}
-            aria-label="Cambiar idioma a Español"
-          >
-            <img src="https://flagcdn.com/w20/es.png" alt="Español" />
-          </button>
-          
-          {/* Bandera EN */}
-          <button 
-            className={`lang-btn ${lang === 'en' ? 'active' : ''}`}
-            onClick={() => setLang('en')}
-            aria-label="Switch language to English"
-          >
-            <img src="https://flagcdn.com/w20/gb.png" alt="English" />
+            <img 
+              src={lang === 'es' ? 'https://flagcdn.com/w20/es.png' : 'https://flagcdn.com/w20/gb.png'} 
+              alt={lang === 'es' ? 'Español' : 'English'} 
+            />
           </button>
         </div>
       </header>
