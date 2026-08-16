@@ -5,13 +5,48 @@ import PdfCanvasViewer from '../components/PdfCanvasViewer';
 import { trackFeature } from '../utils/analyticsTracker';
 
 const POOLS_1VS1 = [
-  { name: { es: "1. Control de Zonas", en: "1. Zone Control" }, items: ['Domination', 'Capture & Control', 'Breakthrough', 'Stake a Claim'] },
-  { name: { es: "2. Matar y Destruir", en: "2. Kill & Destroy" }, items: ['To the Death!', 'Lords of Battle', 'Assassination', 'Contest of Champions'] },
-  { name: { es: "3. Objetivos Variables", en: "3. Variable Objectives" }, items: ['Hold Ground', 'Heirloom of Ages Past', 'Sites of Power', 'Command the Battlefield'] },
-  { name: { es: "4. Escenarios de Suministros", en: "4. Supply Scenarios" }, items: ['Destroy the Supplies', 'Retrieval', 'Seize the Prizes', 'Treasure Hoard'] },
-  { name: { es: "5. Movimiento y Flancos", en: "5. Maneuver & Flank" }, items: ['Reconnoitre', 'Storm the Camp', 'Divide & Conquer', 'Escort the Wounded'] },
-  { name: { es: "6. Condiciones Especiales", en: "6. Special Conditions" }, items: ['Fog of War', 'Clash by Moonlight', 'Lead from the Front', 'Convergence'] }
+  { name: { es: "Pool 1: Control de Objetivos", en: "Pool 1: Hold Objective" }, items: ['Domination', 'Capture & Control', 'Breakthrough', 'Stake a Claim'] },
+  { name: { es: "Pool 2: Matar al Enemigo", en: "Pool 2: Kill the Enemy" }, items: ['To the Death!', 'Lords of Battle', 'Assassination', 'Contest of Champions'] },
+  { name: { es: "Pool 3: Torbellino de Batalla", en: "Pool 3: Maelstrom of Battle" }, items: ['Hold Ground', 'Heirloom of Ages Past', 'Sites of Power', 'Command the Battlefield'] },
+  { name: { es: "Pool 4: Suministros", en: "Pool 4: Supply Scenarios" }, items: ['Destroy the Supplies', 'Retrieval', 'Seize the Prizes', 'Treasure Hoard'] },
+  { name: { es: "Pool 5: Maniobras y Flancos", en: "Pool 5: Manoeuvring" }, items: ['Reconnoitre', 'Storm the Camp', 'Divide & Conquer', 'Escort the Wounded'] },
+  { name: { es: "Pool 6: Escenarios Únicos", en: "Pool 6: Unique Scenarios" }, items: ['Fog of War', 'Clash by Moonlight', 'Lead from the Front', 'Convergence'] }
 ];
+
+export const MISSION_DISPLAY_INFO = {
+  'Domination': { num: 1, es: '1. Dominación', en: '1. Domination' },
+  'To the Death!': { num: 2, es: '2. ¡A Muerte!', en: '2. To the Death!' },
+  'Hold Ground': { num: 3, es: '3. Mantener la Posición', en: '3. Hold Ground' },
+  'Destroy the Supplies': { num: 4, es: '4. Destruir Suministros', en: '4. Destroy the Supplies' },
+  'Reconnoitre': { num: 5, es: '5. Reconocimiento', en: '5. Reconnoitre' },
+  'Fog of War': { num: 6, es: '6. Niebla de Guerra', en: '6. Fog of War' },
+  'Capture & Control': { num: 7, es: '7. Capturar y Controlar', en: '7. Capture & Control' },
+  'Breakthrough': { num: 8, es: '8. Ruptura', en: '8. Breakthrough' },
+  'Stake a Claim': { num: 9, es: '9. Reclamar el Terreno', en: '9. Stake a Claim' },
+  'Lords of Battle': { num: 10, es: '10. Señores de la Batalla', en: '10. Lords of Battle' },
+  'Assassination': { num: 11, es: '11. Asesinato', en: '11. Assassination' },
+  'Contest of Champions': { num: 12, es: '12. Concurso de Campeones', en: '12. Contest of Champions' },
+  'Heirloom of Ages Past': { num: 13, es: '13. Reliquia de Tiempos Pasados', en: '13. Heirloom of Ages Past' },
+  'Sites of Power': { num: 14, es: '14. Sitios de Poder', en: '14. Sites of Power' },
+  'Command the Battlefield': { num: 15, es: '15. Dominar el Campo de Batalla', en: '15. Command the Battlefield' },
+  'Retrieval': { num: 16, es: '16. Recuperación', en: '16. Retrieval' },
+  'Seize the Prizes': { num: 17, es: '17. Apoderarse de los Premios', en: '17. Seize the Prizes' },
+  'Treasure Hoard': { num: 18, es: '18. Tesoro Acumulado', en: '18. Treasure Hoard' },
+  'Storm the Camp': { num: 19, es: '19. Asaltar el Campamento', en: '19. Storm the Camp' },
+  'Divide & Conquer': { num: 20, es: '20. Dividir y Vencer', en: '20. Divide & Conquer' },
+  'Escort the Wounded': { num: 21, es: '21. Escoltar a los Heridos', en: '21. Escort the Wounded' },
+  'Clash by Moonlight': { num: 22, es: '22. Choque a la Luz de la Luna', en: '22. Clash by Moonlight' },
+  'Lead from the Front': { num: 23, es: '23. Liderar desde el Frente', en: '23. Lead from the Front' },
+  'Convergence': { num: 24, es: '24. Convergencia', en: '24. Convergence' },
+  
+  // 2vs2 (Dobles)
+  'No Escape': { num: 1, es: '1. Sin Escape', en: '1. No Escape' },
+  'Total Conquest': { num: 2, es: '2. Conquista Total', en: '2. Total Conquest' },
+  'Take & Hold': { num: 3, es: '3. Tomar y Mantener', en: '3. Take & Hold' },
+  'Clash of Champions': { num: 4, es: '4. Choque de Campeones', en: '4. Clash of Champions' },
+  'Cornered': { num: 5, es: '5. Acorralados', en: '5. Cornered' },
+  'Duel of Wits': { num: 6, es: '6. Duelo de Ingenios', en: '6. Duel of Wits' }
+};
 
 const MISSIONS_2VS2 = [
   'No Escape',
@@ -360,7 +395,7 @@ export default function Missions({ lang, translations, setLang }) {
                       }}
                       title={mission}
                     >
-                      {mission}
+                      {MISSION_DISPLAY_INFO[mission]?.[lang] || mission}
                       {roundNum && (
                         <span className="mission-pill-badge">
                           {roundNum}
@@ -412,7 +447,7 @@ export default function Missions({ lang, translations, setLang }) {
                   }}
                   title={mission}
                 >
-                  {mission}
+                  {MISSION_DISPLAY_INFO[mission]?.[lang] || mission}
                   {roundNum && (
                     <span 
                       className="mission-pill-badge"
