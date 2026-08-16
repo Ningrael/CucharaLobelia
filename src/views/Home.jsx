@@ -223,7 +223,7 @@ export default function Home({ setView, onOpenAbout, onOpenLegal, onOpenBugRepor
               }}
             >
               <span>🐛</span>
-              <span>{lang === 'es' ? 'Reportar un error' : 'Report a bug'}</span>
+              <span>{lang === 'es' ? 'Reportar un bug' : 'Report a bug'}</span>
             </button>
           )}
         </div>
