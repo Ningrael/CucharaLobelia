@@ -2,7 +2,7 @@ import React from 'react';
 import HitsDisplay from '../components/HitsDisplay';
 import AiRulesWidget from '../components/AiRulesWidget';
 
-export default function Home({ setView, onOpenAbout, lang, translations, user, profile, onOpenAuthModal }) {
+export default function Home({ setView, onOpenAbout, onShareApp, lang, translations, user, profile, onOpenAuthModal }) {
   const t = translations[lang] || translations['es'];
 
   return (
@@ -144,6 +144,35 @@ export default function Home({ setView, onOpenAbout, lang, translations, user, p
           <span style={{ color: 'var(--gold-primary)', fontSize: '1.2rem', fontWeight: 'bold', paddingLeft: '8px' }}>➔</span>
         </div>
       </div>
+
+      {/* Botón Compartir App con la Comunidad */}
+      {onShareApp && (
+        <button
+          type="button"
+          onClick={onShareApp}
+          className="btn btn-secondary"
+          style={{
+            width: '100%',
+            padding: '12px 18px',
+            borderRadius: '14px',
+            fontSize: '0.88rem',
+            fontWeight: 'bold',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            background: 'linear-gradient(135deg, rgba(203, 161, 53, 0.12), rgba(0,0,0,0.3))',
+            borderColor: 'rgba(203, 161, 53, 0.35)',
+            color: 'var(--gold-primary)',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease'
+          }}
+        >
+          <span>📤</span>
+          <span>{lang === 'es' ? 'Compartir La Cuchara de Lobelia con tu grupo' : 'Share La Cuchara de Lobelia with your group'}</span>
+        </button>
+      )}
 
       {/* Footer Info & Acerca De */}
       <div 

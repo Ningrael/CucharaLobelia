@@ -262,6 +262,44 @@ export default function App() {
     setIsSubmittingBug(false);
   };
 
+  // Función para Compartir la App con la API nativa de Android/iOS/Windows
+  const handleShareApp = async () => {
+    const shareUrl = window.location.origin.includes('localhost')
+      ? 'https://ningrael.github.io/CucharaLobelia/'
+      : (window.location.origin + window.location.pathname);
+
+    const shareData = {
+      title: 'La Cuchara de Lobelia | MESBG App',
+      text: lang === 'es'
+        ? '⚔️ ¡Descubre La Cuchara de Lobelia! Misiones oficiales, ligas, torneos, calculadora de dados y el Referí de reglas con IA de MESBG.'
+        : '⚔️ Join La Cuchara de Lobelia! Official MESBG missions, leagues, tournament tools, dice calculator, and AI Rules Referee.',
+      url: shareUrl
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          console.error('Error sharing:', err);
+        }
+      }
+    } else if (navigator.clipboard) {
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        showAlert(
+          lang === 'es'
+            ? '¡Enlace de La Cuchara de Lobelia copiado al portapapeles! 📋'
+            : 'La Cuchara de Lobelia link copied to clipboard! 📋'
+        );
+      } catch (_) {
+        prompt(lang === 'es' ? 'Copia el enlace de la app:' : 'Copy app link:', shareUrl);
+      }
+    } else {
+      prompt(lang === 'es' ? 'Copia el enlace de la app:' : 'Copy app link:', shareUrl);
+    }
+  };
+
   // 3. Estado del Modal "Acerca de"
   const [isAboutOpen, setIsAboutOpen] = useState(false);
 
@@ -1167,6 +1205,7 @@ export default function App() {
           <Home 
             setView={setView} 
             onOpenAbout={() => setIsAboutOpen(true)}
+            onShareApp={handleShareApp}
             lang={lang} 
             translations={translations}
             user={user}
@@ -1204,6 +1243,7 @@ export default function App() {
           <Home 
             setView={setView} 
             onOpenAbout={() => setIsAboutOpen(true)}
+            onShareApp={handleShareApp}
             lang={lang} 
             translations={translations}
             user={user}
@@ -1295,6 +1335,17 @@ export default function App() {
               {user ? (profile?.alignment === 'luz' ? '☀️' : '👁️') : '👤'}
             </button>
           )}
+
+          {/* Botón Compartir App */}
+          <button 
+            className="lang-btn"
+            onClick={handleShareApp}
+            aria-label={lang === 'es' ? 'Compartir aplicación' : 'Share application'}
+            title={lang === 'es' ? 'Compartir app' : 'Share app'}
+            style={{ fontSize: '1rem', background: 'rgba(203, 161, 53, 0.12)', borderColor: 'rgba(203, 161, 53, 0.4)', color: 'var(--gold-primary)' }}
+          >
+            📤
+          </button>
 
           {/* Botón Bug Report */}
           <button 
