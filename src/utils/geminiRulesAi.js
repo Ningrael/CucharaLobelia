@@ -1,16 +1,66 @@
 import rulesKnowledge from '../data/rules_knowledge.json';
+import { db } from './firebase';
+import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 
-const MAX_DAILY_QUERIES = 30;
+const DEFAULT_MAX_DAILY_QUERIES = 30;
+let cachedMaxDailyQueries = (() => {
+  try {
+    const val = localStorage.getItem('lobelia_ai_daily_limit');
+    return val ? parseInt(val, 10) : DEFAULT_MAX_DAILY_QUERIES;
+  } catch (_) {
+    return DEFAULT_MAX_DAILY_QUERIES;
+  }
+})();
 
-export function getRemainingAiQueries(userUid) {
+export function getAiDailyLimit() {
+  return cachedMaxDailyQueries || DEFAULT_MAX_DAILY_QUERIES;
+}
+
+export function setAiDailyLimit(limit) {
+  const num = parseInt(limit, 10);
+  if (!isNaN(num) && num > 0) {
+    cachedMaxDailyQueries = num;
+    try {
+      localStorage.setItem('lobelia_ai_daily_limit', num.toString());
+    } catch (_) {}
+  }
+}
+
+// Escuchar cambios de configuración global en Firestore
+export function subscribeToAppConfig(callback) {
+  try {
+    const configDocRef = doc(db, 'app_config', 'global');
+    return onSnapshot(configDocRef, (snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
+        if (data.aiDailyLimit && typeof data.aiDailyLimit === 'number') {
+          setAiDailyLimit(data.aiDailyLimit);
+        }
+        if (callback) callback(data);
+      } else {
+        if (callback) callback({ aiDailyLimit: DEFAULT_MAX_DAILY_QUERIES });
+      }
+    }, (err) => {
+      console.warn('[AppConfig] Error listening to global config:', err);
+      if (callback) callback({ aiDailyLimit: cachedMaxDailyQueries });
+    });
+  } catch (err) {
+    console.warn('[AppConfig] Could not set up snapshot listener:', err);
+    if (callback) callback({ aiDailyLimit: cachedMaxDailyQueries });
+    return () => {};
+  }
+}
+
+export function getRemainingAiQueries(userUid, customMax) {
   if (!userUid) return 0;
+  const maxLimit = customMax || getAiDailyLimit();
   const today = new Date().toISOString().slice(0, 10);
   const key = `lobelia_ai_usage_${userUid}_${today}`;
   try {
     const used = parseInt(localStorage.getItem(key) || '0', 10);
-    return Math.max(0, MAX_DAILY_QUERIES - used);
+    return Math.max(0, maxLimit - used);
   } catch (_) {
-    return MAX_DAILY_QUERIES;
+    return maxLimit;
   }
 }
 

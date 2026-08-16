@@ -19,6 +19,7 @@ import {
   signInWithPopup
 } from 'firebase/auth';
 import UserManagement from './components/UserManagement';
+import AppConfig from './components/AppConfig';
 import { 
   doc, 
   getDoc, 
@@ -440,8 +441,8 @@ export default function App() {
             }
 
             setProfile(profileData);
-            const isUserSuperAdmin = profileData.username?.toLowerCase() === 'matias' || profileData.isSuperAdmin === true;
-            const isUserAdmin = ADMIN_USERNAMES.includes(profileData.username?.toLowerCase()) || profileData.isAdmin === true || isUserSuperAdmin;
+            const isUserSuperAdmin = profileData.username?.toLowerCase() === 'matias' || (currentUser.email && currentUser.email.toLowerCase() === 'sosamatias@gmail.com') || profileData.isSuperAdmin === true;
+            const isUserAdmin = ADMIN_USERNAMES.includes(profileData.username?.toLowerCase()) || (currentUser.email && currentUser.email.toLowerCase() === 'sosamatias@gmail.com') || profileData.isAdmin === true || isUserSuperAdmin;
             setIsAdmin(isUserAdmin);
 
             // Auto-fix invalid profile fields for Firestore schema compliance
@@ -1628,23 +1629,42 @@ export default function App() {
                 {lang === 'es' ? 'Contraseña' : 'Password'}
               </button>
               {isAdmin && (
-                <button 
-                  type="button"
-                  onClick={() => setProfileTab('admin_users')}
-                  style={{
-                    background: profileTab === 'admin_users' ? 'var(--gold-primary)' : 'transparent',
-                    color: profileTab === 'admin_users' ? '#000' : 'var(--text-secondary)',
-                    border: 'none',
-                    padding: '6px 12px',
-                    borderRadius: '4px',
-                    fontSize: '0.78rem',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s'
-                  }}
-                >
-                  {lang === 'es' ? 'Usuarios' : 'Users'}
-                </button>
+                <>
+                  <button 
+                    type="button"
+                    onClick={() => setProfileTab('admin_users')}
+                    style={{
+                      background: profileTab === 'admin_users' ? 'var(--gold-primary)' : 'transparent',
+                      color: profileTab === 'admin_users' ? '#000' : 'var(--text-secondary)',
+                      border: 'none',
+                      padding: '6px 12px',
+                      borderRadius: '4px',
+                      fontSize: '0.78rem',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    👥 {lang === 'es' ? 'Usuarios' : 'Users'}
+                  </button>
+                  <button 
+                    type="button"
+                    onClick={() => setProfileTab('admin_config')}
+                    style={{
+                      background: profileTab === 'admin_config' ? 'var(--gold-primary)' : 'transparent',
+                      color: profileTab === 'admin_config' ? '#000' : 'var(--text-secondary)',
+                      border: 'none',
+                      padding: '6px 12px',
+                      borderRadius: '4px',
+                      fontSize: '0.78rem',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    ⚙️ AppConfig
+                  </button>
+                </>
               )}
             </div>
 
@@ -1803,6 +1823,16 @@ export default function App() {
                 currentUsername={profile?.username}
                 showAlert={showAlert}
                 showConfirm={showConfirm}
+              />
+            )}
+
+            {profileTab === 'admin_config' && isAdmin && (
+              <AppConfig
+                lang={lang}
+                showAlert={showAlert}
+                showConfirm={showConfirm}
+                currentUser={user}
+                profile={profile}
               />
             )}
           </div>

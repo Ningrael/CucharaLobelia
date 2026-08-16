@@ -1,6 +1,13 @@
 // src/components/AiRulesWidget.jsx
 import React, { useState, useEffect, useRef } from 'react';
-import { askRulesAi, getRemainingAiQueries, incrementAiUsage, getApiKeysPool } from '../utils/geminiRulesAi';
+import { 
+  askRulesAi, 
+  getRemainingAiQueries, 
+  incrementAiUsage, 
+  getApiKeysPool, 
+  getAiDailyLimit, 
+  subscribeToAppConfig 
+} from '../utils/geminiRulesAi';
 
 const blobToBase64 = (blob) => {
   return new Promise((resolve, reject) => {
@@ -122,7 +129,29 @@ export default function AiRulesWidget({ user, profile, lang, onOpenAuthModal }) 
   const [chatHistory, setChatHistory] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const [remainingQueries, setRemainingQueries] = useState(30);
+  const [aiDailyLimit, setAiDailyLimitState] = useState(getAiDailyLimit);
+  const [adminUnlimited, setAdminUnlimited] = useState(false);
+  const [remainingQueries, setRemainingQueries] = useState(() => getAiDailyLimit());
+
+  const isAdminUser = profile?.isAdmin || profile?.isSuperAdmin;
+  const isUnlimited = isAdminUser && adminUnlimited;
+
+  // Escuchar configuración global de la App en tiempo real
+  useEffect(() => {
+    const unsubscribe = subscribeToAppConfig((config) => {
+      if (config) {
+        if (typeof config.aiDailyLimit === 'number' && config.aiDailyLimit > 0) {
+          setAiDailyLimitState(config.aiDailyLimit);
+        }
+        if (typeof config.adminUnlimitedQueries === 'boolean') {
+          setAdminUnlimited(config.adminUnlimitedQueries);
+        }
+      }
+    });
+    return () => {
+      if (typeof unsubscribe === 'function') unsubscribe();
+    };
+  }, []);
 
   // Estados para grabación de audio
   const [isRecording, setIsRecording] = useState(false);
@@ -141,14 +170,18 @@ export default function AiRulesWidget({ user, profile, lang, onOpenAuthModal }) 
 
   const hasAvailableKey = !!customApiKey || getApiKeysPool().length > 0;
 
-  // Actualizar consultas restantes cuando cambia el usuario
+  // Actualizar consultas restantes cuando cambia el usuario o el límite diario
   useEffect(() => {
     if (user) {
-      setRemainingQueries(getRemainingAiQueries(user.uid));
+      if (isUnlimited) {
+        setRemainingQueries(999);
+      } else {
+        setRemainingQueries(getRemainingAiQueries(user.uid, aiDailyLimit));
+      }
     } else {
       setRemainingQueries(0);
     }
-  }, [user]);
+  }, [user, aiDailyLimit, isUnlimited]);
 
   // Manejar temporizador de grabación
   useEffect(() => {
@@ -171,11 +204,11 @@ export default function AiRulesWidget({ user, profile, lang, onOpenAuthModal }) 
       return;
     }
 
-    if (remainingQueries <= 0) {
+    if (!isUnlimited && remainingQueries <= 0) {
       setErrorMessage(
         lang === 'es'
-          ? 'Has alcanzado el límite de 30 consultas diarias. ¡Vuelve mañana para seguir preguntando!'
-          : 'You have reached your 30 daily query limit. Come back tomorrow!'
+          ? `Has alcanzado el límite de ${aiDailyLimit} consultas diarias. ¡Vuelve mañana para seguir preguntando!`
+          : `You have reached your ${aiDailyLimit} daily query limit. Come back tomorrow!`
       );
       return;
     }
@@ -310,11 +343,11 @@ export default function AiRulesWidget({ user, profile, lang, onOpenAuthModal }) 
       return;
     }
 
-    if (remainingQueries <= 0) {
+    if (!isUnlimited && remainingQueries <= 0) {
       setErrorMessage(
         lang === 'es'
-          ? 'Has alcanzado el límite de 30 consultas diarias. ¡Vuelve mañana para seguir preguntando!'
-          : 'You have reached your 30 daily query limit. Come back tomorrow!'
+          ? `Has alcanzado el límite de ${aiDailyLimit} consultas diarias. ¡Vuelve mañana para seguir preguntando!`
+          : `You have reached your ${aiDailyLimit} daily query limit. Come back tomorrow!`
       );
       return;
     }
@@ -430,16 +463,19 @@ export default function AiRulesWidget({ user, profile, lang, onOpenAuthModal }) 
             style={{
               padding: '6px 14px',
               borderRadius: '20px',
-              background: remainingQueries > 0 ? 'rgba(203, 161, 53, 0.15)' : 'rgba(231, 76, 60, 0.2)',
-              border: remainingQueries > 0 ? '1px solid var(--gold-primary)' : '1px solid #e74c3c',
-              color: remainingQueries > 0 ? 'var(--gold-primary)' : '#e74c3c',
+              background: (isUnlimited || remainingQueries > 0) ? 'rgba(203, 161, 53, 0.15)' : 'rgba(231, 76, 60, 0.2)',
+              border: (isUnlimited || remainingQueries > 0) ? '1px solid var(--gold-primary)' : '1px solid #e74c3c',
+              color: (isUnlimited || remainingQueries > 0) ? 'var(--gold-primary)' : '#e74c3c',
               fontSize: '0.8rem',
               fontWeight: 'bold',
               whiteSpace: 'nowrap',
               boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
             }}
           >
-            ⚡ {remainingQueries}/30 {lang === 'es' ? 'consultas hoy' : 'queries today'}
+            {isUnlimited 
+              ? (lang === 'es' ? '⚡ Ilimitado (Admin)' : '⚡ Unlimited (Admin)')
+              : `⚡ ${remainingQueries}/${aiDailyLimit} ${lang === 'es' ? 'consultas hoy' : 'queries today'}`
+            }
           </span>
         ) : (
           <button
@@ -448,7 +484,7 @@ export default function AiRulesWidget({ user, profile, lang, onOpenAuthModal }) 
             onClick={onOpenAuthModal}
             style={{ fontSize: '0.8rem', padding: '6px 14px' }}
           >
-            🔒 {lang === 'es' ? 'Inicia sesión para preguntar (30 gratis/día)' : 'Log in to ask (30 free/day)'}
+            🔒 {lang === 'es' ? `Inicia sesión para preguntar (${aiDailyLimit} gratis/día)` : `Log in to ask (${aiDailyLimit} free/day)`}
           </button>
         )}
       </div>
