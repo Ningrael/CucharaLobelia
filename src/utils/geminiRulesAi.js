@@ -221,11 +221,16 @@ const MESBG_TRANSLATIONS = {
   'licántropos': 'werewolves',
   'transfix': 'transfix inmovilizar',
   'inmovilizar': 'transfix paralyse',
-  'inmovilizado': 'transfix paralyse'
+  'inmovilizado': 'transfix paralyse',
+  'pega': 'fight attacks strength combat strike',
+  'pegar': 'fight attacks strength combat strike',
+  'mueve': 'move movement',
+  'gulavhar': 'gulavhar gûlavhar terror arnor',
+  'buhrdur': 'buhrdur buhrdûr troll chieftain'
 };
 
 /**
- * Search the 650-page knowledge base for the most relevant pages,
+ * Search the 848-page knowledge base for the most relevant pages,
  * ALWAYS including all official FAQ & Errata pages.
  */
 function findRelevantPages(query, maxResults = 45) {
@@ -254,17 +259,18 @@ function findRelevantPages(query, maxResults = 45) {
   const nonFaqPages = rulesKnowledge.filter(doc => doc.category !== 'FAQ & Erratas');
   const scoredPages = nonFaqPages.map((doc) => {
     let score = 0;
-    const contentLower = doc.content.toLowerCase();
-    const bookLower = doc.book.toLowerCase();
+    const contentLower = (doc.content || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const bookLower = (doc.book || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
     for (const term of termsArray) {
       if (term.length < 3) continue;
+      const termNorm = term.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
-      if (contentLower.includes(term)) {
+      if (contentLower.includes(termNorm)) {
         score += 4;
       }
 
-      if (bookLower.includes(term)) {
+      if (bookLower.includes(termNorm)) {
         score += 8;
       }
     }
