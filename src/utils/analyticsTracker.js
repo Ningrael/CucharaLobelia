@@ -44,9 +44,11 @@ export function initSessionTracking(currentUser, profile, lang = 'es') {
   const os = getOperatingSystem();
   const isRegistered = !!currentUser;
   const username = profile?.username || (currentUser ? currentUser.email?.split('@')[0] : null);
+  const userUid = currentUser?.uid || null;
 
   activeSession = {
     sessionId,
+    userUid,
     startTime: Date.now(),
     lastHeartbeat: Date.now(),
     durationSeconds: 0,
@@ -57,7 +59,7 @@ export function initSessionTracking(currentUser, profile, lang = 'es') {
     lang
   };
 
-  // 1. Record session start in Firestore (both analytics/summary and players/{adminUid}.analytics)
+  // 1. Record session start in Firestore
   recordSessionStart(activeSession);
 
   // 2. Setup periodic heartbeat (every 30 seconds) to measure active session time
@@ -96,6 +98,7 @@ export function updateSessionUser(currentUser, profile) {
   if (!activeSession) return;
   const wasRegistered = activeSession.isRegistered;
   activeSession.isRegistered = !!currentUser;
+  activeSession.userUid = currentUser?.uid || null;
   activeSession.username = profile?.username || (currentUser ? currentUser.email?.split('@')[0] : null);
 
   // If user just logged in during this session, adjust stats
@@ -117,7 +120,7 @@ export async function trackFeature(featureName, meta = {}) {
     localStorage.setItem(locKey, (cur + 1).toString());
   } catch (_) {}
 
-  // Update in Firestore
+  // Update in global Firestore analytics
   const updatePayload = {
     [`features.${featureName}`]: increment(1),
     [`daily.${today}.features.${featureName}`]: increment(1),
@@ -125,10 +128,21 @@ export async function trackFeature(featureName, meta = {}) {
   };
 
   await atomicUpdateAnalytics(updatePayload);
+
+  // If registered user, also increment in user's profile
+  if (activeSession?.isRegistered && activeSession.userUid) {
+    try {
+      const userDocRef = doc(db, 'players', activeSession.userUid);
+      await updateDoc(userDocRef, {
+        [`userAnalytics.features.${featureName}`]: increment(1),
+        'userAnalytics.lastSeen': new Date().toISOString()
+      });
+    } catch (_) {}
+  }
 }
 
 /**
- * Record a new session start in aggregated analytics
+ * Record a new session start in aggregated analytics and user profile
  */
 async function recordSessionStart(session) {
   const today = new Date().toISOString().slice(0, 10);
@@ -147,9 +161,21 @@ async function recordSessionStart(session) {
     updatedAt: new Date().toISOString()
   };
 
-  // If registered user, append to recent active players list
+  // If registered user, append to recent active players list and update player profile
   if (session.isRegistered && session.username) {
     updateRecentUsersList(session.username, session.deviceType);
+
+    if (session.userUid) {
+      try {
+        const userDocRef = doc(db, 'players', session.userUid);
+        await updateDoc(userDocRef, {
+          'userAnalytics.sessionsCount': increment(1),
+          'userAnalytics.lastSeen': new Date().toISOString(),
+          'userAnalytics.lastDevice': session.deviceType,
+          'userAnalytics.lastOs': session.os
+        });
+      } catch (_) {}
+    }
   }
 
   await atomicUpdateAnalytics(updatePayload);
@@ -169,6 +195,17 @@ async function recordHeartbeat(seconds, session) {
   };
 
   await atomicUpdateAnalytics(updatePayload);
+
+  // If registered user, also accumulate session time in player profile
+  if (session.isRegistered && session.userUid) {
+    try {
+      const userDocRef = doc(db, 'players', session.userUid);
+      await updateDoc(userDocRef, {
+        'userAnalytics.totalDurationSec': increment(seconds),
+        'userAnalytics.lastSeen': new Date().toISOString()
+      });
+    } catch (_) {}
+  }
 }
 
 /**
@@ -187,6 +224,18 @@ async function recordRegisteredConversion(session) {
 
   if (session.username) {
     updateRecentUsersList(session.username, session.deviceType);
+  }
+
+  if (session.userUid) {
+    try {
+      const userDocRef = doc(db, 'players', session.userUid);
+      await updateDoc(userDocRef, {
+        'userAnalytics.sessionsCount': increment(1),
+        'userAnalytics.lastSeen': new Date().toISOString(),
+        'userAnalytics.lastDevice': session.deviceType,
+        'userAnalytics.lastOs': session.os
+      });
+    } catch (_) {}
   }
 
   await atomicUpdateAnalytics(updatePayload);

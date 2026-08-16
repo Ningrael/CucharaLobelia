@@ -5,56 +5,13 @@ import { getAnalyticsSummary, resetAnalyticsData } from '../utils/analyticsTrack
 export default function AnalyticsDashboard({ lang, showAlert, showConfirm }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [timeFilter, setTimeFilter] = useState('all'); // 'all' | 'today' | 'week'
-
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const summary = await getAnalyticsSummary();
-      setData(summary || {});
-    } catch (err) {
-      console.error('[AnalyticsDashboard] Error loading data:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const handleReset = () => {
-    showConfirm(
-      lang === 'es' ? 'Reiniciar Analíticas' : 'Reset Analytics',
-      lang === 'es' 
-        ? '¿Estás seguro de que deseas poner a cero todas las estadísticas y métricas de uso acumuladas?'
-        : 'Are you sure you want to reset all accumulated analytics and usage metrics to zero?',
-      async () => {
-        setLoading(true);
-        try {
-          const empty = await resetAnalyticsData();
-          setData(empty);
-          showAlert(
-            lang === 'es' ? 'Analíticas Reiniciadas' : 'Analytics Reset',
-            lang === 'es' ? 'Se han restablecido los contadores correctamente.' : 'Counters have been reset successfully.'
-          );
-        } catch (err) {
-          showAlert(lang === 'es' ? 'Error' : 'Error', err.message);
-        } finally {
-          setLoading(false);
-        }
-      }
-    );
-  };
-
-  if (loading) {
-    return (
-      <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-secondary)' }}>
-        <span style={{ fontSize: '2rem', display: 'block', marginBottom: '10px' }}>📊</span>
-        {lang === 'es' ? 'Cargando analíticas y telemetría de uso...' : 'Loading analytics and usage telemetry...'}
-      </div>
-    );
-  }
+  const [timeFilter, setTimeFilter] = useState('all'); // 'all' | 'today' | 'week' | 'month' | 'custom'
+  const [customStartDate, setCustomStartDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 14);
+    return d.toISOString().slice(0, 10);
+  });
+  const [customEndDate, setCustomEndDate] = useState(() => new Date().toISOString().slice(0, 10));
 
   // Filtrado temporal
   const todayKey = new Date().toISOString().slice(0, 10);
@@ -92,14 +49,49 @@ export default function AnalyticsDashboard({ lang, showAlert, showConfirm }) {
       league_view: todayData.features?.league_view || 0,
       calendar_view: todayData.features?.calendar_view || 0
     };
-  } else if (timeFilter === 'week') {
-    // Sum last 7 days
+  } else if (timeFilter === 'week' || timeFilter === 'month') {
+    const daysBack = timeFilter === 'week' ? 7 : 30;
     let totalSess = 0, anonSess = 0, regSess = 0, durSec = 0;
     let featAi = 0, featCalc = 0, featMiss = 0, featPdf = 0, featLeague = 0, featCal = 0;
 
-    for (let i = 0; i < 7; i++) {
+    for (let i = 0; i < daysBack; i++) {
       const d = new Date();
       d.setDate(d.getDate() - i);
+      const dKey = d.toISOString().slice(0, 10);
+      const dayData = dailyStats[dKey];
+      if (dayData) {
+        totalSess += dayData.sessions?.total || 0;
+        anonSess += dayData.sessions?.anonymous || 0;
+        regSess += dayData.sessions?.registered || 0;
+        durSec += dayData.sessions?.totalDurationSec || 0;
+
+        featAi += dayData.features?.ai_query || 0;
+        featCalc += dayData.features?.calculator_run || 0;
+        featMiss += dayData.features?.mission_view || 0;
+        featPdf += dayData.features?.pdf_export || 0;
+        featLeague += dayData.features?.league_view || 0;
+        featCal += dayData.features?.calendar_view || 0;
+      }
+    }
+
+    sessions = { total: totalSess, anonymous: anonSess, registered: regSess, totalDurationSec: durSec };
+    features = {
+      ai_query: featAi,
+      calculator_run: featCalc,
+      mission_view: featMiss,
+      pdf_export: featPdf,
+      league_view: featLeague,
+      calendar_view: featCal
+    };
+  } else if (timeFilter === 'custom') {
+    let totalSess = 0, anonSess = 0, regSess = 0, durSec = 0;
+    let featAi = 0, featCalc = 0, featMiss = 0, featPdf = 0, featLeague = 0, featCal = 0;
+
+    const start = new Date(customStartDate);
+    const end = new Date(customEndDate);
+
+    // Iterar por cada día del rango
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
       const dKey = d.toISOString().slice(0, 10);
       const dayData = dailyStats[dKey];
       if (dayData) {
@@ -218,6 +210,22 @@ export default function AnalyticsDashboard({ lang, showAlert, showConfirm }) {
             </button>
             <button
               type="button"
+              onClick={() => setTimeFilter('month')}
+              style={{
+                background: timeFilter === 'month' ? 'var(--gold-primary)' : 'transparent',
+                color: timeFilter === 'month' ? '#000' : 'var(--text-secondary)',
+                border: 'none',
+                padding: '4px 10px',
+                borderRadius: '6px',
+                fontSize: '0.72rem',
+                fontWeight: 'bold',
+                cursor: 'pointer'
+              }}
+            >
+              {lang === 'es' ? '30 Días' : '30 Days'}
+            </button>
+            <button
+              type="button"
               onClick={() => setTimeFilter('week')}
               style={{
                 background: timeFilter === 'week' ? 'var(--gold-primary)' : 'transparent',
@@ -248,6 +256,22 @@ export default function AnalyticsDashboard({ lang, showAlert, showConfirm }) {
             >
               {lang === 'es' ? 'Hoy' : 'Today'}
             </button>
+            <button
+              type="button"
+              onClick={() => setTimeFilter('custom')}
+              style={{
+                background: timeFilter === 'custom' ? 'var(--gold-primary)' : 'transparent',
+                color: timeFilter === 'custom' ? '#000' : 'var(--text-secondary)',
+                border: 'none',
+                padding: '4px 10px',
+                borderRadius: '6px',
+                fontSize: '0.72rem',
+                fontWeight: 'bold',
+                cursor: 'pointer'
+              }}
+            >
+              📅 {lang === 'es' ? 'Rango' : 'Custom'}
+            </button>
           </div>
 
           <button
@@ -261,6 +285,56 @@ export default function AnalyticsDashboard({ lang, showAlert, showConfirm }) {
           </button>
         </div>
       </div>
+
+      {/* Selector de Rango Personalizado */}
+      {timeFilter === 'custom' && (
+        <div style={{
+          background: 'rgba(0,0,0,0.3)',
+          border: 'var(--border-glass)',
+          borderRadius: '8px',
+          padding: '10px 16px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          flexWrap: 'wrap'
+        }}>
+          <span style={{ fontSize: '0.8rem', color: 'var(--gold-primary)', fontWeight: 'bold' }}>
+            📅 {lang === 'es' ? 'Filtrar por Fecha:' : 'Filter by Date Range:'}
+          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{lang === 'es' ? 'Desde:' : 'From:'}</label>
+            <input 
+              type="date"
+              value={customStartDate}
+              onChange={(e) => setCustomStartDate(e.target.value)}
+              style={{
+                background: 'rgba(0,0,0,0.5)',
+                border: 'var(--border-glass)',
+                borderRadius: '4px',
+                color: '#fff',
+                padding: '4px 8px',
+                fontSize: '0.78rem'
+              }}
+            />
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{lang === 'es' ? 'Hasta:' : 'To:'}</label>
+            <input 
+              type="date"
+              value={customEndDate}
+              onChange={(e) => setCustomEndDate(e.target.value)}
+              style={{
+                background: 'rgba(0,0,0,0.5)',
+                border: 'var(--border-glass)',
+                borderRadius: '4px',
+                color: '#fff',
+                padding: '4px 8px',
+                fontSize: '0.78rem'
+              }}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Grid de KPIs Principales */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '12px' }}>

@@ -8,9 +8,10 @@ export default function UserManagement({ lang, currentUserId, currentUsername, s
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   
-  // Edit and Ban views states
+  // Edit, Ban and Analytics views states
   const [editingUser, setEditingUser] = useState(null);
   const [banningUser, setBanningUser] = useState(null);
+  const [selectedAnalyticsUser, setSelectedAnalyticsUser] = useState(null);
   
   // Form edit states
   const [editName, setEditName] = useState('');
@@ -642,7 +643,23 @@ export default function UserManagement({ lang, currentUserId, currentUsername, s
                       </div>
                     )}
 
-                    <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                    <div style={{ display: 'flex', gap: '6px', marginTop: '4px', flexWrap: 'wrap' }}>
+                      <button 
+                        type="button" 
+                        className="btn btn-secondary btn-small" 
+                        onClick={() => setSelectedAnalyticsUser(u)}
+                        style={{ 
+                          flex: 1, 
+                          padding: '4px 0', 
+                          minHeight: '30px', 
+                          background: 'rgba(203, 161, 53, 0.12)', 
+                          color: 'var(--gold-primary)', 
+                          border: '1px solid rgba(203, 161, 53, 0.35)' 
+                        }}
+                        title={lang === 'es' ? 'Ver analíticas de este usuario' : 'View user analytics'}
+                      >
+                        📊 {lang === 'es' ? 'Analíticas' : 'Analytics'}
+                      </button>
                       <button 
                         type="button" 
                         className="btn btn-secondary btn-small" 
@@ -684,6 +701,172 @@ export default function UserManagement({ lang, currentUserId, currentUsername, s
             </div>
           )}
         </>
+      )}
+
+      {/* MODAL DE ANALÍTICAS INDIVIDUALES DEL USUARIO */}
+      {selectedAnalyticsUser && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.85)',
+          backdropFilter: 'blur(5px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          padding: '16px'
+        }}>
+          <div style={{
+            background: '#141414',
+            border: '1px solid var(--gold-primary)',
+            borderRadius: '12px',
+            maxWidth: '520px',
+            width: '100%',
+            maxHeight: '90vh',
+            overflowY: 'auto',
+            padding: '20px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.8)'
+          }}>
+            {/* Header del Modal */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: '1.8rem' }}>📊</span>
+                <div>
+                  <h3 style={{ margin: 0, color: 'var(--gold-primary)', fontSize: '1.1rem', fontFamily: 'var(--font-heading)' }}>
+                    {selectedAnalyticsUser.name}
+                  </h3>
+                  <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                    @{selectedAnalyticsUser.username} • {selectedAnalyticsUser.email}
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedAnalyticsUser(null)}
+                style={{
+                  background: 'rgba(255,255,255,0.08)',
+                  border: 'none',
+                  color: '#fff',
+                  borderRadius: '50%',
+                  width: '28px',
+                  height: '28px',
+                  cursor: 'pointer',
+                  fontSize: '0.9rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Tarjetas de Métricas de Sesión y Tiempo */}
+            {(() => {
+              const uA = selectedAnalyticsUser.userAnalytics || {};
+              const feats = uA.features || {};
+              const durSec = uA.totalDurationSec || 0;
+              const durMin = Math.floor(durSec / 60);
+              const durSecRem = durSec % 60;
+              const durFormatted = durMin > 60 
+                ? `${(durMin / 60).toFixed(1)} h (${durMin} min)`
+                : `${durMin}m ${durSecRem}s`;
+
+              const lastSeenFormatted = uA.lastSeen 
+                ? new Date(uA.lastSeen).toLocaleString(lang === 'es' ? 'es-ES' : 'en-US', { 
+                    dateStyle: 'short', 
+                    timeStyle: 'short' 
+                  })
+                : (lang === 'es' ? 'Reciente' : 'Recent');
+
+              return (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  
+                  {/* Grid 1: Conexión y Tiempo */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    <div style={{ background: 'rgba(255,255,255,0.03)', border: 'var(--border-glass)', borderRadius: '8px', padding: '10px' }}>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>⏱️ {lang === 'es' ? 'Tiempo en App:' : 'Time on App:'}</div>
+                      <div style={{ fontSize: '1rem', fontWeight: 'bold', color: '#2ecc71', marginTop: '2px' }}>{durFormatted}</div>
+                    </div>
+                    <div style={{ background: 'rgba(255,255,255,0.03)', border: 'var(--border-glass)', borderRadius: '8px', padding: '10px' }}>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>🔄 {lang === 'es' ? 'Sesiones totales:' : 'Total Sessions:'}</div>
+                      <div style={{ fontSize: '1rem', fontWeight: 'bold', color: '#fff', marginTop: '2px' }}>{uA.sessionsCount || 1} {lang === 'es' ? 'visitas' : 'visits'}</div>
+                    </div>
+                    <div style={{ background: 'rgba(255,255,255,0.03)', border: 'var(--border-glass)', borderRadius: '8px', padding: '10px' }}>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>🕒 {lang === 'es' ? 'Última conexión:' : 'Last active:'}</div>
+                      <div style={{ fontSize: '0.82rem', fontWeight: '600', color: 'var(--gold-primary)', marginTop: '2px' }}>{lastSeenFormatted}</div>
+                    </div>
+                    <div style={{ background: 'rgba(255,255,255,0.03)', border: 'var(--border-glass)', borderRadius: '8px', padding: '10px' }}>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>📱 {lang === 'es' ? 'Dispositivo habitual:' : 'Primary device:'}</div>
+                      <div style={{ fontSize: '0.82rem', fontWeight: '600', color: '#fff', marginTop: '2px' }}>
+                        {uA.lastDevice === 'mobile' ? '📱 Móvil' : '💻 PC / Escritorio'} ({uA.lastOs || 'Web'})
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Sección 2: Uso de Funcionalidades por este Jugador */}
+                  <div style={{ background: 'rgba(0,0,0,0.3)', border: 'var(--border-glass)', borderRadius: '8px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <span style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--gold-primary)' }}>
+                      🛠️ {lang === 'es' ? 'Herramientas y Acciones Usadas:' : 'Tools & Actions Used:'}
+                    </span>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.78rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                        <span style={{ color: 'var(--text-secondary)' }}>🤖 {lang === 'es' ? 'Consultas a Lobelia IA:' : 'AI Rules Queries:'}</span>
+                        <strong style={{ color: 'var(--gold-primary)' }}>{feats.ai_query || 0}</strong>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                        <span style={{ color: 'var(--text-secondary)' }}>🎲 {lang === 'es' ? 'Cálculos de Combate / Dados:' : 'Combat Calculations:'}</span>
+                        <strong style={{ color: '#fff' }}>{feats.calculator_run || 0}</strong>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                        <span style={{ color: 'var(--text-secondary)' }}>📜 {lang === 'es' ? 'Misiones Consultadas:' : 'Missions Viewed:'}</span>
+                        <strong style={{ color: '#fff' }}>{feats.mission_view || 0}</strong>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0' }}>
+                        <span style={{ color: 'var(--text-secondary)' }}>🏆 {lang === 'es' ? 'Partidas Oficiales Jugadas:' : 'Official Matches Played:'}</span>
+                        <strong style={{ color: '#2ecc71' }}>{selectedAnalyticsUser.matchesPlayed || 0} ({selectedAnalyticsUser.wins || 0}V - {selectedAnalyticsUser.draws || 0}E - {selectedAnalyticsUser.losses || 0}D)</strong>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Sección 3: Rendimiento de Juego */}
+                  <div style={{ background: 'rgba(0,0,0,0.3)', border: 'var(--border-glass)', borderRadius: '8px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <span style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--gold-primary)' }}>
+                      ⚔️ {lang === 'es' ? 'Rendimiento y Puntuación:' : 'Performance & Scores:'}
+                    </span>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', fontSize: '0.76rem', color: 'var(--text-secondary)' }}>
+                      <div>• <strong>{lang === 'es' ? 'Puntos Totales:' : 'Total Points:'}</strong> {selectedAnalyticsUser.points || 0} pts</div>
+                      <div>• <strong>{lang === 'es' ? 'VP Ratio:' : 'VP Ratio:'}</strong> {selectedAnalyticsUser.vpScored || 0} / {selectedAnalyticsUser.vpConceded || 0}</div>
+                      <div>• <strong>{lang === 'es' ? 'Líderes Eliminados:' : 'Leaders Killed:'}</strong> {selectedAnalyticsUser.leadersKilled || 0}</div>
+                      <div>• <strong>{lang === 'es' ? 'Líderes Perdidos:' : 'Leaders Lost:'}</strong> {selectedAnalyticsUser.leadersLost || 0}</div>
+                    </div>
+                  </div>
+
+                </div>
+              );
+            })()}
+
+            {/* Botón Cerrar */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '6px' }}>
+              <button
+                type="button"
+                className="btn btn-secondary btn-small"
+                onClick={() => setSelectedAnalyticsUser(null)}
+                style={{ minWidth: '100px' }}
+              >
+                {lang === 'es' ? 'Cerrar' : 'Close'}
+              </button>
+            </div>
+
+          </div>
+        </div>
       )}
     </div>
   );
