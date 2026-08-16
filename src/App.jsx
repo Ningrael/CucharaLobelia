@@ -268,11 +268,13 @@ export default function App() {
       ? 'https://ningrael.github.io/CucharaLobelia/'
       : (window.location.origin + window.location.pathname);
 
+    const shareText = lang === 'es'
+      ? `🥄 *La Cuchara de Lobelia* ⚔️\n_La app definitiva para tus partidas de MESBG_\n\n🎲 Misiones & Emparejamientos\n🧙‍♂️ Lobelia: Tu referí con IA\n🏆 Ligas, Torneos y Estadísticas\n\nEntra aquí:`
+      : `🥄 *La Cuchara de Lobelia* ⚔️\n_The ultimate MESBG companion app_\n\n🎲 Missions & Pairings\n🧙‍♂️ Lobelia: AI Rules Referee\n🏆 Leagues, Tournaments & Stats\n\nJoin here:`;
+
     const shareData = {
       title: 'La Cuchara de Lobelia | MESBG App',
-      text: lang === 'es'
-        ? '⚔️ ¡Descubre La Cuchara de Lobelia! Misiones oficiales, ligas, torneos, calculadora de dados y el Referí de reglas con IA de MESBG.'
-        : '⚔️ Join La Cuchara de Lobelia! Official MESBG missions, leagues, tournament tools, dice calculator, and AI Rules Referee.',
+      text: shareText,
       url: shareUrl
     };
 
@@ -286,11 +288,11 @@ export default function App() {
       }
     } else if (navigator.clipboard) {
       try {
-        await navigator.clipboard.writeText(shareUrl);
+        await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
         showAlert(
           lang === 'es'
-            ? '¡Enlace de La Cuchara de Lobelia copiado al portapapeles! 📋'
-            : 'La Cuchara de Lobelia link copied to clipboard! 📋'
+            ? '¡Mensaje y enlace de La Cuchara de Lobelia copiados al portapapeles! 📋'
+            : 'La Cuchara de Lobelia message and link copied to clipboard! 📋'
         );
       } catch (_) {
         prompt(lang === 'es' ? 'Copia el enlace de la app:' : 'Copy app link:', shareUrl);
