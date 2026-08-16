@@ -384,6 +384,12 @@ export default function App() {
   const [newMessageText, setNewMessageText] = useState('');
   const [isSendingMessage, setIsSendingMessage] = useState(false);
 
+  // Estados para Administrador: Reportes de Bugs recibidos
+  const [bugReports, setBugReports] = useState([]);
+  const [unreadBugReportsCount, setUnreadBugReportsCount] = useState(0);
+  const [chatActiveTab, setChatActiveTab] = useState('chats'); // 'chats' | 'bugs'
+  const [selectedBugScreenshot, setSelectedBugScreenshot] = useState(null);
+
   // Sincronizar inputs de edición con el perfil activo
   useEffect(() => {
     if (profile) {
@@ -613,6 +619,36 @@ export default function App() {
     return () => unsubscribe();
   }, [user]);
 
+  // Escuchar reportes de bugs en tiempo real para Administradores
+  useEffect(() => {
+    if (!user || !isAdmin) {
+      setBugReports([]);
+      setUnreadBugReportsCount(0);
+      return;
+    }
+
+    const bugsRef = collection(db, "bug_reports");
+    const q = query(bugsRef, orderBy("createdAt", "desc"));
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const reports = [];
+      let unreadBugs = 0;
+      snapshot.forEach(docSnap => {
+        const data = docSnap.data();
+        reports.push({ id: docSnap.id, ...data });
+        if (data.status === 'new') {
+          unreadBugs++;
+        }
+      });
+      setBugReports(reports);
+      setUnreadBugReportsCount(unreadBugs);
+    }, (err) => {
+      console.warn("Could not listen to bug_reports:", err.message);
+    });
+
+    return () => unsubscribe();
+  }, [user, isAdmin]);
+
   // Escuchar mensajes del chat activo y marcar como leído
   useEffect(() => {
     if (!activeChat || !user) {
@@ -750,6 +786,74 @@ export default function App() {
       console.warn("Failed to send message/email:", err.message);
     }
     setIsSendingMessage(false);
+  };
+
+  // Helper para abrir chat privado con el usuario que reportó el bug
+  const handleOpenChatWithReporter = async (reporterUid, reporterName) => {
+    if (!user || !reporterUid || reporterUid === user.uid) return;
+    const senderUid = user.uid;
+    const recipientUid = reporterUid;
+    const chatId = senderUid < recipientUid ? `${senderUid}_${recipientUid}` : `${recipientUid}_${senderUid}`;
+    const chatDocRef = doc(db, 'chats', chatId);
+
+    try {
+      const chatDoc = await getDoc(chatDocRef);
+      if (!chatDoc.exists()) {
+        await setDoc(chatDocRef, {
+          participants: [senderUid, recipientUid],
+          lastMessage: lang === 'es' ? 'Hola, te escribo en relación a tu reporte de bug.' : 'Hello, I am contacting you regarding your bug report.',
+          lastUpdated: new Date(),
+          unread: {
+            [senderUid]: false,
+            [recipientUid]: true
+          },
+          nicks: {
+            [senderUid]: profile?.name || 'Matias (Admin)',
+            [recipientUid]: reporterName || 'Jugador'
+          },
+          usernames: {
+            [senderUid]: profile?.username || 'matias',
+            [recipientUid]: reporterName?.toLowerCase() || 'jugador'
+          }
+        });
+      }
+      setActiveChat({
+        id: chatId,
+        participants: [senderUid, recipientUid],
+        nicks: { [senderUid]: profile?.name || 'Matias (Admin)', [recipientUid]: reporterName || 'Jugador' },
+        usernames: { [senderUid]: profile?.username || 'matias', [recipientUid]: reporterName?.toLowerCase() || 'jugador' }
+      });
+      setChatActiveTab('chats');
+    } catch (err) {
+      console.error("Error opening chat with reporter:", err);
+      showAlert(lang === 'es' ? 'Error' : 'Error', (lang === 'es' ? 'No se pudo abrir el chat: ' : 'Could not open chat: ') + err.message);
+    }
+  };
+
+  // Helper para cambiar el estado de un reporte de bug
+  const handleUpdateBugStatus = async (reportId, newStatus) => {
+    try {
+      const bugRef = doc(db, 'bug_reports', reportId);
+      await updateDoc(bugRef, { status: newStatus });
+    } catch (err) {
+      console.error("Error updating bug report status:", err);
+    }
+  };
+
+  // Helper para eliminar un reporte de bug
+  const handleDeleteBugReport = (reportId) => {
+    showConfirm(
+      lang === 'es' ? 'Eliminar Reporte de Bug' : 'Delete Bug Report',
+      lang === 'es' ? '¿Estás seguro de que deseas eliminar este reporte de bug de la base de datos?' : 'Are you sure you want to delete this bug report?',
+      async () => {
+        try {
+          await deleteDoc(doc(db, 'bug_reports', reportId));
+        } catch (err) {
+          console.error("Error deleting bug report:", err);
+          showAlert(lang === 'es' ? 'Error' : 'Error', err.message);
+        }
+      }
+    );
   };
 
   const handleRefreshVerification = async () => {
@@ -1326,39 +1430,42 @@ export default function App() {
         
         <div className="header-controls">
           {/* Botón de Mensajería Privada (PM) */}
-          {user && (
-            <button 
-              className={`lang-btn ${isChatModalOpen ? 'active' : ''}`}
-              onClick={() => {
-                setActiveChat(null);
-                setIsChatModalOpen(true);
-              }}
-              aria-label={lang === 'es' ? "Mensajes Privados" : "Private Messages"}
-              style={{ fontSize: '1.1rem', background: 'rgba(255, 255, 255, 0.05)', position: 'relative' }}
-            >
-              ✉️
-              {unreadCount > 0 && (
-                <span style={{
-                  position: 'absolute',
-                  top: '-4px',
-                  right: '-4px',
-                  background: 'var(--danger-color)',
-                  color: '#fff',
-                  fontSize: '0.62rem',
-                  fontWeight: 'bold',
-                  borderRadius: '50%',
-                  width: '16px',
-                  height: '16px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  border: '1px solid #000'
-                }}>
-                  {unreadCount}
-                </span>
-              )}
-            </button>
-          )}
+          {user && (() => {
+            const totalUnread = unreadCount + (isAdmin ? unreadBugReportsCount : 0);
+            return (
+              <button 
+                className={`lang-btn ${isChatModalOpen ? 'active' : ''}`}
+                onClick={() => {
+                  setActiveChat(null);
+                  setIsChatModalOpen(true);
+                }}
+                aria-label={lang === 'es' ? "Mensajes Privados" : "Private Messages"}
+                style={{ fontSize: '1.1rem', background: 'rgba(255, 255, 255, 0.05)', position: 'relative' }}
+              >
+                ✉️
+                {totalUnread > 0 && (
+                  <span style={{
+                    position: 'absolute',
+                    top: '-4px',
+                    right: '-4px',
+                    background: 'var(--danger-color)',
+                    color: '#fff',
+                    fontSize: '0.62rem',
+                    fontWeight: 'bold',
+                    borderRadius: '50%',
+                    width: '16px',
+                    height: '16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: '1px solid #000'
+                  }}>
+                    {totalUnread}
+                  </span>
+                )}
+              </button>
+            );
+          })()}
 
           {/* Botón de Perfil / Iniciar Sesión Global */}
           {authLoading ? (
@@ -2211,71 +2318,324 @@ export default function App() {
         onClose={() => {
           setIsChatModalOpen(false);
           setActiveChat(null);
+          setChatActiveTab('chats');
         }}
         title={activeChat 
           ? (lang === 'es' ? `Chat con ${activeChat.nicks?.[activeChat.participants.find(uid => uid !== user?.uid) || user?.uid] || 'Admin'}` : `Chat with ${activeChat.nicks?.[activeChat.participants.find(uid => uid !== user?.uid) || user?.uid] || 'Admin'}`) 
           : (lang === 'es' ? "Mensajes Privados" : "Private Messages")}
       >
         {!activeChat ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', minHeight: '300px', maxHeight: '60vh', overflowY: 'auto' }}>
-            {chats.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '40px 10px', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                <span style={{ fontSize: '2.5rem', display: 'block', marginBottom: '8px' }}>✉️</span>
-                {lang === 'es' ? 'No tienes conversaciones activas.' : 'No active conversations.'}
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {chats.map(chat => {
-                  const recipientId = chat.participants.find(uid => uid !== user?.uid) || user?.uid;
-                  const recipientNick = chat.nicks?.[recipientId] || recipientId || 'Admin';
-                  const recipientUser = chat.usernames?.[recipientId] || '';
-                  const hasUnread = chat.unread?.[user?.uid] === true;
-                  const lastMsgTime = chat.lastUpdated?.toMillis 
-                    ? new Date(chat.lastUpdated.toMillis()).toLocaleDateString() + ' ' + new Date(chat.lastUpdated.toMillis()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                    : '';
-
-                  return (
-                    <div
-                      key={chat.id}
-                      onClick={() => setActiveChat(chat)}
-                      className="league-row-hover"
-                      style={{
-                        background: hasUnread ? 'rgba(203, 161, 53, 0.06)' : 'rgba(255, 255, 255, 0.02)',
-                        border: hasUnread ? '1px solid rgba(203, 161, 53, 0.3)' : '1px solid rgba(255, 255, 255, 0.05)',
-                        borderRadius: '8px',
-                        padding: '12px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        gap: '10px',
-                        transition: 'all 0.2s'
-                      }}
-                    >
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, minWidth: 0 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <span style={{ fontWeight: hasUnread ? 'bold' : '600', color: hasUnread ? 'var(--gold-primary)' : '#fff', fontSize: '0.9rem' }}>
-                            {recipientNick}
-                          </span>
-                          {recipientUser && (
-                            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>@{recipientUser}</span>
-                          )}
-                          {hasUnread && (
-                            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--gold-primary)', display: 'inline-block' }} />
-                          )}
-                        </div>
-                        <div style={{ fontSize: '0.78rem', color: hasUnread ? 'var(--text-primary)' : 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontStyle: chat.lastMessage ? 'normal' : 'italic' }}>
-                          {chat.lastMessage || (lang === 'es' ? 'Sin mensajes aún.' : 'No messages yet.')}
-                        </div>
-                      </div>
-                      <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textAlign: 'right', whiteSpace: 'nowrap' }}>
-                        {lastMsgTime}
-                      </div>
-                    </div>
-                  );
-                })}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', minHeight: '300px', maxHeight: '65vh' }}>
+            
+            {/* Pestañas de Admin: Chats vs Reportes de Bugs */}
+            {isAdmin && (
+              <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.08)', marginBottom: '4px' }}>
+                <button
+                  type="button"
+                  onClick={() => setChatActiveTab('chats')}
+                  style={{
+                    flex: 1,
+                    padding: '8px 12px',
+                    background: chatActiveTab === 'chats' ? 'rgba(203, 161, 53, 0.15)' : 'transparent',
+                    border: 'none',
+                    borderBottom: chatActiveTab === 'chats' ? '2px solid var(--gold-primary)' : '2px solid transparent',
+                    color: chatActiveTab === 'chats' ? 'var(--gold-primary)' : 'var(--text-secondary)',
+                    fontWeight: 'bold',
+                    fontSize: '0.85rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  💬 {lang === 'es' ? 'Mensajes' : 'Chats'} ({chats.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setChatActiveTab('bugs')}
+                  style={{
+                    flex: 1,
+                    padding: '8px 12px',
+                    background: chatActiveTab === 'bugs' ? 'rgba(203, 161, 53, 0.15)' : 'transparent',
+                    border: 'none',
+                    borderBottom: chatActiveTab === 'bugs' ? '2px solid var(--gold-primary)' : '2px solid transparent',
+                    color: chatActiveTab === 'bugs' ? 'var(--gold-primary)' : 'var(--text-secondary)',
+                    fontWeight: 'bold',
+                    fontSize: '0.85rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  🐛 {lang === 'es' ? 'Reportes de Bugs' : 'Bug Reports'} ({bugReports.length})
+                  {unreadBugReportsCount > 0 && (
+                    <span style={{
+                      background: 'var(--danger-color)',
+                      color: '#fff',
+                      fontSize: '0.65rem',
+                      padding: '1px 6px',
+                      borderRadius: '10px',
+                      fontWeight: 'bold'
+                    }}>
+                      {unreadBugReportsCount}
+                    </span>
+                  )}
+                </button>
               </div>
             )}
+
+            {/* VISTA 1: LISTA DE CHATS PRIVADOS */}
+            {(!isAdmin || chatActiveTab === 'chats') && (
+              <div style={{ flex: 1, overflowY: 'auto' }}>
+                {chats.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '40px 10px', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                    <span style={{ fontSize: '2.5rem', display: 'block', marginBottom: '8px' }}>✉️</span>
+                    {lang === 'es' ? 'No tienes conversaciones activas.' : 'No active conversations.'}
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {chats.map(chat => {
+                      const recipientId = chat.participants.find(uid => uid !== user?.uid) || user?.uid;
+                      const recipientNick = chat.nicks?.[recipientId] || recipientId || 'Admin';
+                      const recipientUser = chat.usernames?.[recipientId] || '';
+                      const hasUnread = chat.unread?.[user?.uid] === true;
+                      const lastMsgTime = chat.lastUpdated?.toMillis 
+                        ? new Date(chat.lastUpdated.toMillis()).toLocaleDateString() + ' ' + new Date(chat.lastUpdated.toMillis()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                        : '';
+
+                      return (
+                        <div
+                          key={chat.id}
+                          onClick={() => setActiveChat(chat)}
+                          className="league-row-hover"
+                          style={{
+                            background: hasUnread ? 'rgba(203, 161, 53, 0.06)' : 'rgba(255, 255, 255, 0.02)',
+                            border: hasUnread ? '1px solid rgba(203, 161, 53, 0.3)' : '1px solid rgba(255, 255, 255, 0.05)',
+                            borderRadius: '8px',
+                            padding: '12px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: '10px',
+                            transition: 'all 0.2s'
+                          }}
+                        >
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, minWidth: 0 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <span style={{ fontWeight: hasUnread ? 'bold' : '600', color: hasUnread ? 'var(--gold-primary)' : '#fff', fontSize: '0.9rem' }}>
+                                {recipientNick}
+                              </span>
+                              {recipientUser && (
+                                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>@{recipientUser}</span>
+                              )}
+                              {hasUnread && (
+                                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--gold-primary)', display: 'inline-block' }} />
+                              )}
+                            </div>
+                            <div style={{ fontSize: '0.78rem', color: hasUnread ? 'var(--text-primary)' : 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontStyle: chat.lastMessage ? 'normal' : 'italic' }}>
+                              {chat.lastMessage || (lang === 'es' ? 'Sin mensajes aún.' : 'No messages yet.')}
+                            </div>
+                          </div>
+                          <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                            {lastMsgTime}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* VISTA 2: LISTA DE REPORTES DE BUGS (SOLO ADMINS) */}
+            {isAdmin && chatActiveTab === 'bugs' && (
+              <div style={{ flex: 1, overflowY: 'auto' }}>
+                {bugReports.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '40px 10px', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                    <span style={{ fontSize: '2.5rem', display: 'block', marginBottom: '8px' }}>🐛</span>
+                    {lang === 'es' ? 'No hay reportes de bugs registrados.' : 'No bug reports registered.'}
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {bugReports.map(b => {
+                      const isNew = b.status === 'new';
+                      const isResolved = b.status === 'resolved';
+                      const dateStr = b.createdAt?.toMillis 
+                        ? new Date(b.createdAt.toMillis()).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) 
+                        : (b.createdAt?.toDate ? b.createdAt.toDate().toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : (b.createdAt ? new Date(b.createdAt).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : 'Reciente'));
+
+                      return (
+                        <div
+                          key={b.id}
+                          style={{
+                            background: isNew ? 'rgba(235, 87, 87, 0.08)' : 'rgba(255, 255, 255, 0.02)',
+                            border: isNew ? '1px solid rgba(235, 87, 87, 0.35)' : '1px solid rgba(255, 255, 255, 0.06)',
+                            borderRadius: '8px',
+                            padding: '12px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '8px'
+                          }}
+                        >
+                          {/* Header del reporte */}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '6px' }}>
+                            <div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                <span style={{ fontWeight: 'bold', color: '#fff', fontSize: '0.88rem' }}>
+                                  👤 {b.reporterName || (b.contactEmail || 'Usuario anónimo')}
+                                </span>
+                                {b.contactEmail && (
+                                  <span style={{ fontSize: '0.75rem', color: 'var(--gold-primary)' }}>
+                                    ✉️ {b.contactEmail}
+                                  </span>
+                                )}
+                              </div>
+                              <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                                🕒 {dateStr}
+                              </div>
+                            </div>
+
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <span style={{
+                                fontSize: '0.7rem',
+                                padding: '2px 8px',
+                                borderRadius: '4px',
+                                fontWeight: 'bold',
+                                background: isNew ? 'rgba(235, 87, 87, 0.2)' : (isResolved ? 'rgba(46, 204, 113, 0.2)' : 'rgba(241, 196, 15, 0.2)'),
+                                color: isNew ? '#ff6b6b' : (isResolved ? '#2ecc71' : '#f1c40f'),
+                                border: `1px solid ${isNew ? 'rgba(235, 87, 87, 0.4)' : (isResolved ? 'rgba(46, 204, 113, 0.4)' : 'rgba(241, 196, 15, 0.4)')}`
+                              }}>
+                                {isNew ? '🔴 Nuevo' : (isResolved ? '✅ Resuelto' : '🟡 Revisado')}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Descripción del Bug */}
+                          <div style={{
+                            background: 'rgba(0,0,0,0.3)',
+                            border: 'var(--border-glass)',
+                            borderRadius: '6px',
+                            padding: '8px 10px',
+                            fontSize: '0.82rem',
+                            color: 'var(--text-primary)',
+                            lineHeight: '1.4',
+                            whiteSpace: 'pre-wrap'
+                          }}>
+                            {b.description}
+                          </div>
+
+                          {/* Captura de pantalla si existe */}
+                          {b.screenshot && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <div
+                                onClick={() => setSelectedBugScreenshot(b.screenshot)}
+                                style={{
+                                  cursor: 'zoom-in',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '6px',
+                                  background: 'rgba(255,255,255,0.05)',
+                                  padding: '4px 8px',
+                                  borderRadius: '6px',
+                                  border: 'var(--border-glass)',
+                                  fontSize: '0.75rem',
+                                  color: 'var(--gold-primary)'
+                                }}
+                              >
+                                📷 {lang === 'es' ? 'Ver captura adjunta' : 'View screenshot'}
+                                <img 
+                                  src={b.screenshot} 
+                                  alt="Thumb" 
+                                  style={{ width: '28px', height: '28px', objectFit: 'cover', borderRadius: '4px' }} 
+                                />
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Info técnica */}
+                          {b.techInfo && (
+                            <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', display: 'flex', flexWrap: 'wrap', gap: '8px', background: 'rgba(255,255,255,0.02)', padding: '6px 8px', borderRadius: '4px' }}>
+                              <span>📌 Vista: <strong>{b.techInfo.currentView || '-'}</strong></span>
+                              <span>🖥️ SO: <strong>{b.techInfo.platform || '-'}</strong></span>
+                              <span>📱 Pantalla: <strong>{b.techInfo.screenSize || '-'}</strong></span>
+                              <span>⚙️ v<strong>{b.techInfo.appVersion || '3.0'}</strong></span>
+                            </div>
+                          )}
+
+                          {/* Botones de acción */}
+                          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '2px', alignItems: 'center' }}>
+                            {b.reporterUid && (
+                              <button
+                                type="button"
+                                className="btn btn-secondary btn-small"
+                                onClick={() => handleOpenChatWithReporter(b.reporterUid, b.reporterName)}
+                                style={{ fontSize: '0.72rem', padding: '3px 8px' }}
+                              >
+                                💬 {lang === 'es' ? 'Abrir Chat' : 'Open Chat'}
+                              </button>
+                            )}
+                            {b.contactEmail && (
+                              <a
+                                href={`mailto:${b.contactEmail}?subject=${encodeURIComponent('Respuesta a tu reporte de bug - La Cuchara de Lobelia')}`}
+                                className="btn btn-secondary btn-small"
+                                target="_blank"
+                                rel="noreferrer"
+                                style={{ fontSize: '0.72rem', padding: '3px 8px', textDecoration: 'none' }}
+                              >
+                                📧 {lang === 'es' ? 'Enviar Email' : 'Send Email'}
+                              </a>
+                            )}
+                            {isNew && (
+                              <button
+                                type="button"
+                                className="btn btn-secondary btn-small"
+                                onClick={() => handleUpdateBugStatus(b.id, 'reviewed')}
+                                style={{ fontSize: '0.72rem', padding: '3px 8px' }}
+                              >
+                                👁️ {lang === 'es' ? 'Marcar Revisado' : 'Mark Reviewed'}
+                              </button>
+                            )}
+                            {!isResolved ? (
+                              <button
+                                type="button"
+                                className="btn btn-secondary btn-small"
+                                onClick={() => handleUpdateBugStatus(b.id, 'resolved')}
+                                style={{ fontSize: '0.72rem', padding: '3px 8px', color: '#2ecc71', borderColor: 'rgba(46, 204, 113, 0.3)' }}
+                              >
+                                ✅ {lang === 'es' ? 'Marcar Resuelto' : 'Mark Resolved'}
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                className="btn btn-secondary btn-small"
+                                onClick={() => handleUpdateBugStatus(b.id, 'new')}
+                                style={{ fontSize: '0.72rem', padding: '3px 8px' }}
+                              >
+                                🔄 {lang === 'es' ? 'Reabrir' : 'Reopen'}
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              className="btn btn-danger btn-small"
+                              onClick={() => handleDeleteBugReport(b.id)}
+                              style={{ fontSize: '0.72rem', padding: '3px 8px', marginLeft: 'auto' }}
+                              title={lang === 'es' ? 'Eliminar reporte' : 'Delete report'}
+                            >
+                              🗑️
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', height: '65vh' }}>
@@ -2363,6 +2723,7 @@ export default function App() {
         isOpen={isAlertModalOpen}
         onClose={() => setIsAlertModalOpen(false)}
         title={lang === 'es' ? 'Mensaje de la Cuchara' : 'Lobelia Message'}
+        zIndex={10000}
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center', textAlign: 'center', padding: '10px 0' }}>
           <p style={{ fontSize: '0.92rem', color: 'var(--text-primary)', lineHeight: '1.4' }}>
@@ -2383,6 +2744,7 @@ export default function App() {
         isOpen={isConfirmModalOpen}
         onClose={() => setIsConfirmModalOpen(false)}
         title={lang === 'es' ? 'Confirmación' : 'Confirmation'}
+        zIndex={10000}
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center', textAlign: 'center', padding: '10px 0' }}>
           <p style={{ fontSize: '0.92rem', color: 'var(--text-primary)', lineHeight: '1.4' }}>
@@ -2411,6 +2773,40 @@ export default function App() {
           </div>
         </div>
       </Modal>
+
+      {/* Lightbox para ver capturas de pantalla a tamaño completo */}
+      {selectedBugScreenshot && (
+        <div 
+          onClick={() => setSelectedBugScreenshot(null)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0,0,0,0.92)',
+            backdropFilter: 'blur(8px)',
+            zIndex: 20000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+            cursor: 'zoom-out'
+          }}
+        >
+          <img 
+            src={selectedBugScreenshot} 
+            alt="Screenshot Preview" 
+            style={{
+              maxWidth: '95vw',
+              maxHeight: '92vh',
+              borderRadius: '8px',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.9)',
+              border: '1px solid var(--gold-primary)'
+            }}
+          />
+        </div>
+      )}
 
       {/* Modal de Selección de Idioma Inicial (solo para españoles) */}
       <Modal

@@ -1,7 +1,7 @@
 // src/components/Modal.jsx
 import React, { useEffect } from 'react';
 
-export default function Modal({ isOpen, onClose, title, size, children }) {
+export default function Modal({ isOpen, onClose, title, size, zIndex, children }) {
   // Manejar el cierre del modal al pulsar la tecla Escape
   useEffect(() => {
     if (!isOpen) return;
@@ -24,6 +24,9 @@ export default function Modal({ isOpen, onClose, title, size, children }) {
 
   if (!isOpen) return null;
 
+  const backdropStyle = zIndex ? { zIndex } : {};
+  const contentStyle = zIndex ? { zIndex: zIndex + 1 } : {};
+
   return (
     <>
       {/* Fondo oscuro del modal con blur */}
@@ -31,6 +34,7 @@ export default function Modal({ isOpen, onClose, title, size, children }) {
         className="modal-backdrop" 
         onClick={onClose} 
         aria-hidden="true" 
+        style={backdropStyle}
       />
       
       {/* Contenido del modal (Híbrido: cajón inferior en móvil / tarjeta en PC) */}
@@ -39,6 +43,7 @@ export default function Modal({ isOpen, onClose, title, size, children }) {
         role="dialog" 
         aria-modal="true" 
         aria-labelledby="modal-title"
+        style={contentStyle}
       >
         <div className="modal-header">
           <h2 id="modal-title">{title}</h2>
