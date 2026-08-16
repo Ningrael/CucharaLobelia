@@ -2,7 +2,7 @@ import React from 'react';
 import HitsDisplay from '../components/HitsDisplay';
 import AiRulesWidget from '../components/AiRulesWidget';
 
-export default function Home({ setView, onOpenAbout, onShareApp, lang, translations, user, profile, onOpenAuthModal }) {
+export default function Home({ setView, onOpenAbout, onOpenLegal, onShareApp, lang, translations, user, profile, onOpenAuthModal }) {
   const t = translations[lang] || translations['es'];
 
   return (
@@ -174,28 +174,40 @@ export default function Home({ setView, onOpenAbout, onShareApp, lang, translati
         </button>
       )}
 
-      {/* Footer Info & Acerca De */}
+      {/* Footer Info, Legal & Acerca De */}
       <div 
         style={{ 
           display: 'flex', 
           flexDirection: 'column', 
           alignItems: 'center', 
-          gap: '12px', 
+          gap: '10px', 
           marginTop: '8px', 
           paddingBottom: '20px',
           borderTop: '1px solid rgba(255,255,255,0.05)',
-          paddingTop: '20px'
+          paddingTop: '18px'
         }}
       >
-        <button 
-          className="btn btn-small" 
-          onClick={onOpenAbout}
-          style={{ background: 'transparent', border: 'none', boxShadow: 'none', color: 'var(--text-muted)' }}
-          onMouseOver={(e) => e.currentTarget.style.color = 'var(--gold-primary)'}
-          onMouseOut={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
-        >
-          {t.about}
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
+          <button 
+            className="btn btn-small" 
+            onClick={onOpenAbout}
+            style={{ background: 'transparent', border: 'none', boxShadow: 'none', color: 'var(--text-muted)', fontSize: '0.78rem', cursor: 'pointer', padding: '4px 8px' }}
+            onMouseOver={(e) => e.currentTarget.style.color = 'var(--gold-primary)'}
+            onMouseOut={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
+          >
+            {t.about}
+          </button>
+          <span style={{ color: 'rgba(255,255,255,0.15)', fontSize: '0.75rem' }}>•</span>
+          <button 
+            className="btn btn-small" 
+            onClick={onOpenLegal}
+            style={{ background: 'transparent', border: 'none', boxShadow: 'none', color: 'var(--text-muted)', fontSize: '0.78rem', cursor: 'pointer', padding: '4px 8px' }}
+            onMouseOver={(e) => e.currentTarget.style.color = 'var(--gold-primary)'}
+            onMouseOut={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
+          >
+            {lang === 'es' ? 'Aviso Legal, Privacidad & Cookies' : 'Legal Notice, Privacy & Cookies'}
+          </button>
+        </div>
         <HitsDisplay lang={lang} />
       </div>
     </div>

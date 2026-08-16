@@ -302,8 +302,9 @@ export default function App() {
     }
   };
 
-  // 3. Estado del Modal "Acerca de"
+  // 3. Estado del Modal "Acerca de" y "Aviso Legal & Privacidad"
   const [isAboutOpen, setIsAboutOpen] = useState(false);
+  const [isLegalOpen, setIsLegalOpen] = useState(false);
 
   // 4. Estados de Autenticación Global
   const [user, setUser] = useState(null);
@@ -1207,6 +1208,7 @@ export default function App() {
           <Home 
             setView={setView} 
             onOpenAbout={() => setIsAboutOpen(true)}
+            onOpenLegal={() => setIsLegalOpen(true)}
             onShareApp={handleShareApp}
             lang={lang} 
             translations={translations}
@@ -1245,6 +1247,7 @@ export default function App() {
           <Home 
             setView={setView} 
             onOpenAbout={() => setIsAboutOpen(true)}
+            onOpenLegal={() => setIsLegalOpen(true)}
             onShareApp={handleShareApp}
             lang={lang} 
             translations={translations}
@@ -1455,6 +1458,108 @@ export default function App() {
           <p style={{ fontSize: '0.9rem', color: 'var(--text-primary)', lineHeight: '1.6' }}>
             {t.about_body}
           </p>
+          <button
+            type="button"
+            className="btn btn-secondary btn-small"
+            onClick={() => { setIsAboutOpen(false); setIsLegalOpen(true); }}
+            style={{ marginTop: '8px', fontSize: '0.78rem', alignSelf: 'center' }}
+          >
+            ⚖️ {lang === 'es' ? 'Aviso Legal, Privacidad & Cookies' : 'Legal Notice, Privacy & Cookies'}
+          </button>
+        </div>
+      </Modal>
+
+      {/* Modal Aviso Legal, Privacidad, Cookies & IA (Cumplimiento UE 2024/1689 + RGPD + LSSI) */}
+      <Modal
+        isOpen={isLegalOpen}
+        onClose={() => setIsLegalOpen(false)}
+        title={lang === 'es' ? "Aviso Legal, Privacidad & Cookies" : "Legal Notice, Privacy & Cookies"}
+        size="large"
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', fontSize: '0.84rem', color: 'var(--text-secondary)', lineHeight: '1.55', textAlign: 'left' }}>
+          
+          {/* Sección 1: Inteligencia Artificial (AI Act) */}
+          <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(203, 161, 53, 0.3)', borderRadius: '10px', padding: '12px' }}>
+            <h4 style={{ margin: '0 0 6px 0', color: 'var(--gold-primary)', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.92rem', fontFamily: 'var(--font-title)' }}>
+              <span>🤖</span>
+              <span>{lang === 'es' ? 'Transparencia en Inteligencia Artificial (Reglamento UE 2024/1689)' : 'AI Transparency (EU AI Act)'}</span>
+            </h4>
+            <p style={{ margin: '0 0 6px 0' }}>
+              {lang === 'es'
+                ? 'El asistente de reglas "Lobelia: Tu referí de confianza" es una herramienta consultiva automatizada basada en modelos de lenguaje artificial (Google Gemini API). Analiza fragmentos de reglamentos oficiales indexados para ofrecer orientación rápida.'
+                : 'The rules assistant "Lobelia: Your Trusted Referee" is an automated advisory tool powered by artificial intelligence models (Google Gemini API). It parses indexed official rulebooks to provide rapid guidance.'}
+            </p>
+            <p style={{ margin: '0 0 6px 0' }}>
+              {lang === 'es'
+                ? '• Notas de Voz (Audio): El audio grabado por el usuario se transmite de forma cifrada y efímera a la API únicamente para su transcripción y resolución técnica de la duda. No se almacena permanentemente en servidores ni se usa para entrenamiento.'
+                : '• Voice Notes (Audio): Audio recorded by the user is transmitted in an encrypted and ephemeral manner to the API solely for transcription and rule resolution. It is not permanently stored nor used for training.'}
+            </p>
+            <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+              {lang === 'es'
+                ? '⚖️ En torneos o partidas competitivas, la decisión final vinculante siempre corresponde al árbitro u organizador humano del evento.'
+                : '⚖️ In official tournaments or competitive games, the human tournament referee holds final authority.'}
+            </p>
+          </div>
+
+          {/* Sección 2: Protección de Datos (RGPD) */}
+          <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', padding: '12px' }}>
+            <h4 style={{ margin: '0 0 6px 0', color: 'var(--gold-primary)', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.92rem', fontFamily: 'var(--font-title)' }}>
+              <span>🛡️</span>
+              <span>{lang === 'es' ? 'Protección de Datos (RGPD & LOPDGDD 3/2018)' : 'Data Protection (GDPR)'}</span>
+            </h4>
+            <p style={{ margin: '0 0 4px 0' }}>
+              {lang === 'es'
+                ? '• Responsable: Proyecto lúdico comunitario sin fines de lucro "La Cuchara de Lobelia".'
+                : '• Controller: Non-commercial fan community project "La Cuchara de Lobelia".'}
+            </p>
+            <p style={{ margin: '0 0 4px 0' }}>
+              {lang === 'es'
+                ? '• Datos tratados: Nombre de usuario/apodo, correo electrónico (Firebase Auth), bando de juego preferido y estadísticas voluntarias de partidas de liga.'
+                : '• Processed data: Nickname, email (Firebase Auth), preferred gaming alignment, and voluntary league match stats.'}
+            </p>
+            <p style={{ margin: '0 0 4px 0' }}>
+              {lang === 'es'
+                ? '• Encargados del tratamiento: Google Firebase (almacenamiento de base de datos Firestore y autenticación) y GitHub Pages (alojamiento web).'
+                : '• Processors: Google Firebase (Firestore database & auth) and GitHub Pages (hosting).'}
+            </p>
+            <p style={{ margin: 0 }}>
+              {lang === 'es'
+                ? '• Derechos del usuario: Puedes editar tus datos o solicitar la supresión de tu cuenta en cualquier momento desde tu Perfil de Jugador.'
+                : '• User rights: You may edit your data or request deletion of your account at any time from your Player Profile.'}
+            </p>
+          </div>
+
+          {/* Sección 3: Cookies y Almacenamiento Técnico */}
+          <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', padding: '12px' }}>
+            <h4 style={{ margin: '0 0 6px 0', color: 'var(--gold-primary)', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.92rem', fontFamily: 'var(--font-title)' }}>
+              <span>🍪</span>
+              <span>{lang === 'es' ? 'Cookies y Almacenamiento Local (LSSI-CE)' : 'Cookies & Local Storage (LSSI-CE)'}</span>
+            </h4>
+            <p style={{ margin: '0 0 6px 0' }}>
+              {lang === 'es'
+                ? 'Esta aplicación NO utiliza cookies publicitarias, comerciales ni de seguimiento de terceros. Únicamente se utiliza almacenamiento técnico esencial (localStorage):'
+                : 'This application does NOT use advertising or third-party tracking cookies. Only strictly necessary technical storage (localStorage) is used:'}
+            </p>
+            <ul style={{ margin: '0 0 4px 0', paddingLeft: '20px', fontSize: '0.78rem' }}>
+              <li><strong>firebase:authUser</strong>: {lang === 'es' ? 'Mantiene abierta tu sesión autenticada.' : 'Keeps your authenticated session open.'}</li>
+              <li><strong>lobelia_lang</strong>: {lang === 'es' ? 'Recuerda tu idioma de preferencia.' : 'Remembers your language preference.'}</li>
+              <li><strong>lobelia_ai_usage</strong>: {lang === 'es' ? 'Controla el consumo de la cuota diaria gratuita de 30 consultas de IA.' : 'Manages your 30 free daily AI query quota.'}</li>
+            </ul>
+          </div>
+
+          {/* Sección 4: Propiedad Intelectual */}
+          <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', padding: '12px' }}>
+            <h4 style={{ margin: '0 0 6px 0', color: 'var(--gold-primary)', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.92rem', fontFamily: 'var(--font-title)' }}>
+              <span>⚔️</span>
+              <span>{lang === 'es' ? 'Propiedad Intelectual & Descargo Fan Project' : 'Intellectual Property & Fan Project Disclaimer'}</span>
+            </h4>
+            <p style={{ margin: 0, fontSize: '0.76rem' }}>
+              {lang === 'es'
+                ? 'Middle-earth Strategy Battle Game (MESBG) y sus reglamentos, nombres y miniaturas son marcas registradas de Games Workshop Limited y Middle-earth Enterprises. La Cuchara de Lobelia es una herramienta comunitaria gratuita y no oficial, sin ánimo de lucro y sin vinculación comercial con dichas entidades.'
+                : 'Middle-earth Strategy Battle Game (MESBG) and its rulebooks, names, and miniatures are registered trademarks of Games Workshop Limited and Middle-earth Enterprises. La Cuchara de Lobelia is a free, non-commercial, unofficial community companion tool.'}
+            </p>
+          </div>
+
         </div>
       </Modal>
 
@@ -1873,10 +1978,17 @@ export default function App() {
                     required 
                     style={{ marginTop: '3px', cursor: 'pointer' }}
                   />
-                  <label htmlFor="gdpr_consent" style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', lineHeight: '1.3', cursor: 'pointer' }}>
+                  <label htmlFor="gdpr_consent" style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', lineHeight: '1.35', cursor: 'pointer' }}>
                     {lang === 'es' 
-                      ? 'Acepto el tratamiento de mis datos personales (nombre, correo y teléfono opcional) para la gestión del torneo conforme al RGPD. Esta app utiliza almacenamiento local del navegador (cookies/localStorage) únicamente para mantener mi sesión abierta.' 
-                      : 'I consent to the processing of my personal data (name, email, and optional phone) for tournament management under GDPR. This app uses local storage (cookies/localStorage) strictly to keep my session open.'}
+                      ? 'Acepto el tratamiento de mis datos personales para la gestión lúdica conforme al RGPD y el uso de almacenamiento técnico (cookies/localStorage) esencial. ' 
+                      : 'I consent to the processing of my personal data under GDPR and essential technical storage (cookies/localStorage). '}
+                    <button
+                      type="button"
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsLegalOpen(true); }}
+                      style={{ background: 'transparent', border: 'none', color: 'var(--gold-primary)', textDecoration: 'underline', padding: 0, fontSize: '0.72rem', cursor: 'pointer' }}
+                    >
+                      {lang === 'es' ? 'Ver Aviso Legal, Privacidad y Cookies' : 'View Legal & Privacy Policy'}
+                    </button>
                   </label>
                 </div>
 

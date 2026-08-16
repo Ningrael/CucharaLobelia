@@ -91,6 +91,28 @@ function AiMessageBubble({ msg, lang }) {
           {expanded ? (lang === 'es' ? '▲ Mostrar menos' : '▲ Show less') : (lang === 'es' ? '📖 Leer más...' : '📖 Read more...')}
         </button>
       )}
+
+      {/* Descargo sutil de Transparencia de IA (Reglamento UE 2024/1689 Art. 50) */}
+      {!isUser && (
+        <div style={{
+          marginTop: '6px',
+          paddingTop: '6px',
+          borderTop: '1px solid rgba(255, 255, 255, 0.05)',
+          fontSize: '0.66rem',
+          color: 'var(--text-muted)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          lineHeight: '1.25'
+        }}>
+          <span>🤖</span>
+          <span>
+            {lang === 'es'
+              ? 'Contenido generado con IA (Reglamento UE 2024/1689). En torneos oficiales, la decisión final vinculante corresponde al árbitro humano del evento.'
+              : 'AI-generated content (EU AI Act 2024/1689). In official tournaments, the tournament referee holds final authority.'}
+          </span>
+        </div>
+      )}
     </div>
   );
 }
@@ -521,6 +543,9 @@ export default function AiRulesWidget({ user, profile, lang, onOpenAuthModal }) 
               🚀 {lang === 'es' ? 'Finalizar y Preguntar' : 'Finish & Ask'}
             </button>
           </div>
+          <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textAlign: 'center', width: '100%' }}>
+            {lang === 'es' ? '🔒 El audio se procesa de forma efímera para la consulta y no se almacena.' : '🔒 Audio is processed ephemerally for the query and is not stored.'}
+          </span>
         </div>
       )}
 
