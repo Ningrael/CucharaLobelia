@@ -1,6 +1,6 @@
 // src/components/AnalyticsDashboard.jsx
 import React, { useState, useEffect } from 'react';
-import { getAnalyticsSummary, resetAnalyticsData } from '../utils/analyticsTracker';
+import { subscribeToAnalytics, getAnalyticsSummary, resetAnalyticsData } from '../utils/analyticsTracker';
 
 export default function AnalyticsDashboard({ lang, showAlert, showConfirm }) {
   const [data, setData] = useState(null);
@@ -12,6 +12,74 @@ export default function AnalyticsDashboard({ lang, showAlert, showConfirm }) {
     return d.toISOString().slice(0, 10);
   });
   const [customEndDate, setCustomEndDate] = useState(() => new Date().toISOString().slice(0, 10));
+
+  useEffect(() => {
+    let isMounted = true;
+    const unsubscribe = subscribeToAnalytics((incomingData) => {
+      if (isMounted) {
+        setData(incomingData || {});
+        setLoading(false);
+      }
+    });
+
+    // Fallback load in case snapshot delay
+    getAnalyticsSummary().then((initial) => {
+      if (isMounted && initial) {
+        setData(initial);
+        setLoading(false);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      if (typeof unsubscribe === 'function') unsubscribe();
+    };
+  }, []);
+
+  const handleRefresh = async () => {
+    setLoading(true);
+    try {
+      const summary = await getAnalyticsSummary();
+      setData(summary || {});
+    } catch (err) {
+      console.error('[AnalyticsDashboard] Refresh error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleReset = () => {
+    showConfirm(
+      lang === 'es' ? 'Reiniciar Analíticas' : 'Reset Analytics',
+      lang === 'es' 
+        ? '¿Estás seguro de que deseas poner a cero todas las estadísticas y métricas de uso acumuladas?'
+        : 'Are you sure you want to reset all accumulated analytics and usage metrics to zero?',
+      async () => {
+        setLoading(true);
+        try {
+          const empty = await resetAnalyticsData();
+          setData(empty);
+          showAlert(
+            lang === 'es' ? 'Analíticas Reiniciadas' : 'Analytics Reset',
+            lang === 'es' ? 'Se han restablecido los contadores correctamente.' : 'Counters have been reset successfully.'
+          );
+        } catch (err) {
+          showAlert(lang === 'es' ? 'Error' : 'Error', err.message);
+        } finally {
+          setLoading(false);
+        }
+      }
+    );
+  };
+
+  if (loading && !data) {
+    return (
+      <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-secondary)' }}>
+        <span style={{ fontSize: '2rem', display: 'block', marginBottom: '10px' }}>📊</span>
+        {lang === 'es' ? 'Cargando analíticas y telemetría de uso...' : 'Loading analytics and usage telemetry...'}
+      </div>
+    );
+  }
 
   // Filtrado temporal
   const todayKey = new Date().toISOString().slice(0, 10);
@@ -190,8 +258,8 @@ export default function AnalyticsDashboard({ lang, showAlert, showConfirm }) {
         </div>
 
         {/* Filtros temporales y refrescar */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <div style={{ display: 'flex', background: 'rgba(0,0,0,0.4)', borderRadius: '8px', padding: '2px', border: 'var(--border-glass)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', background: 'rgba(0,0,0,0.4)', borderRadius: '8px', padding: '2px', border: 'var(--border-glass)', flexWrap: 'wrap' }}>
             <button
               type="button"
               onClick={() => setTimeFilter('all')}
@@ -277,7 +345,7 @@ export default function AnalyticsDashboard({ lang, showAlert, showConfirm }) {
           <button
             type="button"
             className="btn btn-secondary btn-small"
-            onClick={loadData}
+            onClick={handleRefresh}
             title={lang === 'es' ? 'Actualizar métricas' : 'Refresh metrics'}
             style={{ padding: '6px 10px', background: 'rgba(255,255,255,0.06)' }}
           >

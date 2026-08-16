@@ -1,6 +1,6 @@
 // src/utils/analyticsTracker.js
 import { db } from './firebase';
-import { doc, getDoc, setDoc, updateDoc, increment } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, increment, onSnapshot } from 'firebase/firestore';
 
 const ADMIN_CONFIG_UID = 'xXhjkWRjh0hVBjcYr2qAAFRvGL82';
 const SUMMARY_DOC_REF = () => doc(db, 'analytics', 'summary');
@@ -313,6 +313,54 @@ async function atomicUpdateAnalytics(updatePayload) {
 }
 
 /**
+ * Subscribes to real-time analytics updates for the Admin Dashboard
+ */
+export function subscribeToAnalytics(callback) {
+  try {
+    const sumRef = SUMMARY_DOC_REF();
+    return onSnapshot(sumRef, (snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
+        getDoc(ADMIN_DOC_REF()).then((adminSnap) => {
+          if (adminSnap.exists() && adminSnap.data()?.analytics?.recentUsers) {
+            data.recentUsers = adminSnap.data().analytics.recentUsers;
+          }
+          if (callback) callback(data);
+        }).catch(() => {
+          if (callback) callback(data);
+        });
+      } else {
+        // Fallback to admin doc
+        getDoc(ADMIN_DOC_REF()).then((adminSnap) => {
+          if (adminSnap.exists() && adminSnap.data()?.analytics) {
+            if (callback) callback(adminSnap.data().analytics);
+          } else {
+            if (callback) callback({});
+          }
+        }).catch(() => {
+          if (callback) callback({});
+        });
+      }
+    }, (err) => {
+      console.warn('[Analytics] Error in summary snapshot listener, trying admin doc:', err);
+      getDoc(ADMIN_DOC_REF()).then((adminSnap) => {
+        if (adminSnap.exists() && adminSnap.data()?.analytics) {
+          if (callback) callback(adminSnap.data().analytics);
+        } else {
+          if (callback) callback({});
+        }
+      }).catch(() => {
+        if (callback) callback({});
+      });
+    });
+  } catch (err) {
+    console.warn('[Analytics] Failed to setup snapshot listener:', err);
+    getAnalyticsSummary().then(data => { if (callback) callback(data || {}); });
+    return () => {};
+  }
+}
+
+/**
  * Fetches aggregated analytics summary for the Admin Dashboard
  */
 export async function getAnalyticsSummary() {
@@ -339,10 +387,10 @@ export async function getAnalyticsSummary() {
       return adminSnap.data().analytics;
     }
 
-    return null;
+    return {};
   } catch (err) {
     console.error('[Analytics] Error fetching summary:', err);
-    return null;
+    return {};
   }
 }
 
