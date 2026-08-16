@@ -1,6 +1,6 @@
 // src/components/AiRulesWidget.jsx
 import React, { useState, useEffect, useRef } from 'react';
-import { askRulesAi, getRemainingAiQueries, incrementAiUsage } from '../utils/geminiRulesAi';
+import { askRulesAi, getRemainingAiQueries, incrementAiUsage, getApiKeysPool } from '../utils/geminiRulesAi';
 
 const blobToBase64 = (blob) => {
   return new Promise((resolve, reject) => {
@@ -117,7 +117,7 @@ export default function AiRulesWidget({ user, profile, lang, onOpenAuthModal }) 
     }
   });
 
-  const effectiveApiKey = customApiKey || import.meta.env.VITE_GEMINI_API_KEY || '';
+  const hasAvailableKey = !!customApiKey || getApiKeysPool().length > 0;
 
   // Actualizar consultas restantes cuando cambia el usuario
   useEffect(() => {
@@ -158,11 +158,11 @@ export default function AiRulesWidget({ user, profile, lang, onOpenAuthModal }) 
       return;
     }
 
-    if (!effectiveApiKey) {
+    if (!hasAvailableKey) {
       setErrorMessage(
         lang === 'es'
-          ? 'Por favor, introduce tu clave API de Gemini a continuación para activar el Sabio de Reglas.'
-          : 'Please enter your Gemini API key below to activate the Rules Wizard.'
+          ? 'Por favor, introduce tu clave API de Gemini en Ajustes para activar el Referí de Reglas.'
+          : 'Please enter your Gemini API key in Settings to activate the Rules Referee.'
       );
       return;
     }
@@ -198,7 +198,7 @@ export default function AiRulesWidget({ user, profile, lang, onOpenAuthModal }) 
         mimeType: blob ? blob.type : null
       };
 
-      const answer = await askRulesAi(payload, effectiveApiKey, chatHistory);
+      const answer = await askRulesAi(payload, customApiKey, chatHistory);
       setChatHistory([...newHistory, { sender: 'ai', text: answer }]);
       incrementAiUsage(user.uid);
       setRemainingQueries(getRemainingAiQueries(user.uid));
@@ -297,11 +297,11 @@ export default function AiRulesWidget({ user, profile, lang, onOpenAuthModal }) 
       return;
     }
 
-    if (!effectiveApiKey) {
+    if (!hasAvailableKey) {
       setErrorMessage(
         lang === 'es'
-          ? 'Por favor, introduce tu clave API de Gemini a continuación para activar el Sabio de Reglas.'
-          : 'Please enter your Gemini API key below to activate the Rules Wizard.'
+          ? 'Por favor, introduce tu clave API de Gemini en Ajustes para activar el Referí de Reglas.'
+          : 'Please enter your Gemini API key in Settings to activate the Rules Referee.'
       );
       return;
     }
@@ -328,7 +328,7 @@ export default function AiRulesWidget({ user, profile, lang, onOpenAuthModal }) 
         mimeType: null
       };
 
-      const answer = await askRulesAi(payload, effectiveApiKey, chatHistory);
+      const answer = await askRulesAi(payload, customApiKey, chatHistory);
       setChatHistory([...newHistory, { sender: 'ai', text: answer }]);
       incrementAiUsage(user.uid);
       setRemainingQueries(getRemainingAiQueries(user.uid));

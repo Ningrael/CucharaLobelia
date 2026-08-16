@@ -167,21 +167,45 @@ NORMAS CRÍTICAS DE ARBITRAJE:
 `;
 
 const CANDIDATE_MODELS = [
-  'gemini-3.1-flash-lite',
-  'gemini-3.7-flash',
-  'gemini-3.5-flash',
-  'gemini-3.6-flash'
+  'gemini-flash-latest',
+  'gemini-flash-lite-latest',
+  'gemini-2.5-flash-lite',
+  'gemini-3.1-flash-lite-preview',
+  'gemini-3-flash-preview',
+  'gemini-pro-latest'
 ];
+
+let activeKeyIndex = 0;
+
+/**
+ * Returns available Gemini API keys pool from env or custom key.
+ */
+export function getApiKeysPool(customApiKey = '') {
+  if (customApiKey && customApiKey.trim()) {
+    return [customApiKey.trim()];
+  }
+
+  const rawEnvKeys = import.meta.env.VITE_GEMINI_API_KEYS || import.meta.env.VITE_GEMINI_API_KEY || '';
+  const parsedKeys = rawEnvKeys
+    .split(/[,;\n]+/)
+    .map(k => k.trim())
+    .filter(k => k.length > 10);
+
+  return parsedKeys.length > 0 ? parsedKeys : [];
+}
 
 /**
  * Queries Gemini API with Grounded Rule Knowledge from official PDFs (supports text and audio).
+ * Automatically rotates and falls back across API keys pool on quota/rate limit errors.
  * @param {string|object} input - Either query text or an object { text, audioBase64, mimeType }
- * @param {string} apiKey - Gemini API Key
+ * @param {string} customApiKey - Optional user custom Gemini API Key
  * @param {Array} conversationHistory - Past messages in the chat session
  */
-export async function askRulesAi(input, apiKey, conversationHistory = []) {
-  if (!apiKey) {
-    throw new Error('No se ha configurado la clave API de Gemini (VITE_GEMINI_API_KEY).');
+export async function askRulesAi(input, customApiKey = '', conversationHistory = []) {
+  const keysPool = getApiKeysPool(customApiKey);
+
+  if (keysPool.length === 0) {
+    throw new Error('No se ha configurado ninguna clave API de Gemini (VITE_GEMINI_API_KEY).');
   }
 
   const queryText = typeof input === 'string' ? input : (input?.text || '');
@@ -249,31 +273,46 @@ Responde en español de forma directa, analizando todas las condiciones de las r
 
   let lastError = null;
 
-  for (const modelName of CANDIDATE_MODELS) {
-    try {
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
+  // Intentar con cada clave disponible en el pool a partir del índice activo
+  for (let attempt = 0; attempt < keysPool.length; attempt++) {
+    const currentKeyIdx = (activeKeyIndex + attempt) % keysPool.length;
+    const currentApiKey = keysPool[currentKeyIdx];
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        lastError = new Error(errorData.error?.message || `Error en modelo ${modelName} (${response.status})`);
-        continue;
+    for (const modelName of CANDIDATE_MODELS) {
+      try {
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${currentApiKey}`;
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          const errMsg = errorData.error?.message || `HTTP ${response.status}`;
+          lastError = new Error(errMsg);
+
+          // Si es error de cuota/límite (429 / RESOURCE_EXHAUSTED / quota), pasar de inmediato a la siguiente clave
+          if (response.status === 429 || errMsg.toLowerCase().includes('quota') || errMsg.toLowerCase().includes('resource_exhausted')) {
+            console.warn(`[Lobelia AI] Cuota agotada en clave #${currentKeyIdx + 1}. Alternando a la siguiente clave del pool...`);
+            break; // Salir del loop de modelos para probar la siguiente clave del pool
+          }
+          continue;
+        }
+
+        const data = await response.json();
+        const answerText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+        if (answerText) {
+          // Guardar la clave exitosa como activa
+          activeKeyIndex = currentKeyIdx;
+          return answerText;
+        }
+      } catch (err) {
+        lastError = err;
       }
-
-      const data = await response.json();
-      const answerText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-
-      if (answerText) {
-        return answerText;
-      }
-    } catch (err) {
-      lastError = err;
     }
   }
 
-  throw lastError || new Error('No se pudo obtener respuesta de los modelos disponibles.');
+  throw lastError || new Error('No se pudo obtener respuesta de los modelos ni claves disponibles.');
 }
