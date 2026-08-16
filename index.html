@@ -30,10 +30,21 @@
     <meta name="twitter:title" content="🥄 La Cuchara de Lobelia | MESBG App" />
     <meta name="twitter:description" content="⚔️ Misiones oficiales, ligas, torneos, calculadora de dados y Lobelia: Tu referí con IA." />
     <meta name="twitter:image" content="https://ningrael.github.io/CucharaLobelia/og-image.png" />
+
+    <style>
+      @keyframes pulseLogo {
+        0%, 100% { transform: scale(1); opacity: 0.85; filter: drop-shadow(0 0 8px rgba(203, 161, 53, 0.3)); }
+        50% { transform: scale(1.05); opacity: 1; filter: drop-shadow(0 0 16px rgba(203, 161, 53, 0.6)); }
+      }
+    </style>
   </head>
 
-  <body>
-    <div id="root"></div>
+  <body style="margin: 0; background-color: #0a110b;">
+    <div id="root">
+      <div style="min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background-color: #0a110b; gap: 16px;">
+        <img src="./favicon.svg?v=2026" alt="La Cuchara de Lobelia" style="width: 76px; height: 76px; animation: pulseLogo 2s infinite ease-in-out;" />
+      </div>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

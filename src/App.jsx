@@ -2518,7 +2518,7 @@ export default function App() {
           alignItems: 'center',
           gap: '12px'
         }}>
-          <img src="/icon-192.png" alt="App Icon" style={{ width: '42px', height: '42px', borderRadius: '10px', flexShrink: 0 }} />
+          <img src={logoImg} alt="App Icon" style={{ width: '42px', height: '42px', borderRadius: '10px', flexShrink: 0 }} />
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: '0.88rem', fontWeight: 'bold', color: '#fff', fontFamily: 'var(--font-title)' }}>
               {lang === 'es' ? '¿Instalar La Cuchara de Lobelia?' : 'Install La Cuchara de Lobelia?'}
