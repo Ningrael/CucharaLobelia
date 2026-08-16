@@ -49,7 +49,7 @@ function AiMessageBubble({ msg, lang }) {
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
         <span style={{ fontSize: '0.75rem', color: isUser ? 'var(--gold-primary)' : 'var(--text-secondary)', fontWeight: 'bold', letterSpacing: '0.5px' }}>
-          {isUser ? '👤 Tú' : '🧙‍♂️ El Sabio de Lobelia'}
+          {isUser ? '👤 Tú' : (lang === 'es' ? '🧙‍♂️ Lobelia: Tu referí de confianza' : '🧙‍♂️ Lobelia: Your Trusted Referee')}
         </span>
         {msg.hasAudio && (
           <span style={{ fontSize: '0.72rem', background: 'rgba(203, 161, 53, 0.2)', padding: '2px 8px', borderRadius: '12px', color: 'var(--gold-primary)' }}>
@@ -394,10 +394,10 @@ export default function AiRulesWidget({ user, profile, lang, onOpenAuthModal }) 
           </div>
           <div>
             <h3 style={{ margin: 0, fontFamily: 'var(--font-heading)', color: 'var(--gold-primary)', fontSize: '1.25rem', letterSpacing: '0.6px', textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>
-              {lang === 'es' ? 'El Sabio de Lobelia' : 'The Wizard of Lobelia'}
+              {lang === 'es' ? 'Lobelia: Tu referí de confianza' : 'Lobelia: Your Trusted Referee'}
             </h3>
             <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-              {lang === 'es' ? 'Consultor oficial de reglas MESBG (Texto y Notas de voz)' : 'Official MESBG Rules AI (Text & Voice Notes)'}
+              {lang === 'es' ? 'Consultora oficial de reglas MESBG (Texto y Notas de voz)' : 'Official MESBG Rules AI (Text & Voice Notes)'}
             </span>
           </div>
         </div>
@@ -594,11 +594,11 @@ export default function AiRulesWidget({ user, profile, lang, onOpenAuthModal }) 
         </div>
 
         {/* Barra de Acciones Inferior */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', width: '100%' }}>
           <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
             {lang === 'es' ? '💡 Enter: Salto de línea | Ctrl+Enter: Enviar' : '💡 Enter: New line | Ctrl+Enter: Send'}
           </span>
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ display: 'flex', gap: '8px', marginLeft: 'auto' }}>
             <button
               type="submit"
               className="btn btn-primary"

@@ -376,56 +376,47 @@ export default function Missions({ lang, translations, setLang }) {
       {/* --- GRID DE MISIONES 2VS2 --- */}
       {mode === '2vs2' && (
         <div className="glass-card" style={{ padding: '16px' }}>
-          <h4 style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '8px', marginBottom: '12px' }}>
-            {lang === 'es' ? 'Misiones Oficiales por Parejas' : 'Official Doubles Missions'}
+          <h4 style={{ fontSize: '0.9rem', color: 'var(--gold-primary)', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '8px', marginBottom: '14px', fontFamily: 'var(--font-title)' }}>
+            {lang === 'es' ? 'Misiones Oficiales por Parejas (2vs2)' : 'Official Doubles Missions (2v2)'}
           </h4>
           <div 
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(2, 1fr)',
-              gap: '10px'
+              gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+              gap: '12px'
             }}
           >
             {MISSIONS_2VS2.map((mission, idx) => {
               const roundNum = roundBadges[mission];
               const isSelected = selectedMission === mission;
+              let roundClass = "";
+              if (roundNum) {
+                roundClass = ` active-round-${roundNum}`;
+              }
 
               return (
                 <button
                   key={idx}
                   onClick={() => openPdf(mission)}
+                  className={`mission-pill-btn${roundClass}`}
                   style={{
-                    padding: '16px 8px',
-                    background: isSelected ? 'rgba(203, 161, 53, 0.15)' : 'rgba(0,0,0,0.2)',
-                    border: isSelected ? '1px solid var(--gold-primary)' : '1px solid rgba(255,255,255,0.05)',
-                    borderRadius: 'var(--radius-sm)',
-                    color: isSelected ? 'var(--gold-primary)' : 'var(--text-primary)',
-                    fontSize: '0.8rem',
-                    fontWeight: '700',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '4px',
+                    padding: '16px 10px',
+                    fontSize: '0.85rem',
                     minHeight: '64px',
+                    borderRadius: '8px',
+                    borderColor: isSelected ? 'var(--gold-primary)' : undefined,
+                    boxShadow: isSelected ? '0 0 10px var(--gold-glow)' : undefined,
                     position: 'relative'
                   }}
+                  title={mission}
                 >
                   {mission}
                   {roundNum && (
                     <span 
-                      style={{
-                        background: 'var(--gold-primary)',
-                        color: '#000',
-                        borderRadius: '4px',
-                        padding: '2px 6px',
-                        fontSize: '0.65rem',
-                        fontWeight: 'bold',
-                        marginTop: '2px'
-                      }}
+                      className="mission-pill-badge"
+                      style={{ width: '18px', height: '18px', fontSize: '10px', top: '-6px', right: '-6px' }}
                     >
-                      R{roundNum}
+                      {roundNum}
                     </span>
                   )}
                 </button>
