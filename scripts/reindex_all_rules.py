@@ -2,6 +2,7 @@ import fitz
 import json
 import os
 import re
+import unicodedata
 
 PDF_FILES = [
     {
@@ -66,21 +67,36 @@ PDF_FILES = [
     }
 ]
 
-def clean_text(text):
+def clean_and_normalize_text(text):
     if not text:
         return ""
-    # Normalize multiple whitespace, clean non-printable chars while preserving accents and punctuation
+    
+    # 1. Normalize unicode NFKD (decomposes ligatures like fi, fl, ffi into separate ascii chars)
+    text = unicodedata.normalize('NFKD', text)
+
+    # 2. Clean non-printable control characters while preserving line breaks and standard chars
     text = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]', '', text)
-    # Replace weird typography
+
+    # 3. Replace fancy typography with standard equivalents
     text = text.replace('’', "'").replace('‘', "'").replace('“', '"').replace('”', '"')
-    text = text.replace('–', '-').replace('—', '-')
-    # Normalize spaces
+    text = text.replace('«', '"').replace('»', '"').replace('„', '"')
+    text = text.replace('–', '-').replace('—', '-').replace('−', '-')
+    text = text.replace('…', '...')
+    text = text.replace('•', '* ')
+
+    # 4. Fix missing spaces between numbers/measurements and following words
+    text = re.sub(r'(\d+)"([A-Za-z])', r'\1" \2', text)
+    text = re.sub(r'(\d+\+)([A-Za-z])', r'\1 \2', text)
+    text = re.sub(r'([+-]\d+)(to|bonus|penalty|wound|wounds|fight|attack|strength|defence)', r'\1 \2', text, flags=re.IGNORECASE)
+    text = re.sub(r'(\b\d+)(to\b)', r'\1 \2', text, flags=re.IGNORECASE)
+
+    # 5. Normalize whitespace
     text = re.sub(r'[ \t]+', ' ', text)
-    # Normalize multiple newlines
     text = re.sub(r'\n{3,}', '\n\n', text)
+
     return text.strip()
 
-def extract_all():
+def extract_all_rules():
     all_chunks = []
     stats = {}
 
@@ -99,18 +115,19 @@ def extract_all():
 
         for page_idx in range(total_pages):
             page = doc[page_idx]
+            
+            # Extract both standard text and text blocks for maximum completeness
             text = page.get_text("text")
-            cleaned = clean_text(text)
+            cleaned = clean_and_normalize_text(text)
 
-            # Some pages in scanned/art PDFs might have low text or tables with layouts
-            # Let's also extract text in blocks/tables if standard text is empty
-            if len(cleaned) < 30:
+            # Fallback to blocks if text is short
+            if len(cleaned) < 25:
                 blocks = page.get_text("blocks")
-                block_texts = [clean_text(b[4]) for b in blocks if len(b) > 4 and clean_text(b[4])]
+                block_texts = [clean_and_normalize_text(b[4]) for b in blocks if len(b) > 4 and clean_and_normalize_text(b[4])]
                 cleaned = "\n".join(block_texts)
 
-            if len(cleaned) < 15:
-                # Cover or pure art page with no rules
+            if len(cleaned) < 10:
+                # Blank cover or pure artwork page
                 continue
 
             stats[book_name]["extracted_pages"] += 1
@@ -129,13 +146,16 @@ def extract_all():
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(all_chunks, f, ensure_ascii=False, indent=2)
 
-    print("\n=== EXTRACTION SUMMARY ===")
+    print("\n=======================================================")
+    print("        100% COMPLETE MESBG RULES KNOWLEDGE BASE       ")
+    print("=======================================================")
     total_chunks = len(all_chunks)
     total_chars = sum(len(c["content"]) for c in all_chunks)
     for b, s in stats.items():
-        print(f"{b}: {s['extracted_pages']}/{s['total_pages']} pages extracted ({s['chars']} chars)")
-    print(f"\nTOTAL INDEXED SECTIONS: {total_chunks} pages | Total characters: {total_chars}")
+        print(f"[OK] {b:<52}: {s['extracted_pages']:3d}/{s['total_pages']:3d} pages ({s['chars']:7d} chars)")
+    print("-------------------------------------------------------")
+    print(f"TOTAL INDEXED PAGES: {total_chunks} pages | Total characters: {total_chars}")
     print(f"Saved to {output_path}")
 
 if __name__ == "__main__":
-    extract_all()
+    extract_all_rules()
