@@ -161,6 +161,30 @@ export default function AiRulesWidget({ user, profile, lang, onOpenAuthModal }) 
   const timerIntervalRef = useRef(null);
   const shouldAutoSendRef = useRef(false);
 
+  // Referencias para auto-scroll del chat
+  const chatContainerRef = useRef(null);
+  const messagesEndRef = useRef(null);
+
+  const scrollToBottom = (behavior = 'smooth') => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior, block: 'end' });
+    }
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  };
+
+  // Auto-scroll cada vez que cambia el historial o el estado de carga
+  useEffect(() => {
+    scrollToBottom('smooth');
+    const t1 = setTimeout(() => scrollToBottom('smooth'), 80);
+    const t2 = setTimeout(() => scrollToBottom('smooth'), 250);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [chatHistory, isLoading]);
+
   const [customApiKey, setCustomApiKey] = useState(() => {
     try {
       return localStorage.getItem('lobelia_gemini_key') || '';
@@ -493,8 +517,9 @@ export default function AiRulesWidget({ user, profile, lang, onOpenAuthModal }) 
       </div>
 
       {/* Historial de Respuestas */}
-      {chatHistory.length > 0 && (
+      {(chatHistory.length > 0 || isLoading) && (
         <div
+          ref={chatContainerRef}
           style={{
             display: 'flex',
             flexDirection: 'column',
@@ -505,12 +530,38 @@ export default function AiRulesWidget({ user, profile, lang, onOpenAuthModal }) 
             background: 'rgba(0, 0, 0, 0.35)',
             borderRadius: '14px',
             border: '1px solid rgba(255, 255, 255, 0.08)',
-            zIndex: 1
+            zIndex: 1,
+            scrollBehavior: 'smooth'
           }}
         >
           {chatHistory.map((msg, index) => (
             <AiMessageBubble key={index} msg={msg} lang={lang} />
           ))}
+
+          {/* Indicador de pensamiento con animación */}
+          {isLoading && (
+            <div
+              style={{
+                alignSelf: 'flex-start',
+                padding: '12px 18px',
+                borderRadius: '16px 16px 16px 4px',
+                background: 'linear-gradient(135deg, rgba(203, 161, 53, 0.18), rgba(255, 255, 255, 0.03))',
+                border: '1px solid rgba(203, 161, 53, 0.4)',
+                color: 'var(--gold-primary)',
+                fontSize: '0.88rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                boxShadow: '0 4px 15px rgba(0, 0, 0, 0.3)',
+                animation: 'pulse 1.5s infinite'
+              }}
+            >
+              <span style={{ fontSize: '1.25rem' }}>🧙‍♂️</span>
+              <span>{lang === 'es' ? 'Lobelia está consultando los libros y reglamentos oficiales...' : 'Lobelia is consulting official rulebooks and erratas...'}</span>
+            </div>
+          )}
+
+          <div ref={messagesEndRef} style={{ height: '1px', width: '100%' }} />
         </div>
       )}
 

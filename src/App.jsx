@@ -389,6 +389,14 @@ export default function App() {
   const [unreadBugReportsCount, setUnreadBugReportsCount] = useState(0);
   const [chatActiveTab, setChatActiveTab] = useState('chats'); // 'chats' | 'bugs'
   const [selectedBugScreenshot, setSelectedBugScreenshot] = useState(null);
+  const pmMessagesEndRef = useRef(null);
+
+  // Auto-scroll del chat privado al recibir o enviar mensajes
+  useEffect(() => {
+    if (activeChat && pmMessagesEndRef.current) {
+      pmMessagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [chatMessages, activeChat]);
 
   // Sincronizar inputs de edición con el perfil activo
   useEffect(() => {
@@ -2684,6 +2692,7 @@ export default function App() {
                   );
                 })
               )}
+              <div ref={pmMessagesEndRef} style={{ height: '1px', width: '100%' }} />
             </div>
 
             <form onSubmit={handleSendMessage} style={{ display: 'flex', gap: '8px', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '10px' }}>
