@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { db } from '../utils/firebase';
 import { doc, getDoc, setDoc, getCountFromServer, collection } from 'firebase/firestore';
 
-export default function HitsDisplay({ lang }) {
+export default function HitsDisplay({ lang, style }) {
   const [count, setCount] = useState('...');
   
   useEffect(() => {
@@ -96,18 +96,25 @@ export default function HitsDisplay({ lang }) {
   return (
     <div 
       style={{
-        display: 'flex',
+        display: 'inline-flex',
         alignItems: 'center',
-        justifyContent: 'center',
-        padding: '12px',
-        fontSize: '0.8rem',
-        color: 'var(--text-muted)',
+        gap: '6px',
+        fontSize: '0.84rem',
+        fontWeight: '600',
+        color: 'var(--gold-primary)',
         fontFamily: 'var(--font-title)',
-        letterSpacing: '0.05em'
+        letterSpacing: '0.04em',
+        background: 'rgba(203, 161, 53, 0.08)',
+        border: '1px solid rgba(203, 161, 53, 0.25)',
+        borderRadius: '16px',
+        padding: '6px 14px',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+        ...style
       }}
-      aria-hidden="true"
+      aria-label={`${labelText} ${count}`}
     >
-      <span>{labelText}{count}</span>
+      <span>👁️</span>
+      <span>{labelText}<strong>{count}</strong></span>
     </div>
   );
 }

@@ -176,55 +176,82 @@ export default function Home({ setView, onOpenAbout, onOpenLegal, onOpenBugRepor
         </button>
       )}
 
-      {/* Footer Info, Legal, Bug & Acerca De */}
+      {/* Footer: Fila Superior (Visitas & Bug Report) + Fila Inferior (Acerca de & Legal) */}
       <div 
         style={{ 
           display: 'flex', 
           flexDirection: 'column', 
           alignItems: 'center', 
-          gap: '10px', 
-          marginTop: '8px', 
-          paddingBottom: '20px',
-          borderTop: '1px solid rgba(255,255,255,0.05)',
-          paddingTop: '18px'
+          gap: '12px', 
+          marginTop: '10px', 
+          paddingBottom: '24px',
+          borderTop: '1px solid rgba(255,255,255,0.06)',
+          paddingTop: '20px'
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
+        {/* Fila 1: Contador de Visitas + Reportar Bug (Más grandes y destacados) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', justifyContent: 'center' }}>
+          <HitsDisplay lang={lang} />
+
+          {onOpenBugReport && (
+            <button 
+              type="button"
+              className="btn btn-secondary" 
+              onClick={onOpenBugReport}
+              style={{
+                fontSize: '0.84rem',
+                fontWeight: '600',
+                padding: '6px 14px',
+                borderRadius: '16px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                background: 'rgba(255,255,255,0.04)',
+                borderColor: 'rgba(255,255,255,0.12)',
+                color: 'var(--text-secondary)',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.borderColor = 'var(--gold-primary)';
+                e.currentTarget.style.color = 'var(--gold-primary)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)';
+                e.currentTarget.style.color = 'var(--text-secondary)';
+              }}
+            >
+              <span>🐛</span>
+              <span>{lang === 'es' ? 'Reportar un error' : 'Report a bug'}</span>
+            </button>
+          )}
+        </div>
+
+        {/* Fila 2: Acerca de & Aviso Legal (Más pequeños y discretos abajo) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', justifyContent: 'center', marginTop: '2px' }}>
           <button 
+            type="button"
             className="btn btn-small" 
             onClick={onOpenAbout}
-            style={{ background: 'transparent', border: 'none', boxShadow: 'none', color: 'var(--text-muted)', fontSize: '0.78rem', cursor: 'pointer', padding: '4px 8px' }}
+            style={{ background: 'transparent', border: 'none', boxShadow: 'none', color: 'var(--text-muted)', fontSize: '0.72rem', cursor: 'pointer', padding: '2px 6px' }}
             onMouseOver={(e) => e.currentTarget.style.color = 'var(--gold-primary)'}
             onMouseOut={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
           >
             {t.about}
           </button>
-          <span style={{ color: 'rgba(255,255,255,0.15)', fontSize: '0.75rem' }}>•</span>
+          <span style={{ color: 'rgba(255,255,255,0.12)', fontSize: '0.7rem' }}>•</span>
           <button 
+            type="button"
             className="btn btn-small" 
             onClick={onOpenLegal}
-            style={{ background: 'transparent', border: 'none', boxShadow: 'none', color: 'var(--text-muted)', fontSize: '0.78rem', cursor: 'pointer', padding: '4px 8px' }}
+            style={{ background: 'transparent', border: 'none', boxShadow: 'none', color: 'var(--text-muted)', fontSize: '0.72rem', cursor: 'pointer', padding: '2px 6px' }}
             onMouseOver={(e) => e.currentTarget.style.color = 'var(--gold-primary)'}
             onMouseOut={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
           >
             {lang === 'es' ? 'Aviso Legal, Privacidad & Cookies' : 'Legal Notice, Privacy & Cookies'}
           </button>
-          {onOpenBugReport && (
-            <>
-              <span style={{ color: 'rgba(255,255,255,0.15)', fontSize: '0.75rem' }}>•</span>
-              <button 
-                className="btn btn-small" 
-                onClick={onOpenBugReport}
-                style={{ background: 'transparent', border: 'none', boxShadow: 'none', color: 'var(--text-muted)', fontSize: '0.78rem', cursor: 'pointer', padding: '4px 8px' }}
-                onMouseOver={(e) => e.currentTarget.style.color = 'var(--gold-primary)'}
-                onMouseOut={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
-              >
-                🐛 {lang === 'es' ? 'Reportar un error' : 'Report a bug'}
-              </button>
-            </>
-          )}
         </div>
-        <HitsDisplay lang={lang} />
       </div>
     </div>
   );
