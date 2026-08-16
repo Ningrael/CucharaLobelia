@@ -1,131 +1,148 @@
-// src/views/Home.jsx
 import React from 'react';
-import YouTubeGallery from '../components/YouTubeGallery';
 import HitsDisplay from '../components/HitsDisplay';
+import AiRulesWidget from '../components/AiRulesWidget';
 
-export default function Home({ setView, onOpenAbout, lang, translations }) {
-  const t = translations[lang];
+export default function Home({ setView, onOpenAbout, lang, translations, user, profile, onOpenAuthModal }) {
+  const t = translations[lang] || translations['es'];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%' }}>
-      {/* Tarjeta Destacada de Misiones (Principal Funcionalidad) */}
-      <div 
-        className="glass-card hero-card-highlight"
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '12px',
-          padding: '24px 20px',
-          borderRadius: 'var(--radius-md)',
-          alignItems: 'center',
-          textAlign: 'center'
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontSize: '2.5rem', filter: 'drop-shadow(0 0 8px rgba(255,255,255,0.1))' }}>⚔️</span>
-        </div>
-        <h3 style={{ fontSize: '1.35rem', color: 'var(--gold-primary)' }}>
-          {t.missions}
-        </h3>
-        <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', maxWidth: '300px' }}>
-          {lang === 'es'
-            ? 'Generador de escenarios de torneo, rondas de emparejamientos y reglamento oficial en un toque.'
-            : 'Tournament scenario generator, round pairings, and official rules in one touch.'}
-        </p>
-        <button 
-          className="btn btn-primary"
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', width: '100%' }}>
+      {/* Selector Rápido Compacto de Secciones (Misiones & Liga) */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '12px', width: '100%' }}>
+        {/* Banner Compacto: Misiones */}
+        <div
           onClick={() => setView('missions')}
-          style={{ width: '100%', marginTop: '8px', minHeight: '44px' }}
+          className="hero-card-highlight"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '14px 18px',
+            borderRadius: '16px',
+            cursor: 'pointer',
+            background: 'linear-gradient(135deg, rgba(22, 38, 25, 0.85) 0%, rgba(12, 20, 14, 0.95) 100%)',
+            border: '1px solid rgba(203, 161, 53, 0.4)',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
+            transition: 'all 0.2s ease'
+          }}
         >
-          {lang === 'es' ? 'ACCEDER A MISIONES' : 'GO TO MISSIONS'}
-        </button>
-      </div>
-
-      {/* Tarjeta Destacada de Liga (Nueva ubicación) */}
-      <div 
-        className="glass-card hero-card-highlight"
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '12px',
-          padding: '24px 20px',
-          borderRadius: 'var(--radius-md)',
-          alignItems: 'center',
-          textAlign: 'center'
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontSize: '2.5rem', filter: 'drop-shadow(0 0 8px rgba(255,255,255,0.1))' }}>🏆</span>
-        </div>
-        <h3 style={{ fontSize: '1.35rem', color: 'var(--gold-primary)' }}>
-          {lang === 'es' ? 'LIGA' : 'LEAGUE'}
-        </h3>
-        <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', maxWidth: '300px' }}>
-          {lang === 'es'
-            ? 'Explora torneos activos, inscríbete con tu bando y facción y registra tus resultados.'
-            : 'Explore active tournaments, register with your side and faction, and report your scores.'}
-        </p>
-        <button 
-          className="btn btn-primary"
-          onClick={() => setView('league')}
-          style={{ width: '100%', marginTop: '8px', minHeight: '44px' }}
-        >
-          {lang === 'es' ? 'ACCEDER A LA LIGA' : 'GO TO LEAGUE'}
-        </button>
-      </div>
-
-      {/* Grid de Utilidades Secundarias */}
-      <div className="secondary-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)' }}>
-        <button
-          className="secondary-grid-btn"
-          onClick={() => setView('calculator')}
-        >
-          <span>📊</span>
-          <span>{lang === 'es' ? 'Calculadora' : 'Calculator'}</span>
-        </button>
-
-        <button
-          className="secondary-grid-btn"
-          onClick={() => setView('calendar')}
-        >
-          <span>📅</span>
-          <span>{lang === 'es' ? 'Eventos' : 'Events'}</span>
-        </button>
-      </div>
-
-      {/* Galería de Videos de YouTube */}
-      <YouTubeGallery lang={lang} />
-
-      {/* Cartel Destacado Torneos (Sam Va Lentin - Debajo de YouTube y más pequeño) */}
-      <div 
-        className="glass-card"
-        style={{
-          display: 'flex',
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          padding: '12px 16px',
-          border: '1px solid rgba(255, 255, 255, 0.05)',
-          background: 'rgba(0, 0, 0, 0.2)',
-          gap: '12px',
-          borderRadius: 'var(--radius-sm)'
-        }}
-      >
-        <div style={{ textAlign: 'left', minWidth: 0, flex: 1 }}>
-          <div style={{ fontSize: '0.62rem', letterSpacing: '0.1em', color: 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase' }}>
-            {lang === 'es' ? 'Torneo Concluido' : 'Concluded Tournament'}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span style={{ fontSize: '1.8rem', filter: 'drop-shadow(0 0 6px var(--gold-glow))' }}>⚔️</span>
+            <div>
+              <h4 style={{ margin: 0, fontSize: '1rem', color: 'var(--gold-primary)', fontFamily: 'var(--font-title)', letterSpacing: '0.5px' }}>
+                {t.missions || 'Misiones Matched Play'}
+              </h4>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                {lang === 'es' ? 'Escenarios oficiales y emparejamientos' : 'Official scenarios & pairings'}
+              </span>
+            </div>
           </div>
-          <h4 style={{ fontSize: '0.95rem', color: '#fff', margin: '2px 0 0 0', fontFamily: 'var(--font-title)' }}>
-            Sam Va Lentin 2026
-          </h4>
+          <span style={{ color: 'var(--gold-primary)', fontSize: '1.2rem', fontWeight: 'bold', paddingLeft: '8px' }}>➔</span>
         </div>
-        <button 
-          className="btn btn-primary btn-small"
-          onClick={() => setView('calendar')}
-          style={{ minHeight: '30px', padding: '4px 12px', fontSize: '0.72rem' }}
+
+        {/* Banner Compacto: Liga */}
+        <div
+          onClick={() => setView('league')}
+          className="hero-card-highlight"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '14px 18px',
+            borderRadius: '16px',
+            cursor: 'pointer',
+            background: 'linear-gradient(135deg, rgba(35, 26, 16, 0.85) 0%, rgba(18, 14, 10, 0.95) 100%)',
+            border: '1px solid rgba(203, 161, 53, 0.4)',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
+            transition: 'all 0.2s ease'
+          }}
         >
-          {lang === 'es' ? 'Ver Detalles' : 'View Details'}
-        </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span style={{ fontSize: '1.8rem', filter: 'drop-shadow(0 0 6px rgba(236, 210, 121, 0.4))' }}>🏆</span>
+            <div>
+              <h4 style={{ margin: 0, fontSize: '1rem', color: 'var(--gold-primary)', fontFamily: 'var(--font-title)', letterSpacing: '0.5px' }}>
+                {lang === 'es' ? 'Liga & Torneos' : 'League & Tournaments'}
+              </h4>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                {lang === 'es' ? 'Clasificación, inscripciones y resultados' : 'Standings, sign-ups & battle logs'}
+              </span>
+            </div>
+          </div>
+          <span style={{ color: 'var(--gold-primary)', fontSize: '1.2rem', fontWeight: 'bold', paddingLeft: '8px' }}>➔</span>
+        </div>
+      </div>
+
+      {/* 2. Cuadro Principal de IA - Sabio de Reglas MESBG */}
+      <AiRulesWidget
+        user={user}
+        profile={profile}
+        lang={lang}
+        onOpenAuthModal={onOpenAuthModal}
+      />
+
+      {/* Selector Secundario Compacto (Calculadora & Eventos) */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '12px', width: '100%' }}>
+        {/* Banner Compacto: Calculadora */}
+        <div
+          onClick={() => setView('calculator')}
+          className="hero-card-highlight"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '14px 18px',
+            borderRadius: '16px',
+            cursor: 'pointer',
+            background: 'linear-gradient(135deg, rgba(20, 28, 38, 0.85) 0%, rgba(10, 14, 20, 0.95) 100%)',
+            border: '1px solid rgba(203, 161, 53, 0.4)',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
+            transition: 'all 0.2s ease'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span style={{ fontSize: '1.8rem', filter: 'drop-shadow(0 0 6px rgba(100, 180, 255, 0.3))' }}>📊</span>
+            <div>
+              <h4 style={{ margin: 0, fontSize: '1rem', color: 'var(--gold-primary)', fontFamily: 'var(--font-title)', letterSpacing: '0.5px' }}>
+                {lang === 'es' ? 'Calculadora de Dados' : 'Dice Calculator'}
+              </h4>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                {lang === 'es' ? 'Probabilidades de combate y disparo' : 'Combat & shooting odds'}
+              </span>
+            </div>
+          </div>
+          <span style={{ color: 'var(--gold-primary)', fontSize: '1.2rem', fontWeight: 'bold', paddingLeft: '8px' }}>➔</span>
+        </div>
+
+        {/* Banner Compacto: Eventos */}
+        <div
+          onClick={() => setView('calendar')}
+          className="hero-card-highlight"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '14px 18px',
+            borderRadius: '16px',
+            cursor: 'pointer',
+            background: 'linear-gradient(135deg, rgba(32, 20, 35, 0.85) 0%, rgba(16, 10, 20, 0.95) 100%)',
+            border: '1px solid rgba(203, 161, 53, 0.4)',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
+            transition: 'all 0.2s ease'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span style={{ fontSize: '1.8rem', filter: 'drop-shadow(0 0 6px rgba(220, 150, 255, 0.3))' }}>📅</span>
+            <div>
+              <h4 style={{ margin: 0, fontSize: '1rem', color: 'var(--gold-primary)', fontFamily: 'var(--font-title)', letterSpacing: '0.5px' }}>
+                {lang === 'es' ? 'Eventos & Torneos' : 'Events & Calendar'}
+              </h4>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                {lang === 'es' ? 'Calendario de torneos y quedadas' : 'Community tournaments & meetups'}
+              </span>
+            </div>
+          </div>
+          <span style={{ color: 'var(--gold-primary)', fontSize: '1.2rem', fontWeight: 'bold', paddingLeft: '8px' }}>➔</span>
+        </div>
       </div>
 
       {/* Footer Info & Acerca De */}

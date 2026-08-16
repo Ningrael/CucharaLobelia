@@ -33,6 +33,35 @@
   --transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Scrollbars estilizados */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(203, 161, 53, 0.35);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--gold-primary);
+}
+
+/* Animaciones */
+@keyframes pulse {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.02); opacity: 0.85; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes glowBorder {
+  0% { border-color: rgba(203, 161, 53, 0.3); }
+  50% { border-color: rgba(203, 161, 53, 0.8); }
+  100% { border-color: rgba(203, 161, 53, 0.3); }
+}
+
 /* Reset y Estilos Base */
 * {
   box-sizing: border-box;
@@ -354,7 +383,7 @@ h1, h2, h3, h4, h5, h6 {
   box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.7);
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
+  overflow: hidden;
   
   /* Animación Móvil: sube desde abajo */
   bottom: 0;
@@ -362,7 +391,7 @@ h1, h2, h3, h4, h5, h6 {
   right: 0;
   width: 100%;
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-  max-height: 85vh;
+  max-height: 88vh;
   transform: translateY(100%);
   animation: slideUp 0.3s forwards cubic-bezier(0.1, 0.76, 0.55, 0.94);
 }
@@ -371,36 +400,55 @@ h1, h2, h3, h4, h5, h6 {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 14px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(14, 27, 17, 0.98);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  flex-shrink: 0;
+  z-index: 10;
   position: sticky;
   top: 0;
-  background: var(--bg-modal);
-  z-index: 2;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.15rem;
+  color: var(--gold-primary);
+  font-family: var(--font-title);
+  letter-spacing: 0.5px;
 }
 
 .modal-body {
-  padding: 20px;
+  padding: 18px 20px;
   flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  -webkit-overflow-scrolling: touch;
 }
 
 .modal-close-btn {
-  background: transparent;
-  border: none;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 50%;
   color: var(--text-muted);
-  font-size: 1.8rem;
+  font-size: 1.4rem;
   line-height: 1;
-  width: 44px;
-  height: 44px;
+  width: 36px;
+  height: 36px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: color var(--transition-fast);
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
 }
 
 .modal-close-btn:hover {
-  color: var(--danger-color);
+  background: rgba(231, 76, 60, 0.2);
+  border-color: #e74c3c;
+  color: #ff7675;
+  transform: scale(1.05);
 }
 
 /* Estilos de modal para pantallas más grandes (Escritorio) */

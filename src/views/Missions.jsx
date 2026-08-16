@@ -100,9 +100,7 @@ export default function Missions({ lang, translations, setLang }) {
     }
 
     setRoundBadges(badges);
-    if (lastSelected) {
-      setSelectedMission(lastSelected);
-    }
+    setSelectedMission(null);
   };
 
   // 3. Abrir visor de PDF
@@ -222,28 +220,73 @@ export default function Missions({ lang, translations, setLang }) {
         </button>
       </div>
 
-      {/* Panel de Controles Compacto */}
-      <div 
-        className="glass-card" 
-        style={{ 
-          display: 'flex', 
-          flexDirection: 'column', 
-          gap: '8px', 
-          padding: '10px',
-          border: '1px solid rgba(255,255,255,0.06)'
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
-          {/* Stepper para Rondas */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 'bold' }}>
-              {lang === 'es' ? 'Rondas:' : 'Rounds:'}
-            </span>
-            <div className="stepper-container" style={{ maxWidth: '100px', height: '32px' }}>
+      {/* Dos Banners Principales Interactivos (Random Naranja & Rondas de Torneo) */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '12px', width: '100%' }}>
+        {/* 1. Botón Principal Naranja: Misión Random */}
+        <div
+          onClick={handleRandomSelect}
+          className="hero-card-highlight"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '16px 20px',
+            borderRadius: '16px',
+            cursor: 'pointer',
+            background: 'linear-gradient(135deg, rgba(230, 126, 34, 0.28) 0%, rgba(160, 64, 0, 0.35) 100%)',
+            border: '1px solid #e67e22',
+            boxShadow: '0 4px 18px rgba(230, 126, 34, 0.25)',
+            transition: 'all 0.2s ease'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <span style={{ fontSize: '2rem', filter: 'drop-shadow(0 0 8px rgba(243, 156, 18, 0.6))' }}>🎲</span>
+            <div>
+              <h4 style={{ margin: 0, fontSize: '1.05rem', color: '#ffb74d', fontFamily: 'var(--font-title)', letterSpacing: '0.5px' }}>
+                {lang === 'es' ? 'Elige una misión random' : 'Pick a random mission'}
+              </h4>
+              <span style={{ fontSize: '0.78rem', color: 'rgba(255, 255, 255, 0.8)' }}>
+                {lang === 'es' ? 'Selección y visor instantáneo' : 'Instant random mission & PDF'}
+              </span>
+            </div>
+          </div>
+          <span style={{ color: '#ffb74d', fontSize: '1.3rem', fontWeight: 'bold' }}>➔</span>
+        </div>
+
+        {/* 2. Botón Rondas de Torneo con Stepper Integrado */}
+        <div
+          className="hero-card-highlight"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '14px 18px',
+            borderRadius: '16px',
+            background: 'linear-gradient(135deg, rgba(22, 38, 25, 0.85) 0%, rgba(12, 20, 14, 0.95) 100%)',
+            border: '1px solid rgba(203, 161, 53, 0.4)',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.3)',
+            gap: '10px',
+            flexWrap: 'wrap'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: '140px' }}>
+            <span style={{ fontSize: '1.8rem', filter: 'drop-shadow(0 0 6px var(--gold-glow))' }}>🏆</span>
+            <div>
+              <h4 style={{ margin: 0, fontSize: '0.95rem', color: 'var(--gold-primary)', fontFamily: 'var(--font-title)', letterSpacing: '0.5px' }}>
+                {lang === 'es' ? 'Rondas de torneo' : 'Tournament rounds'}
+              </h4>
+              <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
+                {lang === 'es' ? 'Genera sin repetir pool' : 'Generate non-repeating pools'}
+              </span>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div className="stepper-container" style={{ maxWidth: '90px', height: '34px', background: 'rgba(0,0,0,0.4)', borderRadius: '8px' }}>
               <button 
                 type="button" 
                 className="stepper-btn" 
-                style={{ width: '30px', height: '32px', fontSize: '1rem', padding: 0 }}
+                style={{ width: '28px', height: '34px', fontSize: '0.9rem', padding: 0 }}
                 onClick={() => setRounds(Math.max(1, rounds - 1))}
               >
                 -
@@ -251,52 +294,41 @@ export default function Missions({ lang, translations, setLang }) {
               <input 
                 type="number" 
                 className="stepper-input" 
-                style={{ width: '40px', height: '32px', fontSize: '0.9rem' }} 
+                style={{ width: '34px', height: '34px', fontSize: '0.88rem' }} 
                 value={rounds} 
                 readOnly 
               />
               <button 
                 type="button" 
                 className="stepper-btn" 
-                style={{ width: '30px', height: '32px', fontSize: '1rem', padding: 0 }}
+                style={{ width: '28px', height: '34px', fontSize: '0.9rem', padding: 0 }}
                 onClick={() => setRounds(Math.min(6, rounds + 1))}
               >
                 +
               </button>
             </div>
-          </div>
 
-          <div style={{ display: 'flex', gap: '6px', flex: 1, justifyContent: 'flex-end' }}>
-            {/* Botón Aleatorio */}
             <button 
-              className="btn btn-small"
-              onClick={handleRandomSelect}
-              style={{ minHeight: '32px', fontSize: '0.72rem', padding: '0 8px' }}
-            >
-              🎲 {lang === 'es' ? 'Aleatorio' : 'Random'}
-            </button>
-            
-            {/* Botón Generar */}
-            <button 
-              className="btn btn-small btn-primary"
+              className="btn btn-primary btn-small"
               onClick={handleGenerateRounds}
-              style={{ minHeight: '32px', fontSize: '0.72rem', padding: '0 8px' }}
+              style={{ minHeight: '34px', padding: '0 12px', fontSize: '0.8rem', borderRadius: '8px', fontWeight: 'bold' }}
             >
               ⚡ {lang === 'es' ? 'Generar' : 'Generate'}
             </button>
           </div>
         </div>
-
-        {Object.keys(roundBadges).length > 0 && (
-          <button
-            className="btn btn-primary btn-small"
-            onClick={handleShare}
-            style={{ width: '100%', minHeight: '30px', fontSize: '0.72rem', padding: '4px', marginTop: '2px' }}
-          >
-            📤 {lang === 'es' ? 'Compartir Rondas' : 'Share Rounds'}
-          </button>
-        )}
       </div>
+
+      {/* Botón Compartir Rondas si se han generado */}
+      {Object.keys(roundBadges).length > 0 && (
+        <button
+          className="btn btn-primary btn-small"
+          onClick={handleShare}
+          style={{ width: '100%', minHeight: '34px', fontSize: '0.8rem', padding: '6px', borderRadius: '10px' }}
+        >
+          📤 {lang === 'es' ? 'Compartir Rondas Generadas' : 'Share Generated Rounds'}
+        </button>
+      )}
 
       {/* --- GRID DE MISIONES 1VS1 (DASHBOARD COMPACTO 24 MISIONES) --- */}
       {mode === '1vs1' && (

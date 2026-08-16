@@ -159,7 +159,7 @@ export default function App() {
         screenSize: `${window.screen.width}x${window.screen.height}`,
         viewport: `${window.innerWidth}x${window.innerHeight}`,
         currentView: currentView,
-        appVersion: '2.20.0',
+        appVersion: '3.0.0',
         timestamp: new Date().toISOString(),
         url: window.location.href
       };
@@ -1168,7 +1168,13 @@ export default function App() {
             setView={setView} 
             onOpenAbout={() => setIsAboutOpen(true)}
             lang={lang} 
-            translations={translations} 
+            translations={translations}
+            user={user}
+            profile={profile}
+            onOpenAuthModal={() => {
+              setAuthMode('login');
+              setIsAuthModalOpen(true);
+            }}
           />
         );
       case 'calculator':
@@ -1199,7 +1205,13 @@ export default function App() {
             setView={setView} 
             onOpenAbout={() => setIsAboutOpen(true)}
             lang={lang} 
-            translations={translations} 
+            translations={translations}
+            user={user}
+            profile={profile}
+            onOpenAuthModal={() => {
+              setAuthMode('login');
+              setIsAuthModalOpen(true);
+            }}
           />
         );
     }
