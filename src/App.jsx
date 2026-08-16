@@ -48,7 +48,7 @@ import Calculator from './views/Calculator';
 import Missions from './views/Missions';
 import Calendar from './views/Calendar';
 import League from './views/League';
-import logoImg from './assets/hero.png';
+import logoImg from './assets/hero.svg';
 
 // Importar Traducciones
 import translations from './i18n/translations.json';
