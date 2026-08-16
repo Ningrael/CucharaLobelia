@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Símbolo de La Cuchara de Lobelia</title>
+  <desc id="desc">Emblema circular verde con una cuchara de madera y tres puntos de dado.</desc>
+  <defs>
+    <radialGradient id="bg" cx="36%" cy="28%" r="78%">
+      <stop offset="0" stop-color="#244d2d"/>
+      <stop offset="1" stop-color="#07130c"/>
+    </radialGradient>
+    <linearGradient id="wood" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#d08a3c"/>
+      <stop offset="0.55" stop-color="#a86221"/>
+      <stop offset="1" stop-color="#754014"/>
+    </linearGradient>
+    <linearGradient id="bowl" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8a4a18"/>
+      <stop offset="1" stop-color="#522b10"/>
+    </linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="170%">
+      <feDropShadow dx="0" dy="12" stdDeviation="12" flood-color="#020704" flood-opacity=".55"/>
+    </filter>
+  </defs>
+  <circle cx="256" cy="256" r="236" fill="url(#bg)" stroke="#f3e8ce" stroke-width="10"/>
+  <circle cx="256" cy="256" r="215" fill="none" stroke="#cba135" stroke-width="4" opacity=".9"/>
+  <g transform="rotate(38 256 256)" filter="url(#shadow)">
+    <rect x="233" y="46" width="46" height="284" rx="23" fill="url(#wood)" stroke="#f0b86d" stroke-width="4"/>
+    <path d="M221 308h70l-12 50h-46z" fill="url(#wood)"/>
+    <path d="M256 333c-68 0-114 47-114 105 0 45 42 62 114 62s114-17 114-62c0-58-46-105-114-105z" fill="url(#wood)" stroke="#f0b86d" stroke-width="5"/>
+    <path d="M256 355c-51 0-86 34-86 75 0 31 31 44 86 44s86-13 86-44c0-41-35-75-86-75z" fill="url(#bowl)"/>
+    <path d="M194 407c10-22 31-36 57-40" fill="none" stroke="#e29a4b" stroke-width="8" stroke-linecap="round" opacity=".45"/>
+    <circle cx="256" cy="114" r="10" fill="#f3e8ce"/>
+    <circle cx="256" cy="174" r="10" fill="#f3e8ce"/>
+    <circle cx="256" cy="234" r="10" fill="#f3e8ce"/>
+    <path d="M244 73c8-8 18-10 27-8" fill="none" stroke="#f7c47a" stroke-width="5" stroke-linecap="round" opacity=".65"/>
+  </g>
+</svg>

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Símbolo monocromo de La Cuchara de Lobelia">
+  <circle cx="256" cy="256" r="232" fill="none" stroke="#f3e8ce" stroke-width="12"/>
+  <g transform="rotate(38 256 256)" fill="#f3e8ce">
+    <rect x="233" y="46" width="46" height="284" rx="23"/>
+    <path d="M221 308h70l-12 50h-46z"/>
+    <path d="M256 333c-68 0-114 47-114 105 0 45 42 62 114 62s114-17 114-62c0-58-46-105-114-105z"/>
+    <path d="M256 360c-48 0-81 31-81 69 0 28 29 40 81 40s81-12 81-40c0-38-33-69-81-69z" fill="#07130c"/>
+    <circle cx="256" cy="114" r="10" fill="#07130c"/><circle cx="256" cy="174" r="10" fill="#07130c"/><circle cx="256" cy="234" r="10" fill="#07130c"/>
+  </g>
+</svg>

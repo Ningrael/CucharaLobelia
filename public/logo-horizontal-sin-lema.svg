@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 500" role="img" aria-labelledby="title desc">
   <title id="title">La Cuchara de Lobelia</title>
-  <desc id="desc">Logotipo horizontal principal con cuchara de madera.</desc>
+  <desc id="desc">Logotipo horizontal de La Cuchara de Lobelia sin lema.</desc>
   <defs>
     <style>
       @font-face{font-family:'Bree Serif';src:url('../fuentes/Bree Serif/BreeSerif-Regular.ttf') format('truetype')}
