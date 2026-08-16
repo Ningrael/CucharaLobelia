@@ -150,16 +150,16 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .logo-container img {
-  height: 72px;
-  width: 72px;
+  height: 60px;
+  width: auto;
+  max-width: 230px;
   object-fit: contain;
-  border-radius: 12px;
   filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.4));
   transition: transform 0.2s ease, filter 0.2s ease;
 }
 
 .logo-container img:hover {
-  transform: scale(1.04);
+  transform: scale(1.03);
   filter: drop-shadow(0 0 10px var(--gold-glow));
 }
 
@@ -214,9 +214,9 @@ h1, h2, h3, h4, h5, h6 {
 
 @media (max-width: 600px) {
   .logo-container img {
-    height: 48px;
-    width: 48px;
-    border-radius: 8px;
+    height: 42px;
+    width: auto;
+    max-width: 145px;
   }
   .youtube-header-center a {
     padding: 3px 7px;
