@@ -2,7 +2,9 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../utils/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { getApiKeysPool, setAiDailyLimit } from '../utils/geminiRulesAi';
+import { getApiKeysPool, setAiDailyLimit, getKeyUsageStats } from '../utils/geminiRulesAi';
+
+const ADMIN_CONFIG_UID = 'xXhjkWRjh0hVBjcYr2qAAFRvGL82';
 
 export default function AppConfig({ lang, showAlert, showConfirm, currentUser, profile }) {
   const [loading, setLoading] = useState(true);
@@ -15,38 +17,63 @@ export default function AppConfig({ lang, showAlert, showConfirm, currentUser, p
   const [announcementTextEs, setAnnouncementTextEs] = useState('');
   const [announcementTextEn, setAnnouncementTextEn] = useState('');
 
-  const keysPool = getApiKeysPool();
+  // Key stats state
+  const [keyStats, setKeyStats] = useState([]);
 
-  // Load existing configuration from Firestore
+  const refreshKeyStats = () => {
+    setKeyStats(getKeyUsageStats());
+  };
+
+  // Load existing configuration from Firestore (checking both admin doc and app_config)
   useEffect(() => {
     let isMounted = true;
     async function loadConfig() {
       setLoading(true);
       try {
-        const configDocRef = doc(db, 'app_config', 'global');
-        const snap = await getDoc(configDocRef);
-        if (snap.exists() && isMounted) {
-          const data = snap.data();
-          if (typeof data.aiDailyLimit === 'number') {
-            setAiDailyLimitInput(data.aiDailyLimit);
+        let loadedData = null;
+
+        // 1. Check players/{adminUid}.appConfig
+        try {
+          const adminSnap = await getDoc(doc(db, 'players', ADMIN_CONFIG_UID));
+          if (adminSnap.exists() && adminSnap.data()?.appConfig) {
+            loadedData = adminSnap.data().appConfig;
           }
-          if (typeof data.adminUnlimitedQueries === 'boolean') {
-            setAdminUnlimitedQueries(data.adminUnlimitedQueries);
+        } catch (_) {}
+
+        // 2. Fallback to app_config/global if not found
+        if (!loadedData) {
+          try {
+            const configSnap = await getDoc(doc(db, 'app_config', 'global'));
+            if (configSnap.exists()) {
+              loadedData = configSnap.data();
+            }
+          } catch (_) {}
+        }
+
+        if (loadedData && isMounted) {
+          if (typeof loadedData.aiDailyLimit === 'number') {
+            setAiDailyLimitInput(loadedData.aiDailyLimit);
           }
-          if (typeof data.announcementEnabled === 'boolean') {
-            setAnnouncementEnabled(data.announcementEnabled);
+          if (typeof loadedData.adminUnlimitedQueries === 'boolean') {
+            setAdminUnlimitedQueries(loadedData.adminUnlimitedQueries);
           }
-          if (typeof data.announcementTextEs === 'string') {
-            setAnnouncementTextEs(data.announcementTextEs);
+          if (typeof loadedData.announcementEnabled === 'boolean') {
+            setAnnouncementEnabled(loadedData.announcementEnabled);
           }
-          if (typeof data.announcementTextEn === 'string') {
-            setAnnouncementTextEn(data.announcementTextEn);
+          if (typeof loadedData.announcementTextEs === 'string') {
+            setAnnouncementTextEs(loadedData.announcementTextEs);
+          }
+          if (typeof loadedData.announcementTextEn === 'string') {
+            setAnnouncementTextEn(loadedData.announcementTextEn);
           }
         }
       } catch (err) {
         console.error('[AppConfig] Error loading settings:', err);
       } finally {
-        if (isMounted) setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+          refreshKeyStats();
+        }
       }
     }
 
@@ -77,26 +104,38 @@ export default function AppConfig({ lang, showAlert, showConfirm, currentUser, p
         updatedBy: profile?.username || currentUser?.email || 'admin'
       };
 
-      const configDocRef = doc(db, 'app_config', 'global');
-      await setDoc(configDocRef, configData, { merge: true });
+      // 1. Guardar en el documento de administrador (autorizado con permisos en Firestore)
+      try {
+        await setDoc(doc(db, 'players', ADMIN_CONFIG_UID), { appConfig: configData }, { merge: true });
+      } catch (adminDocErr) {
+        console.warn('[AppConfig] Could not write to admin doc, trying app_config/global...', adminDocErr);
+      }
 
-      // Actualizar memoria local inmediata
+      // 2. Guardar también en app_config/global
+      try {
+        await setDoc(doc(db, 'app_config', 'global'), configData, { merge: true });
+      } catch (globalDocErr) {
+        console.warn('[AppConfig] Could not write to app_config/global:', globalDocErr);
+      }
+
+      // 3. Actualizar memoria local inmediata
       setAiDailyLimit(limitNum);
 
       showAlert(
         lang === 'es' ? '¡Configuración Guardada!' : 'Settings Saved!',
         lang === 'es' 
-          ? `La configuración se ha actualizado correctamente. El nuevo límite de la IA es de ${limitNum} consultas diarias por usuario.`
-          : `Settings have been updated successfully. New AI query limit is ${limitNum} daily queries per user.`
+          ? `La configuración se ha guardado correctamente. El nuevo límite de la IA es de ${limitNum} consultas diarias por usuario.`
+          : `Settings have been saved successfully. New AI limit is ${limitNum} daily queries per user.`
       );
     } catch (err) {
-      console.error('[AppConfig] Error saving config:', err);
+      console.error('[AppConfig] Fatal save error:', err);
       showAlert(
         lang === 'es' ? 'Error al guardar' : 'Error saving settings',
-        err.message || (lang === 'es' ? 'No se pudo guardar la configuración en la base de datos.' : 'Could not save configuration to database.')
+        err.message || (lang === 'es' ? 'No se pudo guardar la configuración.' : 'Could not save configuration.')
       );
     } finally {
       setSaving(false);
+      refreshKeyStats();
     }
   };
 
@@ -114,6 +153,23 @@ export default function AppConfig({ lang, showAlert, showConfirm, currentUser, p
     );
   };
 
+  const handleResetKeyCounters = () => {
+    showConfirm(
+      lang === 'es' ? 'Reiniciar Contadores' : 'Reset Counters',
+      lang === 'es' ? '¿Deseas reiniciar los contadores de consultas de las API Keys a 0?' : 'Reset API key query counters to 0?',
+      () => {
+        const today = new Date().toISOString().slice(0, 10);
+        keyStats.forEach((_, idx) => {
+          try {
+            localStorage.removeItem(`lobelia_key_stats_${idx}_${today}`);
+            localStorage.removeItem(`lobelia_key_stats_${idx}_total`);
+          } catch (_) {}
+        });
+        refreshKeyStats();
+      }
+    );
+  };
+
   if (loading) {
     return (
       <div style={{ textAlign: 'center', padding: '30px', color: 'var(--text-secondary)' }}>
@@ -123,7 +179,7 @@ export default function AppConfig({ lang, showAlert, showConfirm, currentUser, p
     );
   }
 
-  const estimatedActiveUsers = Math.floor((keysPool.length * 1500) / (aiDailyLimitInput || 30));
+  const estimatedActiveUsers = Math.floor((keyStats.length * 1500) / (aiDailyLimitInput || 30));
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -238,8 +294,8 @@ export default function AppConfig({ lang, showAlert, showConfirm, currentUser, p
             }}>
               💡 <strong>{lang === 'es' ? 'Cálculo de Capacidad:' : 'Capacity Calculation:'}</strong>{' '}
               {lang === 'es' 
-                ? `Con el pool actual de ${keysPool.length} claves (${keysPool.length * 1500} peticiones/día de cuota gratuita), un límite de ${aiDailyLimitInput} consultas permite atender a aproximadamente ~${estimatedActiveUsers} usuarios activos al día.`
-                : `With the current pool of ${keysPool.length} keys (${keysPool.length * 1500} queries/day free tier), a limit of ${aiDailyLimitInput} queries supports approximately ~${estimatedActiveUsers} active users per day.`}
+                ? `Con el pool actual de ${keyStats.length} claves (${keyStats.length * 1500} peticiones/día de cuota gratuita), un límite de ${aiDailyLimitInput} consultas permite atender a aproximadamente ~${estimatedActiveUsers} usuarios activos al día.`
+                : `With the current pool of ${keyStats.length} keys (${keyStats.length * 1500} queries/day free tier), a limit of ${aiDailyLimitInput} queries supports approximately ~${estimatedActiveUsers} active users per day.`}
             </div>
           </div>
 
@@ -260,7 +316,7 @@ export default function AppConfig({ lang, showAlert, showConfirm, currentUser, p
           </div>
         </div>
 
-        {/* SECCIÓN 2: Pool de Claves API & Redundancia */}
+        {/* SECCIÓN 2: Pool de Claves API & Contador de Consultas por Key */}
         <div style={{
           background: 'rgba(0,0,0,0.25)',
           border: 'var(--border-glass)',
@@ -268,28 +324,133 @@ export default function AppConfig({ lang, showAlert, showConfirm, currentUser, p
           padding: '16px',
           display: 'flex',
           flexDirection: 'column',
-          gap: '12px'
+          gap: '14px'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '8px' }}>
-            <span style={{ fontSize: '1.2rem' }}>🔑</span>
-            <span style={{ fontWeight: 'bold', color: 'var(--gold-primary)', fontSize: '0.92rem' }}>
-              {lang === 'es' ? 'Estado del Pool Multi-API Key (Google Gemini)' : 'Multi-API Key Pool Status (Google Gemini)'}
-            </span>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '1.2rem' }}>🔑</span>
+              <span style={{ fontWeight: 'bold', color: 'var(--gold-primary)', fontSize: '0.92rem' }}>
+                {lang === 'es' ? 'Uso y Estado de Claves API (Google Gemini)' : 'API Key Usage & Status (Google Gemini)'}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={refreshKeyStats}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--text-muted)',
+                fontSize: '0.75rem',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}
+            >
+              🔄 {lang === 'es' ? 'Actualizar' : 'Refresh'}
+            </button>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px' }}>
-            <div style={{ background: 'rgba(255,255,255,0.03)', padding: '10px', borderRadius: '6px', border: 'var(--border-glass)' }}>
-              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{lang === 'es' ? 'Claves en Pool:' : 'Keys in Pool:'}</div>
-              <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: 'var(--gold-primary)' }}>{keysPool.length} {lang === 'es' ? 'Claves activas' : 'Active keys'}</div>
-            </div>
-            <div style={{ background: 'rgba(255,255,255,0.03)', padding: '10px', borderRadius: '6px', border: 'var(--border-glass)' }}>
-              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{lang === 'es' ? 'Capacidad combinada:' : 'Combined Capacity:'}</div>
-              <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#2ecc71' }}>~{keysPool.length * 1500} {lang === 'es' ? 'req/día' : 'req/day'}</div>
-            </div>
-            <div style={{ background: 'rgba(255,255,255,0.03)', padding: '10px', borderRadius: '6px', border: 'var(--border-glass)' }}>
-              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{lang === 'es' ? 'Sistema Failover:' : 'Failover System:'}</div>
-              <div style={{ fontSize: '1rem', fontWeight: 'bold', color: '#3498db' }}>{lang === 'es' ? '✅ Activo (Auto-switch)' : '✅ Active (Auto-switch)'}</div>
-            </div>
+          {/* Tarjetas individuales por cada clave del pool */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {keyStats.map((k, idx) => {
+              const usagePercent = Math.min(100, Math.round((k.todayQueries / k.dailyCapacity) * 100));
+              const isQuotaExceeded = k.todayQueries >= k.dailyCapacity;
+
+              return (
+                <div 
+                  key={idx}
+                  style={{
+                    background: k.isActive ? 'rgba(203, 161, 53, 0.08)' : 'rgba(255, 255, 255, 0.02)',
+                    border: k.isActive ? '1px solid var(--gold-primary)' : 'var(--border-glass)',
+                    borderRadius: '8px',
+                    padding: '12px 14px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '8px'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ 
+                        background: k.isPrimary ? 'var(--gold-primary)' : 'rgba(255,255,255,0.1)', 
+                        color: k.isPrimary ? '#000' : '#fff',
+                        fontWeight: 'bold',
+                        fontSize: '0.7rem',
+                        padding: '2px 6px',
+                        borderRadius: '4px'
+                      }}>
+                        {k.isPrimary ? (lang === 'es' ? 'CLAVE #1 (Principal)' : 'KEY #1 (Primary)') : (lang === 'es' ? `CLAVE #${idx + 1} (Respaldo)` : `KEY #${idx + 1} (Backup)`)}
+                      </span>
+                      <span style={{ fontSize: '0.82rem', fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
+                        {k.maskedKey}
+                      </span>
+                    </div>
+
+                    <span style={{ 
+                      fontSize: '0.72rem', 
+                      fontWeight: 'bold',
+                      padding: '2px 8px',
+                      borderRadius: '10px',
+                      background: isQuotaExceeded ? 'rgba(231, 76, 60, 0.2)' : (k.isActive ? 'rgba(46, 204, 113, 0.2)' : 'rgba(255,255,255,0.06)'),
+                      color: isQuotaExceeded ? '#e74c3c' : (k.isActive ? '#2ecc71' : 'var(--text-muted)')
+                    }}>
+                      {isQuotaExceeded 
+                        ? (lang === 'es' ? '⚠️ Cuota Agotada' : '⚠️ Quota Full')
+                        : (k.isActive ? (lang === 'es' ? '🟢 Activa (En uso)' : '🟢 Active (In use)') : (lang === 'es' ? '⚪ En espera' : '⚪ Standby'))}
+                    </span>
+                  </div>
+
+                  {/* Contador y barra de progreso */}
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', marginBottom: '4px' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>
+                        {lang === 'es' ? 'Consultas hoy:' : 'Queries today:'} <strong>{k.todayQueries}</strong> / {k.dailyCapacity}
+                      </span>
+                      <span style={{ color: 'var(--text-muted)', fontSize: '0.72rem' }}>
+                        {lang === 'es' ? 'Histórico total:' : 'Total all-time:'} {k.totalQueries}
+                      </span>
+                    </div>
+
+                    <div style={{
+                      width: '100%',
+                      height: '7px',
+                      background: 'rgba(255,255,255,0.08)',
+                      borderRadius: '4px',
+                      overflow: 'hidden'
+                    }}>
+                      <div style={{
+                        width: `${Math.max(2, usagePercent)}%`,
+                        height: '100%',
+                        background: isQuotaExceeded ? '#e74c3c' : (usagePercent > 80 ? '#f39c12' : 'var(--gold-primary)'),
+                        borderRadius: '4px',
+                        transition: 'width 0.3s ease'
+                      }} />
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
+            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+              ⚡ {lang === 'es' ? 'El sistema alterna automáticamente de clave si una alcanza el límite de 1.500 req/día.' : 'System automatically switches to backup key if primary hits 1,500 req/day.'}
+            </span>
+            <button
+              type="button"
+              onClick={handleResetKeyCounters}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--text-muted)',
+                fontSize: '0.7rem',
+                cursor: 'pointer',
+                textDecoration: 'underline'
+              }}
+            >
+              {lang === 'es' ? 'Reiniciar contadores' : 'Reset counters'}
+            </button>
           </div>
         </div>
 
@@ -384,7 +545,7 @@ export default function AppConfig({ lang, showAlert, showConfirm, currentUser, p
             type="submit"
             className="btn btn-primary"
             disabled={saving}
-            style={{ minWidth: '150px', fontWeight: 'bold' }}
+            style={{ minWidth: '160px', fontWeight: 'bold' }}
           >
             {saving 
               ? (lang === 'es' ? 'Guardando...' : 'Saving...') 

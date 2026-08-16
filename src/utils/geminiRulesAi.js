@@ -26,23 +26,44 @@ export function setAiDailyLimit(limit) {
   }
 }
 
-// Escuchar cambios de configuración global en Firestore
+const ADMIN_CONFIG_UID = 'xXhjkWRjh0hVBjcYr2qAAFRvGL82';
+
+// Escuchar cambios de configuración global en Firestore (con soporte dual para app_config/global y players/{adminUid})
 export function subscribeToAppConfig(callback) {
   try {
-    const configDocRef = doc(db, 'app_config', 'global');
-    return onSnapshot(configDocRef, (snap) => {
+    const adminDocRef = doc(db, 'players', ADMIN_CONFIG_UID);
+    return onSnapshot(adminDocRef, (snap) => {
       if (snap.exists()) {
-        const data = snap.data();
-        if (data.aiDailyLimit && typeof data.aiDailyLimit === 'number') {
-          setAiDailyLimit(data.aiDailyLimit);
+        const pData = snap.data();
+        const config = pData.appConfig || {};
+        if (config.aiDailyLimit && typeof config.aiDailyLimit === 'number') {
+          setAiDailyLimit(config.aiDailyLimit);
         }
-        if (callback) callback(data);
+        if (callback) callback(config);
       } else {
         if (callback) callback({ aiDailyLimit: DEFAULT_MAX_DAILY_QUERIES });
       }
     }, (err) => {
-      console.warn('[AppConfig] Error listening to global config:', err);
-      if (callback) callback({ aiDailyLimit: cachedMaxDailyQueries });
+      console.warn('[AppConfig] Error listening to admin config:', err);
+      // Fallback a app_config/global
+      try {
+        const configDocRef = doc(db, 'app_config', 'global');
+        return onSnapshot(configDocRef, (snap2) => {
+          if (snap2.exists()) {
+            const data = snap2.data();
+            if (data.aiDailyLimit && typeof data.aiDailyLimit === 'number') {
+              setAiDailyLimit(data.aiDailyLimit);
+            }
+            if (callback) callback(data);
+          } else {
+            if (callback) callback({ aiDailyLimit: cachedMaxDailyQueries });
+          }
+        }, () => {
+          if (callback) callback({ aiDailyLimit: cachedMaxDailyQueries });
+        });
+      } catch (_) {
+        if (callback) callback({ aiDailyLimit: cachedMaxDailyQueries });
+      }
     });
   } catch (err) {
     console.warn('[AppConfig] Could not set up snapshot listener:', err);
@@ -72,6 +93,50 @@ export function incrementAiUsage(userUid) {
     const used = parseInt(localStorage.getItem(key) || '0', 10);
     localStorage.setItem(key, (used + 1).toString());
   } catch (_) {}
+}
+
+// Registro y estadísticas de uso por cada API Key individual
+export function recordKeyUsage(keyIdx) {
+  const today = new Date().toISOString().slice(0, 10);
+  const dayKey = `lobelia_key_stats_${keyIdx}_${today}`;
+  const totalKey = `lobelia_key_stats_${keyIdx}_total`;
+  try {
+    const dayCount = parseInt(localStorage.getItem(dayKey) || '0', 10);
+    const totalCount = parseInt(localStorage.getItem(totalKey) || '0', 10);
+    localStorage.setItem(dayKey, (dayCount + 1).toString());
+    localStorage.setItem(totalKey, (totalCount + 1).toString());
+  } catch (_) {}
+}
+
+export function getKeyUsageStats(customApiKey = '') {
+  const keys = getApiKeysPool(customApiKey);
+  const today = new Date().toISOString().slice(0, 10);
+
+  return keys.map((k, idx) => {
+    const dayKey = `lobelia_key_stats_${idx}_${today}`;
+    const totalKey = `lobelia_key_stats_${idx}_total`;
+    let todayQueries = 0;
+    let totalQueries = 0;
+
+    try {
+      todayQueries = parseInt(localStorage.getItem(dayKey) || '0', 10);
+      totalQueries = parseInt(localStorage.getItem(totalKey) || '0', 10);
+    } catch (_) {}
+
+    const masked = k.length > 10 
+      ? `${k.slice(0, 7)}...${k.slice(-4)}`
+      : 'Clave API';
+
+    return {
+      index: idx,
+      maskedKey: masked,
+      todayQueries,
+      totalQueries,
+      dailyCapacity: 1500,
+      isActive: idx === activeKeyIndex,
+      isPrimary: idx === 0
+    };
+  });
 }
 
 const STOP_WORDS = new Set([
@@ -354,8 +419,9 @@ Responde en español de forma directa, analizando todas las condiciones de las r
         const answerText = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
         if (answerText) {
-          // Guardar la clave exitosa como activa
+          // Guardar la clave exitosa como activa y registrar estadísticas
           activeKeyIndex = currentKeyIdx;
+          recordKeyUsage(currentKeyIdx);
           return answerText;
         }
       } catch (err) {

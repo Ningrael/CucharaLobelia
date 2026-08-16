@@ -53,6 +53,7 @@ import logoImg from './assets/logo-horizontal.svg';
 
 // Importar Traducciones
 import translations from './i18n/translations.json';
+import { subscribeToAppConfig } from './utils/geminiRulesAi';
 
 const ADMIN_USERNAMES = ['matias', 'admin'];
 
@@ -307,11 +308,21 @@ export default function App() {
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [isLegalOpen, setIsLegalOpen] = useState(false);
 
-  // 4. Estados de Autenticación Global
+  // 4. Estados de Autenticación Global & Configuración
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
+  const [globalConfig, setGlobalConfig] = useState(null);
+
+  useEffect(() => {
+    const unsubscribe = subscribeToAppConfig((cfg) => {
+      if (cfg) setGlobalConfig(cfg);
+    });
+    return () => {
+      if (typeof unsubscribe === 'function') unsubscribe();
+    };
+  }, []);
 
   // Estados del Modal de Perfil/Login
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -1371,6 +1382,28 @@ export default function App() {
           </button>
         </div>
       </header>
+
+      {/* Banner de Anuncio Global */}
+      {globalConfig?.announcementEnabled && (globalConfig.announcementTextEs || globalConfig.announcementTextEn) && (
+        <div style={{
+          background: 'linear-gradient(90deg, rgba(203, 161, 53, 0.2), rgba(168, 98, 33, 0.3), rgba(203, 161, 53, 0.2))',
+          borderBottom: '1px solid var(--gold-primary)',
+          padding: '8px 16px',
+          textAlign: 'center',
+          fontSize: '0.84rem',
+          fontWeight: 'bold',
+          color: '#f3e8ce',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '8px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+          letterSpacing: '0.3px'
+        }}>
+          <span style={{ fontSize: '1rem' }}>📢</span>
+          <span>{lang === 'es' ? (globalConfig.announcementTextEs || globalConfig.announcementTextEn) : (globalConfig.announcementTextEn || globalConfig.announcementTextEs)}</span>
+        </div>
+      )}
 
       {/* Renderizado de la vista principal del enrutador */}
       {user && !user.emailVerified && (
