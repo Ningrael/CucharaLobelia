@@ -205,7 +205,23 @@ const MESBG_TRANSLATIONS = {
   'apoyar': 'support',
   'movimiento': 'move movement',
   'mover': 'move',
-  'prioridad': 'priority'
+  'prioridad': 'priority',
+  'tumulario': 'barrow wight barrow-wight',
+  'tumularios': 'barrow wight barrow-wights',
+  'paralizar': 'paralyse',
+  'paralisis': 'paralyse',
+  'parálisis': 'paralyse',
+  'espectro': 'spectre',
+  'espectros': 'spectres',
+  'sombra': 'shade',
+  'sombras': 'shades',
+  'licantropo': 'werewolf',
+  'licántropo': 'werewolf',
+  'licantropos': 'werewolves',
+  'licántropos': 'werewolves',
+  'transfix': 'transfix inmovilizar',
+  'inmovilizar': 'transfix paralyse',
+  'inmovilizado': 'transfix paralyse'
 };
 
 /**
