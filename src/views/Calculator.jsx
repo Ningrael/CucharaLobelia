@@ -1,14 +1,19 @@
 // src/views/Calculator.jsx
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   calculateSpellProbability, 
   calculateResistProbability, 
   calculateDuelProbability 
 } from '../utils/math';
+import { trackFeature } from '../utils/analyticsTracker';
 
 export default function Calculator({ lang, translations }) {
   const t = translations[lang];
   const [activeTab, setActiveTab] = useState('spell'); // 'spell', 'resist', 'duel'
+
+  useEffect(() => {
+    trackFeature('calculator_run', { tab: activeTab });
+  }, [activeTab]);
 
   // --- Estado de Lanzar Hechizo ---
   const [spellWill, setSpellWill] = useState(1);

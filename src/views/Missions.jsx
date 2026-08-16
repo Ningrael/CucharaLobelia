@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '../components/Modal';
 import PdfCanvasViewer from '../components/PdfCanvasViewer';
+import { trackFeature } from '../utils/analyticsTracker';
 
 const POOLS_1VS1 = [
   { name: { es: "1. Control de Zonas", en: "1. Zone Control" }, items: ['Domination', 'Capture & Control', 'Breakthrough', 'Stake a Claim'] },
@@ -106,6 +107,7 @@ export default function Missions({ lang, translations, setLang }) {
   // 3. Abrir visor de PDF
   const openPdf = (missionName) => {
     setSelectedMission(missionName);
+    trackFeature('mission_view', { mission: missionName, mode });
   };
 
   useEffect(() => {

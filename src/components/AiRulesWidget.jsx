@@ -8,6 +8,7 @@ import {
   getAiDailyLimit, 
   subscribeToAppConfig 
 } from '../utils/geminiRulesAi';
+import { trackFeature } from '../utils/analyticsTracker';
 
 const blobToBase64 = (blob) => {
   return new Promise((resolve, reject) => {
@@ -256,6 +257,7 @@ export default function AiRulesWidget({ user, profile, lang, onOpenAuthModal }) 
       const answer = await askRulesAi(payload, customApiKey, chatHistory);
       setChatHistory([...newHistory, { sender: 'ai', text: answer }]);
       incrementAiUsage(user.uid);
+      trackFeature('ai_query', { hasAudio: true });
       setRemainingQueries(getRemainingAiQueries(user.uid));
     } catch (err) {
       console.error('Error in AI Rules Assistant:', err);
@@ -386,6 +388,7 @@ export default function AiRulesWidget({ user, profile, lang, onOpenAuthModal }) 
       const answer = await askRulesAi(payload, customApiKey, chatHistory);
       setChatHistory([...newHistory, { sender: 'ai', text: answer }]);
       incrementAiUsage(user.uid);
+      trackFeature('ai_query', { hasAudio: false });
       setRemainingQueries(getRemainingAiQueries(user.uid));
     } catch (err) {
       console.error('Error in AI Rules Assistant:', err);

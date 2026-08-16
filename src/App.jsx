@@ -20,6 +20,8 @@ import {
 } from 'firebase/auth';
 import UserManagement from './components/UserManagement';
 import AppConfig from './components/AppConfig';
+import AnalyticsDashboard from './components/AnalyticsDashboard';
+import { initSessionTracking, updateSessionUser, trackFeature } from './utils/analyticsTracker';
 import { 
   doc, 
   getDoc, 
@@ -323,6 +325,23 @@ export default function App() {
       if (typeof unsubscribe === 'function') unsubscribe();
     };
   }, []);
+
+  // Inicializar tracking de sesión anónima / usuario y tiempo de permanencia
+  useEffect(() => {
+    initSessionTracking(user, profile, lang);
+  }, []);
+
+  // Actualizar sesión cuando el usuario se loguea o cambia su perfil
+  useEffect(() => {
+    updateSessionUser(user, profile);
+  }, [user, profile]);
+
+  // Telemetría de vistas
+  useEffect(() => {
+    if (currentView) {
+      trackFeature(`view_${currentView}`);
+    }
+  }, [currentView]);
 
   // Estados del Modal de Perfil/Login
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -1665,6 +1684,23 @@ export default function App() {
                 <>
                   <button 
                     type="button"
+                    onClick={() => setProfileTab('admin_analytics')}
+                    style={{
+                      background: profileTab === 'admin_analytics' ? 'var(--gold-primary)' : 'transparent',
+                      color: profileTab === 'admin_analytics' ? '#000' : 'var(--text-secondary)',
+                      border: 'none',
+                      padding: '6px 12px',
+                      borderRadius: '4px',
+                      fontSize: '0.78rem',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    📊 {lang === 'es' ? 'Analíticas' : 'Analytics'}
+                  </button>
+                  <button 
+                    type="button"
                     onClick={() => setProfileTab('admin_users')}
                     style={{
                       background: profileTab === 'admin_users' ? 'var(--gold-primary)' : 'transparent',
@@ -1847,6 +1883,14 @@ export default function App() {
                   </button>
                 </div>
               </form>
+            )}
+
+            {profileTab === 'admin_analytics' && isAdmin && (
+              <AnalyticsDashboard
+                lang={lang}
+                showAlert={showAlert}
+                showConfirm={showConfirm}
+              />
             )}
 
             {profileTab === 'admin_users' && isAdmin && (
