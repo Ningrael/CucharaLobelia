@@ -22,6 +22,15 @@ export default function Navbar({ currentView, setView, lang, translations }) {
       )
     },
     {
+      id: 'duels',
+      label: lang === 'es' ? 'Duelos' : 'Duels',
+      icon: (
+        <svg viewBox="0 0 24 24">
+          <path d="M14.5 13.5L16 12l5 5-1.5 1.5-5-5zm-5-3L8 12 3 7l1.5-1.5 5 5zm3-1.5L14 7.5 17.5 11l-1.5 1.5-3.5-3.5zm-1 3L10 13.5 6.5 10 8 8.5l3.5 3.5zM21 3l-6 6 1.5 1.5L21 6V3zm-18 18l6-6-1.5-1.5L3 18v3z"/>
+        </svg>
+      )
+    },
+    {
       id: 'league',
       label: lang === 'es' ? 'Liga' : 'League',
       icon: (

@@ -53,6 +53,7 @@ import Calendar from './views/Calendar';
 import League from './views/League';
 import ArmyBuilder from './views/ArmyBuilder';
 import Mods from './views/Mods';
+import Duels from './views/Duels';
 import logoImg from './assets/logo-horizontal.svg';
 
 // Importar Traducciones
@@ -1394,6 +1395,15 @@ export default function App() {
       case 'army':
         return (
           <ArmyBuilder
+            lang={lang}
+            user={user}
+            profile={profile}
+            setView={setView}
+          />
+        );
+      case 'duels':
+        return (
+          <Duels
             lang={lang}
             user={user}
             profile={profile}
