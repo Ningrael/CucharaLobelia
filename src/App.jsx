@@ -163,7 +163,7 @@ export default function App() {
         screenSize: `${window.screen.width}x${window.screen.height}`,
         viewport: `${window.innerWidth}x${window.innerHeight}`,
         currentView: currentView,
-        appVersion: '3.0.0',
+        appVersion: '3.0.1',
         timestamp: new Date().toISOString(),
         url: window.location.href
       };
@@ -1615,7 +1615,7 @@ export default function App() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', textAlign: 'center' }}>
           <span style={{ fontSize: '3rem' }}>🥄</span>
           <div style={{ fontSize: '0.8rem', color: 'var(--gold-primary)', fontWeight: 'bold', letterSpacing: '0.08em' }}>
-            LA CUCHARA DE LOBELIA • v3.0.0
+            LA CUCHARA DE LOBELIA • v3.0.1
           </div>
           <p style={{ fontSize: '0.9rem', color: 'var(--text-primary)', lineHeight: '1.6' }}>
             {t.about_body}
