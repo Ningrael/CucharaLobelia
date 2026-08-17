@@ -1,13 +1,36 @@
 // src/views/ArmyBuilder.jsx
 // ─────────────────────────────────────────────────────────────────────────────
 // Vista del Creador de Listas de Ejército — La Cuchara de Lobelia
-// Trabaja con el mod activo instalado por el usuario (zero datos GW en Lobelia).
+// Construye listas usando el mod activo del usuario (cero datos GW en Lobelia).
 // ─────────────────────────────────────────────────────────────────────────────
 import React, { useState, useEffect, useCallback } from 'react';
-import { getActiveMod, getInstalledMods, getFactions, searchModels, getHeroes, getWarriorsByFaction } from '../utils/modManager';
-import { validateFullList, exportToTTS, calculateBreakPoint, calculateQuartered, calculateBowLimit } from '../utils/armyRules';
+import {
+  getActiveMod,
+  getInstalledMods,
+  getHeroes,
+  getWarriorsByFaction
+} from '../utils/modManager';
+import {
+  validateFullList,
+  exportToTTS,
+  calculateBreakPoint,
+  calculateQuartered,
+  calculateBowLimit
+} from '../utils/armyRules';
 import { db } from '../utils/firebase';
-import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
+import {
+  collection,
+  addDoc,
+  getDocs,
+  doc,
+  updateDoc,
+  deleteDoc,
+  serverTimestamp
+} from 'firebase/firestore';
+
+import WarbandCard from '../components/army/WarbandCard';
+import ModelCard from '../components/army/ModelCard';
+import ArmySummaryCard from '../components/army/ArmySummaryCard';
 
 export default function ArmyBuilder({ user, profile, lang, setView }) {
   const [activeMod, setActiveModData] = useState(null);
@@ -20,10 +43,11 @@ export default function ArmyBuilder({ user, profile, lang, setView }) {
   const [isSaving, setIsSaving] = useState(false);
 
   // ── Estado de la UI ─────────────────────────────────────────────────────────
-  const [view, setBuilderView] = useState('my_lists'); // 'my_lists' | 'edit_list' | 'export'
+  const [view, setBuilderView] = useState('my_lists'); // 'my_lists' | 'edit_list'
   const [showAddWarriorModal, setShowAddWarriorModal] = useState(null); // warbandIndex o null
   const [showAddHeroModal, setShowAddHeroModal] = useState(false);
-  const [showModelCard, setShowModelCard] = useState(null); // modelo a mostrar
+  const [inspectedModel, setInspectedModel] = useState(null); // modelo a mostrar en ModelCard
+  const [showSummaryCard, setShowSummaryCard] = useState(false); // tarjeta gráfica WhatsApp
   const [showExportModal, setShowExportModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [notification, setNotification] = useState(null);
@@ -104,6 +128,20 @@ export default function ArmyBuilder({ user, profile, lang, setView }) {
     setIsSaving(false);
   };
 
+  // ── Duplicar lista ──────────────────────────────────────────────────────────
+  const handleDuplicateList = (originalList) => {
+    const duplicated = {
+      ...originalList,
+      id: null,
+      name: `${originalList.name} (Copia)`,
+      createdAt: null,
+      updatedAt: null
+    };
+    setActiveList(duplicated);
+    setBuilderView('edit_list');
+    notify('Copia de lista lista para editar.');
+  };
+
   // ── Eliminar lista ──────────────────────────────────────────────────────────
   const handleDeleteList = async (listId, listName) => {
     if (!confirm(`¿Eliminar la lista "${listName}"? Esta acción no se puede deshacer.`)) return;
@@ -171,6 +209,53 @@ export default function ArmyBuilder({ user, profile, lang, setView }) {
     });
   };
 
+  // ── Modificar opciones de equipo del modelo inspeccionado ────────────────────
+  const handleToggleModelOption = (option) => {
+    if (!inspectedModel) return;
+
+    const currentSelected = inspectedModel.selectedOptions || [];
+    const isSelected = currentSelected.some(o => o.name === option.name);
+
+    let updatedOptions;
+    if (isSelected) {
+      updatedOptions = currentSelected.filter(o => o.name !== option.name);
+    } else {
+      updatedOptions = [...currentSelected, option];
+    }
+
+    const extraCost = updatedOptions.reduce((acc, o) => acc + (o.cost || 0), 0);
+    const totalCost = (inspectedModel.baseCost || 0) + extraCost;
+    const isBowArmed = inspectedModel.isBowArmed || updatedOptions.some(o => o.isBow);
+
+    const updatedModel = {
+      ...inspectedModel,
+      selectedOptions: updatedOptions,
+      totalCost,
+      isBowArmed
+    };
+
+    setInspectedModel(updatedModel);
+
+    // Si el modelo pertenece a la lista activa, actualizar la lista
+    if (activeList) {
+      setActiveList(prev => {
+        const warbands = prev.warbands.map(wb => {
+          if (wb.hero?.id === inspectedModel.id) {
+            return { ...wb, hero: updatedModel };
+          }
+          const warriors = (wb.warriors || []).map(w => {
+            if (w === inspectedModel || (w.id === inspectedModel.id && w.selectedOptions === inspectedModel.selectedOptions)) {
+              return updatedModel;
+            }
+            return w;
+          });
+          return { ...wb, warriors };
+        });
+        return { ...prev, warbands };
+      });
+    }
+  };
+
   // ── Validación en tiempo real ───────────────────────────────────────────────
   const validation = activeList ? validateFullList(activeList, activeMod) : null;
   const stats = validation?.stats || {};
@@ -187,10 +272,6 @@ export default function ArmyBuilder({ user, profile, lang, setView }) {
     statItem: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' },
     statVal: { fontSize: '1.1rem', fontWeight: 'bold', color: 'var(--gold-primary)' },
     statLabel: { fontSize: '0.62rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' },
-    warbandHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' },
-    heroName: { fontWeight: 'bold', color: 'var(--text-primary)', fontSize: '0.92rem', fontFamily: 'var(--font-title)' },
-    heroTier: { fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: '2px' },
-    warriorRow: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.04)', fontSize: '0.82rem', color: 'var(--text-secondary)' },
     pill: (color) => ({ background: color, borderRadius: '4px', padding: '1px 6px', fontSize: '0.66rem', fontWeight: 'bold' }),
     errorBox: { background: 'rgba(255,80,80,0.08)', border: '1px solid rgba(255,80,80,0.2)', borderRadius: '8px', padding: '10px 14px', marginBottom: '12px', fontSize: '0.78rem', color: '#f88' },
     warnBox: { background: 'rgba(255,165,0,0.08)', border: '1px solid rgba(255,165,0,0.2)', borderRadius: '8px', padding: '10px 14px', marginBottom: '12px', fontSize: '0.78rem', color: '#ffa500' },
@@ -301,6 +382,11 @@ export default function ArmyBuilder({ user, profile, lang, setView }) {
                     onClick={() => { setActiveList(list); setBuilderView('edit_list'); }}>
                     ✏️ Editar
                   </button>
+                  <button style={{ ...s.btnSecondary, padding: '6px 10px', fontSize: '0.75rem' }}
+                    onClick={() => handleDuplicateList(list)}
+                    title="Duplicar lista">
+                    📑
+                  </button>
                   <button style={{ ...s.btnSecondary, padding: '6px 10px', fontSize: '0.75rem', color: '#f88' }}
                     onClick={() => handleDeleteList(list.id, list.name)}>
                     🗑
@@ -343,7 +429,7 @@ export default function ArmyBuilder({ user, profile, lang, setView }) {
         </div>
 
         {/* Selector de Límite de Puntos */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px', flexWrap: 'wrap' }}>
           <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Límite de puntos:</span>
           {[500, 600, 700, 750, 800, 1000].map(p => (
             <button key={p}
@@ -400,32 +486,18 @@ export default function ArmyBuilder({ user, profile, lang, setView }) {
           </div>
         )}
 
-        {/* Warbands */}
+        {/* Warbands (utilizando el nuevo componente WarbandCard) */}
         {(activeList.warbands || []).map((wb, wbIdx) => (
-          <div key={wbIdx} style={{ ...s.card, marginBottom: '12px' }}>
-            <div style={s.warbandHeader}>
-              <div>
-                <div style={s.heroName}>{wb.hero?.name || '—'}</div>
-                <div style={s.heroTier}>{heroTierLabels[wb.hero?.heroTier] || ''} · {wb.warriors.length}/{(wb.hero && (wb.hero.warbandMax ?? 0))} guerreros · {wb.hero?.totalCost || wb.hero?.baseCost || 0} pts</div>
-              </div>
-              <button style={{ background: 'transparent', border: 'none', color: '#f88', cursor: 'pointer', fontSize: '1rem' }}
-                onClick={() => handleDeleteWarband(wbIdx)}>🗑</button>
-            </div>
-            {(wb.warriors || []).map((w, wIdx) => (
-              <div key={wIdx} style={s.warriorRow}>
-                <span>{w.name}</span>
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                  <span style={{ color: 'var(--text-muted)', fontSize: '0.72rem' }}>{w.totalCost || w.baseCost} pts</span>
-                  <button style={{ background: 'transparent', border: 'none', color: '#f88', cursor: 'pointer', fontSize: '0.8rem' }}
-                    onClick={() => handleRemoveWarrior(wbIdx, wIdx)}>✕</button>
-                </div>
-              </div>
-            ))}
-            <button style={{ ...s.btnSecondary, marginTop: '10px', fontSize: '0.75rem', padding: '6px 12px', width: '100%' }}
-              onClick={() => { setSearchQuery(''); setShowAddWarriorModal(wbIdx); }}>
-              + Añadir guerrero
-            </button>
-          </div>
+          <WarbandCard
+            key={wbIdx}
+            warband={wb}
+            warbandIndex={wbIdx}
+            onRemoveWarband={handleDeleteWarband}
+            onOpenAddWarrior={(idx) => { setSearchQuery(''); setShowAddWarriorModal(idx); }}
+            onRemoveWarrior={handleRemoveWarrior}
+            onViewModel={(m) => setInspectedModel(m)}
+            activeMod={activeMod}
+          />
         ))}
 
         {/* Botón añadir partida de guerra */}
@@ -434,9 +506,20 @@ export default function ArmyBuilder({ user, profile, lang, setView }) {
           ⚔️ + Nueva Partida de Guerra (Añadir Héroe)
         </button>
 
-        {/* Botones de exportación */}
+        {/* Botones de acción y exportación */}
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          <button style={{ ...s.btnPrimary, flex: 1 }} onClick={() => setShowExportModal(true)}>📤 Exportar</button>
+          <button
+            style={{ ...s.btnPrimary, flex: 1, background: 'linear-gradient(135deg, #27ae60 0%, #1e8449 100%)', color: '#fff' }}
+            onClick={() => setShowSummaryCard(true)}
+          >
+            📸 Tarjeta Gráfica (WhatsApp)
+          </button>
+          <button
+            style={{ ...s.btnPrimary, flex: 1 }}
+            onClick={() => setShowExportModal(true)}
+          >
+            📤 Exportar (TTS / JSON)
+          </button>
         </div>
 
         {/* ── MODAL: Añadir Héroe ── */}
@@ -499,7 +582,26 @@ export default function ArmyBuilder({ user, profile, lang, setView }) {
           </div>
         )}
 
-        {/* ── MODAL: Exportar ── */}
+        {/* ── MODAL: Ver Perfil Ilustrado (ModelCard) ── */}
+        {inspectedModel && (
+          <ModelCard
+            model={inspectedModel}
+            onClose={() => setInspectedModel(null)}
+            onSelectOption={handleToggleModelOption}
+            selectedOptions={inspectedModel.selectedOptions || []}
+          />
+        )}
+
+        {/* ── MODAL: Tarjeta Gráfica de Resumen (ArmySummaryCard) ── */}
+        {showSummaryCard && (
+          <ArmySummaryCard
+            list={activeList}
+            activeMod={activeMod}
+            onClose={() => setShowSummaryCard(false)}
+          />
+        )}
+
+        {/* ── MODAL: Exportar TTS / JSON ── */}
         {showExportModal && (
           <div style={s.modalOverlay} onClick={() => setShowExportModal(false)}>
             <div style={s.modalSheet} onClick={e => e.stopPropagation()}>
@@ -517,7 +619,7 @@ export default function ArmyBuilder({ user, profile, lang, setView }) {
                   />
                   <button style={{ ...s.btnSecondary, marginTop: '8px', fontSize: '0.75rem', padding: '6px 12px' }}
                     onClick={() => { navigator.clipboard.writeText(exportToTTS(activeList)); notify('Copiado al portapapeles.'); }}>
-                    📋 Copiar
+                    📋 Copiar formato TTS
                   </button>
                 </div>
                 {/* JSON */}

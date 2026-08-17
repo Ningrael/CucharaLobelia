@@ -433,3 +433,47 @@ export const PUBLIC_MOD_REGISTRY = [
   },
   // Aquí la comunidad puede añadir sus mods mediante Pull Request
 ];
+
+// ── URL DE PDF DE MISIONES DESDE MOD ──────────────────────────────────────────
+/**
+ * Resuelve la URL del PDF de una misión (1vs1 o 2vs2).
+ * Si el mod activo define "missionPdfsBaseUrl", carga el PDF desde el repositorio externo del mod.
+ * En caso contrario, recurre a la ruta local/por defecto.
+ *
+ * @param {string} missionName - Nombre de la misión (ej. 'Assassination')
+ * @param {string} lang - 'es' | 'en'
+ * @param {'1vs1'|'2vs2'} mode - Modo de juego
+ * @param {object|null} activeMod - Mod activo (opcional)
+ * @returns {string} URL absoluta o relativa al PDF
+ */
+export function getMissionPdfUrl(missionName, lang = 'es', mode = '1vs1', activeMod = null) {
+  const fanmadeMissions = [
+    'Domination', 'Capture & Control', 'Breakthrough', 'Stake a Claim',
+    'Destroy the Supplies', 'Retrieval', 'Seize the Prizes', 'Treasure Hoard',
+    'To the Death!', 'Lords of Battle', 'Assassination', 'Contest of Champions',
+    'Hold Ground', 'Heirloom of Ages Past', 'Sites of Power', 'Command the Battlefield',
+    'Reconnoitre', 'Storm the Camp', 'Divide & Conquer', 'Escort the Wounded',
+    'Fog of War', 'Clash by Moonlight', 'Lead from the Front', 'Convergence',
+    'No Escape', 'Total Conquest', 'Take & Hold', 'Clash of Champions', 'Cornered', 'Duel of Wits'
+  ];
+
+  const folder = mode === '1vs1' ? '' : '2vs2/';
+  let filename = `${missionName.toUpperCase()}.pdf`;
+  if (fanmadeMissions.includes(missionName)) {
+    filename = `${missionName.toUpperCase()}_${lang.toUpperCase()}.pdf`;
+  }
+
+  // 1. Si el mod activo proporciona una URL base externa para PDFs
+  if (activeMod?.missionPdfsBaseUrl) {
+    const baseUrl = activeMod.missionPdfsBaseUrl.replace(/\/$/, '');
+    return `${baseUrl}/${folder}${filename}`;
+  }
+
+  // 2. Ruta local por defecto
+  const base = (typeof import.meta !== 'undefined' && import.meta.env?.BASE_URL)
+    ? import.meta.env.BASE_URL.replace(/\/$/, '')
+    : '';
+
+  return `${base}/pdfs/${folder}${filename}`;
+}
+

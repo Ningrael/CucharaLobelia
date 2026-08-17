@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import Modal from '../components/Modal';
 import PdfCanvasViewer from '../components/PdfCanvasViewer';
 import { trackFeature } from '../utils/analyticsTracker';
+import { getMissionPdfUrl } from '../utils/modManager';
 
 const POOLS_1VS1 = [
   { name: { es: "Pool 1: Control de Objetivos", en: "Pool 1: Hold Objective" }, items: ['Domination', 'Capture & Control', 'Breakthrough', 'Stake a Claim'] },
@@ -421,27 +422,8 @@ export default function Missions({ lang, translations, setLang }) {
       return;
     }
     
-    const fanmadeMissions = [
-      'Domination', 'Capture & Control', 'Breakthrough', 'Stake a Claim',
-      'Destroy the Supplies', 'Retrieval', 'Seize the Prizes', 'Treasure Hoard',
-      'To the Death!', 'Lords of Battle', 'Assassination', 'Contest of Champions',
-      'Hold Ground', 'Heirloom of Ages Past', 'Sites of Power', 'Command the Battlefield',
-      'Reconnoitre', 'Storm the Camp', 'Divide & Conquer', 'Escort the Wounded',
-      'Fog of War', 'Clash by Moonlight', 'Lead from the Front', 'Convergence',
-      'No Escape', 'Total Conquest', 'Take & Hold', 'Clash of Champions', 'Cornered', 'Duel of Wits'
-    ];
-    
-    const folder = mode === '1vs1' ? 'pdfs/' : 'pdfs/2vs2/';
-    
-    let filename = `${selectedMission.toUpperCase()}.pdf`;
-    if (fanmadeMissions.includes(selectedMission)) {
-      filename = `${selectedMission.toUpperCase()}_${pdfLang.toUpperCase()}.pdf`;
-    }
-    
-    const base = import.meta.env.BASE_URL.replace(/\/$/, '');
-    const relativePath = `${base}/${folder}${filename}`;
-    
-    setActivePdfUrl(relativePath);
+    const url = getMissionPdfUrl(selectedMission, pdfLang, mode);
+    setActivePdfUrl(url);
   }, [selectedMission, pdfLang, mode]);
 
   // 4. Compartir Rondas (Mobile Native Share / Fallback Clipboard)
