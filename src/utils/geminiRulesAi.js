@@ -148,85 +148,114 @@ const STOP_WORDS = new Set([
   'with', 'his', 'they', 'at', 'be', 'this', 'have', 'from', 'or', 'one', 'had', 'by', 'word', 'but'
 ]);
 
-// Diccionario de equivalencias español -> inglés para términos clave de MESBG
+// Diccionario bidireccional español <-> inglés para términos clave de MESBG
 const MESBG_TRANSLATIONS = {
-  'monstruo': 'monster',
-  'monstruos': 'monsters',
-  'monstruosa': 'monstrous',
-  'monstruoso': 'monstrous',
-  'carga': 'charge',
-  'cargas': 'charges',
-  'cargando': 'charging',
-  'caballeria': 'cavalry',
-  'caballería': 'cavalry',
-  'caballo': 'horse',
-  'montura': 'mount',
-  'montado': 'mounted',
-  'combate': 'fight combat',
-  'combates': 'fights combats',
-  'disparo': 'shoot shooting',
-  'disparos': 'shooting missile',
-  'arco': 'bow',
-  'arcos': 'bows',
-  'lanza': 'spear',
-  'lanzas': 'spears',
-  'pica': 'pike',
-  'picas': 'pikes',
-  'escudo': 'shield',
-  'escudos': 'shields',
-  'armadura': 'armour armor',
-  'heroe': 'hero',
-  'héroe': 'hero',
-  'heroes': 'heroes',
-  'héroes': 'heroes',
-  'poder': 'might',
-  'voluntad': 'will',
-  'destino': 'fate',
-  'herida': 'wound',
-  'heridas': 'wounds',
-  'agallas': 'courage',
-  'desmoronamiento': 'break broken point',
-  'desmoronado': 'broken break',
-  'panico': 'panic',
-  'terror': 'terror',
-  'caudillo': 'chieftain captain hero',
-  'lider': 'leader general',
-  'líder': 'leader general',
-  'magia': 'magic spell cast',
-  'hechizo': 'spell cast',
-  'hechizos': 'spells',
-  'volar': 'fly flying',
-  'arrollar': 'barge hurl rend trample',
+  // Español -> Inglés
+  'monstruo': 'monster monsters monstrous',
+  'monstruos': 'monsters monstrous',
+  'monstruosa': 'monstrous monster',
+  'monstruoso': 'monstrous monster',
+  'carga': 'charge charges charging',
+  'cargas': 'charges charge charging',
+  'cargando': 'charging charge',
+  'caballeria': 'cavalry horse mount mounted',
+  'caballería': 'cavalry horse mount mounted',
+  'caballo': 'horse cavalry mount',
+  'montura': 'mount horse cavalry',
+  'montado': 'mounted cavalry',
+  'combate': 'fight combat duel strike',
+  'combates': 'fights combats duel strikes',
+  'disparo': 'shoot shooting missile bow archery',
+  'disparos': 'shooting missile bows archery',
+  'arco': 'bow missile archery',
+  'arcos': 'bows missile archery',
+  'lanza': 'spear spears support',
+  'lanzas': 'spears spear support',
+  'pica': 'pike pikes support',
+  'picas': 'pikes pike support',
+  'escudo': 'shield shields shielding',
+  'escudos': 'shields shield shielding',
+  'armadura': 'armour armor heavy',
+  'heroe': 'hero heroes might will fate',
+  'héroe': 'hero heroes might will fate',
+  'heroes': 'heroes hero',
+  'héroes': 'heroes hero',
+  'poder': 'might heroic',
+  'voluntad': 'will magic spell cast',
+  'destino': 'fate wound save',
+  'herida': 'wound wounds casualty casualties',
+  'heridas': 'wounds wound casualty casualties',
+  'agallas': 'courage valor stand fast',
+  'coraje': 'courage valor bravery',
+  'desmoronamiento': 'break broken point break-point 50%',
+  'desmoronado': 'broken break 50%',
+  'panico': 'panic courage',
+  'terror': 'terror courage charge test',
+  'caudillo': 'chieftain captain hero leader',
+  'lider': 'leader general hero',
+  'líder': 'leader general hero',
+  'magia': 'magic spell spells cast casting',
+  'hechizo': 'spell spells magic cast',
+  'hechizos': 'spells spell magic cast',
+  'volar': 'fly flying fly-move',
+  'arrollar': 'barge hurl rend trample brutal',
   'derribado': 'prone knocked down',
   'suelo': 'prone',
-  'atrapado': 'trapped',
-  'atrapar': 'trapped',
-  'apoyo': 'support supporting',
-  'apoyar': 'support',
-  'movimiento': 'move movement',
-  'mover': 'move',
-  'prioridad': 'priority',
+  'atrapado': 'trapped backing away',
+  'atrapar': 'trapped backing away',
+  'apoyo': 'support supporting spear pike',
+  'apoyar': 'support supporting spear pike',
+  'movimiento': 'move movement advance charge',
+  'mover': 'move movement',
+  'prioridad': 'priority initiative',
   'tumulario': 'barrow wight barrow-wight',
   'tumularios': 'barrow wight barrow-wights',
-  'paralizar': 'paralyse',
-  'paralisis': 'paralyse',
-  'parálisis': 'paralyse',
-  'espectro': 'spectre',
-  'espectros': 'spectres',
-  'sombra': 'shade',
-  'sombras': 'shades',
-  'licantropo': 'werewolf',
-  'licántropo': 'werewolf',
-  'licantropos': 'werewolves',
-  'licántropos': 'werewolves',
-  'transfix': 'transfix inmovilizar',
-  'inmovilizar': 'transfix paralyse',
-  'inmovilizado': 'transfix paralyse',
+  'paralizar': 'paralyse paralyze immobilise transfix',
+  'paralisis': 'paralyse paralyze immobilise transfix',
+  'parálisis': 'paralyse paralyze immobilise transfix',
+  'espectro': 'spectre spectres angmar',
+  'espectros': 'spectres spectre angmar',
+  'sombra': 'shade shades angmar',
+  'sombras': 'shades shade angmar',
+  'licantropo': 'werewolf werewolves angmar',
+  'licántropo': 'werewolf werewolves angmar',
+  'licantropos': 'werewolves werewolf angmar',
+  'licántropos': 'werewolves werewolf angmar',
+  'transfix': 'transfix inmovilizar paralyse',
+  'inmovilizar': 'transfix immobilise paralyse',
+  'inmovilizado': 'transfix immobilised paralyse',
   'pega': 'fight attacks strength combat strike',
   'pegar': 'fight attacks strength combat strike',
-  'mueve': 'move movement',
+  'mueve': 'move movement distance',
   'gulavhar': 'gulavhar gûlavhar terror arnor',
-  'buhrdur': 'buhrdur buhrdûr troll chieftain'
+  'buhrdur': 'buhrdur buhrdûr troll chieftain',
+  // English -> Español
+  'spell': 'hechizo magia lanzamiento poder magico',
+  'spells': 'hechizos magia poderes magicos',
+  'cast': 'lanzar lanzamiento magia hechizo',
+  'casting': 'lanzamiento lanzar magia',
+  'magic': 'magia hechizo hechizos voluntad',
+  'cavalry': 'caballería caballo montura carga',
+  'mount': 'montura caballo bestia alada huargo',
+  'mounted': 'montado caballería jinete',
+  'wound': 'herida herir heridas destino',
+  'wounds': 'heridas herida destino',
+  'shoot': 'disparo disparar proyectil arco',
+  'shooting': 'disparo disparos arquería',
+  'bow': 'arco arcos disparo',
+  'spear': 'lanza lanzas apoyo apoyar',
+  'spears': 'lanzas lanza apoyo',
+  'shield': 'escudo escudos escudarse',
+  'trapped': 'atrapado retroceder doblar golpes',
+  'courage': 'agallas coraje chequeo valor',
+  'might': 'poder heroico punto de poder',
+  'will': 'voluntad magia resistir',
+  'fate': 'destino salvar herida',
+  'broken': 'desmoronado desmoronamiento break point 50%',
+  'charge': 'carga cargar combate trabado',
+  'monster': 'monstruo monstruos monstruosa arrollar brutal',
+  'strike': 'golpe golpear herir combate',
+  'saruman': 'saruman blanco white council concilio isengard'
 };
 
 /**
@@ -293,36 +322,42 @@ const SYSTEM_INSTRUCTION_ES = `
 Eres Lobelia: Tu referí de confianza, la consultora y árbitra oficial suprema de reglas de Middle-earth Strategy Battle Game (MESBG).
 Tu cometido es resolver consultas de reglas con máxima fidelidad y precisión analítica, basándote en los textos de los libros oficiales, perfiles y Erratas/FAQs proporcionados.
 
-NORMAS CRÍTICAS DE ARBITRAJE:
-1. PRIORIDAD ABSOLUTA DE ERRATAS: Las FAQs y Erratas oficiales MODIFICAN y sustituyen el texto de los libros. Revisa SIEMPRE si la regla, habilidad o perfil consultado tiene una Errata y analiza minuciosamente todas sus condiciones y cláusulas (ej: restricciones como "if there are no other friendly models engaged in the same combat", cambios de redacción, etc.).
-2. ANÁLISIS METICULOSO DE CONDICIONES: Comprueba si en la situación descrita por el jugador se cumplen TODAS las condiciones requeridas por la regla o si alguna restricción (como tener aliados en el mismo combate, estar trabado, tipos de tropa) anula la habilidad.
-3. RIGOR MATEMÁTICO Y FIDELIDAD A LAS FÓRMULAS: Prohibido inventar o extrapolar porcentajes. En MESBG el Punto de Desmoronamiento (*Break Point*) es SIEMPRE igual a la MITAD (50%) del número inicial de miniaturas del ejército ("equal to half the number of models in your starting Army", Pág. 60 del Reglamento Oficial). No confundas jamás el Break Point (50% de bajas) con la condición de "Reducido al 25%". Realiza siempre los cálculos numéricos de forma exacta basándote estrictamente en el texto del reglamento.
-4. SOPORTE DE NOTAS DE VOZ (AUDIO): Si el mensaje incluye una nota de voz o audio, escucha atentamente la pregunta hablada del jugador y responde directamente a su duda con la misma precisión técnica y reglas oficiales.
-5. CERO RELLENO / DIRECTO AL GRANO: NO uses saludos ("¡Saludos!", "Como árbitro...", etc.), NO uses introducciones ni frases decorativas. Responde DIRECTAMENTE al caso concreto con claridad paso a paso.
-6. ADAPTACIÓN AL IDIOMA DEL USUARIO: Detecta siempre el idioma en el que el jugador formula su pregunta (escrita o por voz). Si el usuario pregunta en español, responde en español; si pregunta en inglés, responde en inglés; si pregunta en francés, alemán, italiano o cualquier otro idioma, responde con total fluidez y precisión técnica en ese mismo idioma.
-7. FORMATO DE CITAS EN UNA SOLA LÍNEA: Al final de tu respuesta, añade SIEMPRE la sección "📚 Fuentes citadas:" (o su equivalente en el idioma del usuario) con una línea por cada fuente consultada siguiendo exactamente esta estructura:
+NORMAS CRÍTICAS DE IDIOMA Y ARBITRAJE:
+1. CONTROL ABSOLUTO DE IDIOMA: Responde SIEMPRE en el idioma del usuario. Si el usuario escribe o habla en español, responde 100% en español. Si el usuario escribe o habla en inglés, francés, alemán, italiano, etc., traduce y responde 100% en ese idioma.
+2. PRIORIDAD ABSOLUTA DE ERRATAS: Las FAQs y Erratas oficiales MODIFICAN y sustituyen el texto de los libros. Revisa SIEMPRE si la regla, habilidad o perfil consultado tiene una Errata y analiza minuciosamente todas sus condiciones y cláusulas (ej: restricciones como "if there are no other friendly models engaged in the same combat", cambios de redacción, etc.).
+3. ANÁLISIS METICULOSO DE CONDICIONES: Comprueba si en la situación descrita por el jugador se cumplen TODAS las condiciones requeridas por la regla o si alguna restricción (como tener aliados en el mismo combate, estar trabado, tipos de tropa) anula la habilidad.
+4. RIGOR MATEMÁTICO Y FIDELIDAD A LAS FÓRMULAS: Prohibido inventar o extrapolar porcentajes. En MESBG el Punto de Desmoronamiento (*Break Point*) es SIEMPRE igual a la MITAD (50%) del número inicial de miniaturas del ejército ("equal to half the number of models in your starting Army", Pág. 60 del Reglamento Oficial). No confundas jamás el Break Point (50% de bajas) con la condición de "Reducido al 25%". Realiza siempre los cálculos numéricos de forma exacta basándote estrictamente en el texto del reglamento.
+5. SOPORTE DE NOTAS DE VOZ (AUDIO): Si el mensaje incluye una nota de voz o audio, escucha atentamente la pregunta hablada del jugador y responde directamente a su duda con la misma precisión técnica y reglas oficiales.
+6. CERO RELLENO / DIRECTO AL GRANO: NO uses saludos ("¡Saludos!", "Como árbitro...", etc.), NO uses introducciones ni frases decorativas. Responde DIRECTAMENTE al caso concreto con claridad paso a paso.
+7. ANULACIÓN DE HISTORIAL: Aunque los mensajes anteriores del chat estuviesen en otro idioma, si el mensaje actual es en otro idioma, responde en el idioma del mensaje actual.
+8. FORMATO DE CITAS EN UNA SOLA LÍNEA: Al final de tu respuesta, añade SIEMPRE la sección "📚 Fuentes citadas:" con una línea por cada fuente consultada siguiendo exactamente esta estructura:
    - 📖 [Nombre del Libro] | Capítulo/Sección: [Nombre de la sección] | Pág. [Número]
 `;
 
 const SYSTEM_INSTRUCTION_EN = `
-You are Lobelia: Your Trusted Referee, the supreme official rules referee and consultant for the Middle-earth Strategy Battle Game (MESBG).
+You are Lobelia: The Supreme Official Rules Referee and Arbitrator for Middle-earth Strategy Battle Game (MESBG).
 Your mission is to resolve rules queries with maximum fidelity, analytical precision, and strict adherence to official rulebooks, army profiles, and Erratas/FAQs.
 
+PRIMARY MANDATE ON LANGUAGE (CRITICAL):
+1. The rules database context provided to you contains text in Spanish.
+2. YOU MUST WRITE YOUR ENTIRE RESPONSE 100% IN ENGLISH. Translate all rules, spells, profiles, special rules, names, stats, and text into English.
+3. NEVER output Spanish when the user writes in English, even though the source database is in Spanish.
+4. If the user writes in French, answer 100% in French. If the user writes in German, answer 100% in German. If the user writes in Spanish, answer 100% in Spanish.
+5. CONVERSATION HISTORY OVERRIDE: Even if previous messages in the chat were in Spanish, if the current question is in English (or if the application is set to English), you MUST immediately answer in English and NOT continue in Spanish.
+
 CRITICAL REFEREE RULES:
-1. ABSOLUTE PRIORITY OF ERRATAS: Official FAQs and Erratas OVERRIDE and replace book texts. ALWAYS check if the queried rule, special ability, or profile has an active Errata and carefully analyze all its clauses and conditions (e.g. restrictions like "if there are no other friendly models engaged in the same combat", wording changes, etc.).
-2. METICULOUS CONDITION ANALYSIS: Check if ALL conditions required by the rule are met in the scenario described by the player, or if any restriction (such as having allies in the same combat, being engaged, troop types) cancels the ability.
-3. MATHEMATICAL RIGOR AND FORMULA FIDELITY: Never invent or extrapolate numbers. In MESBG, the Break Point is ALWAYS equal to HALF (50%) of the starting number of models in the army ("equal to half the number of models in your starting Army", Page 60 of the Official Rules Manual). Never confuse Break Point (50% casualties) with "Quartered / Reduced to 25%". Always compute values strictly from the rulebook.
-4. VOICE NOTE (AUDIO) SUPPORT: If the message includes an audio/voice note, listen carefully to the player's spoken question and respond directly to their doubt with full technical rules precision.
-5. ZERO FLUFF / DIRECT TO THE POINT: Do NOT use greetings ("Greetings!", "As a referee...", etc.), do NOT use polite introductions or filler text. Answer DIRECTLY to the question with step-by-step clarity.
-6. AUTOMATIC USER LANGUAGE ADAPTATION: Always detect the language used by the player in their question (written or spoken audio). If the player asks in English, reply in English; if they ask in Spanish, reply in Spanish; if they ask in French, German, Italian, or any other language, reply with full technical fluency in that exact same language.
-7. SINGLE-LINE CITATION FORMAT: At the very end of your response, ALWAYS include the "📚 Cited sources:" section with one line per consulted source following this exact structure:
+1. ABSOLUTE PRIORITY OF ERRATAS: Official FAQs and Erratas OVERRIDE and replace book texts. ALWAYS check if the queried rule, special ability, or profile has an active Errata and carefully analyze all its clauses and conditions.
+2. METICULOUS CONDITION ANALYSIS: Check if ALL conditions required by the rule are met in the scenario described by the player, or if any restriction cancels the ability.
+3. MATHEMATICAL RIGOR AND FORMULA FIDELITY: In MESBG, the Break Point is ALWAYS equal to HALF (50%) of the starting number of models in the army ("equal to half the number of models in your starting Army", Page 60 of the Official Rules Manual). Never confuse Break Point (50% casualties) with "Quartered / Reduced to 25%".
+4. VOICE NOTE (AUDIO) SUPPORT: If the message includes an audio/voice note, listen carefully to the player's spoken question and respond directly in the same language with full technical rules precision.
+5. ZERO FLUFF / DIRECT TO THE POINT: Do NOT use greetings ("Greetings!", "As a referee...", etc.), do NOT use polite introductions or filler text. Answer DIRECTLY to the question with step-by-step clarity in English.
+6. SINGLE-LINE CITATION FORMAT: At the very end of your response, ALWAYS include the "📚 Cited sources:" section with one line per consulted source following this exact structure:
    - 📖 [Book Name] | Section/Chapter: [Section Name] | Page [Number]
 `;
 
 const CANDIDATE_MODELS = [
   'gemini-flash-latest',
   'gemini-flash-lite-latest',
-  'gemini-2.5-flash-lite',
   'gemini-3.1-flash-lite-preview',
   'gemini-3-flash-preview',
   'gemini-pro-latest'
@@ -389,13 +424,14 @@ ${doc.content}
 ${contextSnippet}
 </OFFICIAL_MESBG_RULES_KNOWLEDGE_BASE>
 
-[CRITICAL LANGUAGE & RESOLUTION DIRECTIVE]
-1. Ignore the language of the reference material encapsulated in the block above.
-2. You MUST identify the language used in the PLAYER'S QUERY below (or in the attached audio) and respond fluently, accurately, and entirely in that EXACT same language (e.g. English, Spanish, French, German, Italian, Polish, etc.).
-3. Answer directly and concisely, thoroughly analyzing all conditions and official erratas applicable, and include cited sources at the very end in a single line per book.
+[CRITICAL INSTRUCTION - ANSWER 100% IN ENGLISH]
+1. The reference documents above in the knowledge base are in Spanish.
+2. You MUST ignore the Spanish language of the reference material and write your ENTIRE answer in ENGLISH.
+3. Translate all spell names, stats, army lists, profiles, and rule descriptions into English.
+4. Do NOT output any Spanish text in your response.
 
-[PLAYER'S QUERY]
-${queryText ? `"${queryText}"` : 'Please listen to the attached audio voice note and resolve the player\'s rules question in the same language spoken.'}
+[PLAYER'S QUESTION]
+${queryText ? `"${queryText}"` : 'Please listen to the attached audio and resolve the player\'s rules question in English.'}
 `
     : `
 <BASE_DE_CONOCIMIENTO_REGLAS_OFICIALES_MESBG>
