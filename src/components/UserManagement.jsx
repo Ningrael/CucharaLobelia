@@ -7,6 +7,8 @@ export default function UserManagement({ lang, currentUserId, currentUsername, s
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState('registered_desc'); // 'registered_desc' | 'registered_asc' | 'name_asc' | 'last_seen_desc' | 'ai_desc' | 'points_desc'
+  const [viewMode, setViewMode] = useState('cards'); // 'cards' | 'table'
   
   // Edit, Ban and Analytics views states
   const [editingUser, setEditingUser] = useState(null);
@@ -43,10 +45,11 @@ export default function UserManagement({ lang, currentUserId, currentUsername, s
   // Translations
   const t = {
     es: {
-      title: "Gestión de Usuarios",
-      search_placeholder: "Buscar por nombre, usuario o email...",
+      title: "Gestión de Usuarios & Directorio de Registrados",
+      subtitle: "Historial cronológico de registros, actividad reciente y administración de cuentas.",
+      search_placeholder: "Buscar por nombre, usuario, email o facción...",
       no_users: "No se encontraron usuarios.",
-      loading: "Cargando usuarios...",
+      loading: "Cargando usuarios y telemetría...",
       user_label: "Usuario",
       email_label: "Email",
       phone_label: "Teléfono",
@@ -97,13 +100,33 @@ export default function UserManagement({ lang, currentUserId, currentUsername, s
       alignment: "Alineación",
       faction: "Facción",
       luz: "Luz",
-      oscuridad: "Oscuridad"
+      oscuridad: "Oscuridad",
+      registered_date: "Fecha de Registro",
+      last_active: "Última Conexión",
+      recent_activity: "Actividad en App",
+      total_registered: "Total Registrados",
+      active_recently: "Activos Recientes",
+      sort_by: "Ordenar por:",
+      sort_registered_desc: "📅 Registro (Más Recientes)",
+      sort_registered_asc: "📅 Registro (Más Antiguos)",
+      sort_name_asc: "🔤 Nombre (A-Z)",
+      sort_last_seen: "⚡ Última Conexión",
+      sort_ai: "🤖 Más Uso de IA",
+      sort_points: "🏆 Puntos en Liga",
+      view_cards: "📇 Tarjetas Detalladas",
+      view_table: "📑 Listado / Histórico",
+      legacy_user: "Usuario Histórico",
+      ai_queries: "Consultas IA",
+      calc_runs: "Cálculos",
+      mission_views: "Misiones",
+      never_connected: "Sin actividad registrada"
     },
     en: {
-      title: "User Management",
-      search_placeholder: "Search by name, username or email...",
+      title: "User Management & Registered Directory",
+      subtitle: "Chronological registration history, recent user activity and account administration.",
+      search_placeholder: "Search by name, username, email or faction...",
       no_users: "No users found.",
-      loading: "Loading users...",
+      loading: "Loading users and telemetry...",
       user_label: "Username",
       email_label: "Email",
       phone_label: "Phone",
@@ -154,7 +177,26 @@ export default function UserManagement({ lang, currentUserId, currentUsername, s
       alignment: "Alignment",
       faction: "Faction",
       luz: "Light",
-      oscuridad: "Darkness"
+      oscuridad: "Darkness",
+      registered_date: "Registration Date",
+      last_active: "Last Active",
+      recent_activity: "App Activity",
+      total_registered: "Total Registered",
+      active_recently: "Recently Active",
+      sort_by: "Sort by:",
+      sort_registered_desc: "📅 Registration (Newest)",
+      sort_registered_asc: "📅 Registration (Oldest)",
+      sort_name_asc: "🔤 Name (A-Z)",
+      sort_last_seen: "⚡ Last Active",
+      sort_ai: "🤖 Most AI Queries",
+      sort_points: "🏆 League Points",
+      view_cards: "📇 Detailed Cards",
+      view_table: "📑 Directory / History",
+      legacy_user: "Legacy User",
+      ai_queries: "AI Queries",
+      calc_runs: "Calculations",
+      mission_views: "Missions",
+      never_connected: "No recorded activity"
     }
   };
 
@@ -165,8 +207,8 @@ export default function UserManagement({ lang, currentUserId, currentUsername, s
     try {
       const querySnapshot = await getDocs(collection(db, "players"));
       const usersList = [];
-      querySnapshot.forEach((doc) => {
-        usersList.push({ id: doc.id, ...doc.data() });
+      querySnapshot.forEach((docSnap) => {
+        usersList.push({ id: docSnap.id, ...docSnap.data() });
       });
       setUsers(usersList);
     } catch (error) {
@@ -209,14 +251,13 @@ export default function UserManagement({ lang, currentUserId, currentUsername, s
   };
 
   const handleBanClick = (user) => {
-    // Check protection
     if (user.username?.toLowerCase() === 'matias') {
       showAlert(currentT.protect_super);
       return;
     }
     setBanningUser(user);
     setEditingUser(null);
-    setEditStatus(user.status === 'approved' || !user.status ? 'suspended' : user.status);
+    setEditStatus(user.status || 'approved');
     setEditBanUntil(user.banUntil || '');
     setEditBanReason(user.banReason || '');
   };
@@ -225,17 +266,10 @@ export default function UserManagement({ lang, currentUserId, currentUsername, s
     e.preventDefault();
     if (!editingUser) return;
 
-    // Protection checks
     const targetIsMatias = editingUser.username?.toLowerCase() === 'matias';
-    if (targetIsMatias) {
-      if (editStatus !== 'approved' || !editIsAdmin || !editIsSuperAdmin) {
-        showAlert(currentT.protect_super);
-        return;
-      }
-    }
 
-    // Prevent self-demotion
-    if (editingUser.id === currentUserId && !editIsAdmin) {
+    // Prevent demoting yourself from Admin
+    if (editingUser.id === currentUserId && !editIsAdmin && !editIsSuperAdmin) {
       showAlert(currentT.cant_self_demote);
       return;
     }
@@ -275,7 +309,6 @@ export default function UserManagement({ lang, currentUserId, currentUsername, s
       console.error(error);
       showAlert(currentT.error_save + error.message);
     }
-    setIsSaving(true);
     setIsSaving(false);
   };
 
@@ -329,21 +362,146 @@ export default function UserManagement({ lang, currentUserId, currentUsername, s
     });
   };
 
+  // Helper date formatters
+  const formatRegistrationDate = (dateVal) => {
+    if (!dateVal) return currentT.legacy_user;
+    try {
+      let d;
+      if (dateVal?.toDate) {
+        d = dateVal.toDate();
+      } else if (typeof dateVal === 'string' || typeof dateVal === 'number') {
+        d = new Date(dateVal);
+      } else if (dateVal?.seconds) {
+        d = new Date(dateVal.seconds * 1000);
+      }
+      if (!d || isNaN(d.getTime())) return currentT.legacy_user;
+
+      return d.toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-US', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (_) {
+      return currentT.legacy_user;
+    }
+  };
+
+  const formatLastSeen = (lastSeenVal) => {
+    if (!lastSeenVal) return currentT.never_connected;
+    try {
+      const d = new Date(lastSeenVal);
+      if (isNaN(d.getTime())) return currentT.never_connected;
+
+      const diffMs = Date.now() - d.getTime();
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMins / 60);
+      const diffDays = Math.floor(diffHours / 24);
+
+      if (diffMins < 5) return lang === 'es' ? '🟢 Conectado ahora' : '🟢 Active now';
+      if (diffMins < 60) return lang === 'es' ? `🟢 Hace ${diffMins} min` : `🟢 ${diffMins}m ago`;
+      if (diffHours < 24) return lang === 'es' ? `Hace ${diffHours}h` : `${diffHours}h ago`;
+      if (diffDays <= 7) return lang === 'es' ? `Hace ${diffDays} días` : `${diffDays}d ago`;
+
+      return d.toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-US', {
+        day: '2-digit',
+        month: 'short'
+      });
+    } catch (_) {
+      return currentT.never_connected;
+    }
+  };
+
+  // Filter users by search
   const filteredUsers = users.filter(user => {
     const query = searchQuery.toLowerCase();
     return (
       (user.name || '').toLowerCase().includes(query) ||
       (user.username || '').toLowerCase().includes(query) ||
       (user.email || '').toLowerCase().includes(query) ||
-      (user.location || '').toLowerCase().includes(query)
+      (user.location || '').toLowerCase().includes(query) ||
+      (user.faction || '').toLowerCase().includes(query)
     );
   });
 
+  // Sort users
+  const sortedUsers = [...filteredUsers].sort((a, b) => {
+    if (sortBy === 'name_asc') {
+      return (a.name || a.username || '').localeCompare(b.name || b.username || '');
+    }
+    if (sortBy === 'registered_desc') {
+      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : (a.userAnalytics?.lastSeen ? new Date(a.userAnalytics.lastSeen).getTime() : 0);
+      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : (b.userAnalytics?.lastSeen ? new Date(b.userAnalytics.lastSeen).getTime() : 0);
+      return dateB - dateA;
+    }
+    if (sortBy === 'registered_asc') {
+      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : (a.userAnalytics?.lastSeen ? new Date(a.userAnalytics.lastSeen).getTime() : 0);
+      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : (b.userAnalytics?.lastSeen ? new Date(b.userAnalytics.lastSeen).getTime() : 0);
+      return dateA - dateB;
+    }
+    if (sortBy === 'last_seen_desc') {
+      const lsA = a.userAnalytics?.lastSeen ? new Date(a.userAnalytics.lastSeen).getTime() : 0;
+      const lsB = b.userAnalytics?.lastSeen ? new Date(b.userAnalytics.lastSeen).getTime() : 0;
+      return lsB - lsA;
+    }
+    if (sortBy === 'ai_desc') {
+      const aiA = a.userAnalytics?.features?.ai_query || 0;
+      const aiB = b.userAnalytics?.features?.ai_query || 0;
+      return aiB - aiA;
+    }
+    if (sortBy === 'points_desc') {
+      return (b.points || 0) - (a.points || 0);
+    }
+    return 0;
+  });
+
+  // KPI calculations for users header
+  const totalCount = users.length;
+  const recentActiveCount = users.filter(u => {
+    if (!u.userAnalytics?.lastSeen) return false;
+    const diffDays = (Date.now() - new Date(u.userAnalytics.lastSeen).getTime()) / (1000 * 60 * 60 * 24);
+    return diffDays <= 7;
+  }).length;
+  const adminCount = users.filter(u => u.isAdmin || u.isSuperAdmin).length;
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', width: '100%', maxHeight: '70vh', overflowY: 'auto' }}>
-      <h3 style={{ color: 'var(--gold-primary)', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '6px', margin: 0, fontSize: '1.2rem' }}>
-        {currentT.title}
-      </h3>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', width: '100%', maxHeight: '72vh', overflowY: 'auto' }}>
+      
+      {/* CABECERA CON RESUMEN DE USUARIOS REGISTRADOS */}
+      <div style={{
+        background: 'linear-gradient(135deg, rgba(203, 161, 53, 0.12), rgba(0,0,0,0.3))',
+        border: '1px solid var(--gold-primary)',
+        borderRadius: '10px',
+        padding: '12px 16px',
+        display: 'flex',
+        flexWrap: 'wrap',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        gap: '10px'
+      }}>
+        <div>
+          <h3 style={{ margin: 0, color: 'var(--gold-primary)', fontSize: '1.05rem', fontFamily: 'var(--font-heading)' }}>
+            👥 {currentT.title}
+          </h3>
+          <p style={{ margin: '2px 0 0 0', fontSize: '0.76rem', color: 'var(--text-secondary)' }}>
+            {currentT.subtitle}
+          </p>
+        </div>
+
+        {/* Chips de KPIs */}
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '0.72rem', background: 'rgba(203, 161, 53, 0.15)', color: 'var(--gold-primary)', border: '1px solid rgba(203, 161, 53, 0.3)', padding: '3px 8px', borderRadius: '6px', fontWeight: 'bold' }}>
+            👥 {totalCount} {currentT.total_registered}
+          </span>
+          <span style={{ fontSize: '0.72rem', background: 'rgba(46, 204, 113, 0.15)', color: '#2ecc71', border: '1px solid rgba(46, 204, 113, 0.3)', padding: '3px 8px', borderRadius: '6px', fontWeight: 'bold' }}>
+            🟢 {recentActiveCount} {currentT.active_recently}
+          </span>
+          <span style={{ fontSize: '0.72rem', background: 'rgba(255, 255, 255, 0.08)', color: '#fff', border: '1px solid rgba(255, 255, 255, 0.15)', padding: '3px 8px', borderRadius: '6px' }}>
+            🛡️ {adminCount} Admins
+          </span>
+        </div>
+      </div>
 
       {editingUser ? (
         /* EDIT FULL FORM VIEW */
@@ -382,7 +540,7 @@ export default function UserManagement({ lang, currentUserId, currentUsername, s
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
               <label style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>{currentT.location_label}</label>
-              <input type="text" value={editLocation} onChange={e => setEditLocation(e.target.value)} required style={{ background: 'rgba(0,0,0,0.3)', border: 'var(--border-glass)', borderRadius: '4px', color: '#fff', padding: '8px', fontSize: '0.82rem' }} />
+              <input type="text" value={editLocation} onChange={e => setEditLocation(e.target.value)} style={{ background: 'rgba(0,0,0,0.3)', border: 'var(--border-glass)', borderRadius: '4px', color: '#fff', padding: '8px', fontSize: '0.82rem' }} />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
               <label style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>{currentT.faction}</label>
@@ -400,7 +558,7 @@ export default function UserManagement({ lang, currentUserId, currentUsername, s
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
               <label style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>{currentT.status_label}</label>
-              <select value={editStatus} onChange={e => setEditStatus(e.target.value)} disabled={editingUser.username?.toLowerCase() === 'matias'} style={{ background: '#111', border: 'var(--border-glass)', borderRadius: '4px', color: '#fff', padding: '8px', fontSize: '0.82rem' }}>
+              <select value={editStatus} onChange={e => setEditStatus(e.target.value)} style={{ background: '#111', border: 'var(--border-glass)', borderRadius: '4px', color: '#fff', padding: '8px', fontSize: '0.82rem' }}>
                 <option value="approved">{currentT.approved}</option>
                 <option value="suspended">{currentT.suspended}</option>
                 <option value="blocked">{currentT.blocked}</option>
@@ -408,78 +566,18 @@ export default function UserManagement({ lang, currentUserId, currentUsername, s
             </div>
           </div>
 
-          {editStatus === 'suspended' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-              <label style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>{currentT.ban_until}</label>
-              <input type="date" value={editBanUntil} onChange={e => setEditBanUntil(e.target.value)} required style={{ background: 'rgba(0,0,0,0.3)', border: 'var(--border-glass)', borderRadius: '4px', color: '#fff', padding: '8px', fontSize: '0.82rem' }} />
-            </div>
-          )}
-
-          {(editStatus === 'suspended' || editStatus === 'blocked') && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-              <label style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>{currentT.ban_reason}</label>
-              <input type="text" value={editBanReason} onChange={e => setEditBanReason(e.target.value)} placeholder={currentT.ban_reason_placeholder} required style={{ background: 'rgba(0,0,0,0.3)', border: 'var(--border-glass)', borderRadius: '4px', color: '#fff', padding: '8px', fontSize: '0.82rem' }} />
-            </div>
-          )}
-
-          {/* ADMIN & SUPER ADMIN CHECKBOXES */}
-          <div style={{ display: 'flex', gap: '16px', background: 'rgba(255,255,255,0.03)', padding: '10px', borderRadius: '4px', border: 'var(--border-glass)' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', cursor: 'pointer' }}>
-              <input type="checkbox" checked={editIsAdmin} onChange={e => setEditIsAdmin(e.target.checked)} disabled={editingUser.username?.toLowerCase() === 'matias'} />
-              <span>{currentT.admin}</span>
+          <div style={{ display: 'flex', gap: '16px', alignItems: 'center', marginTop: '4px' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', color: '#fff', cursor: 'pointer' }}>
+              <input type="checkbox" checked={editIsAdmin} onChange={e => setEditIsAdmin(e.target.checked)} />
+              {currentT.admin}
             </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', cursor: 'pointer' }}>
-              <input type="checkbox" checked={editIsSuperAdmin} onChange={e => setEditIsSuperAdmin(e.target.checked)} disabled={editingUser.username?.toLowerCase() === 'matias'} />
-              <span>{currentT.super_admin}</span>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', color: 'var(--gold-primary)', cursor: 'pointer' }}>
+              <input type="checkbox" checked={editIsSuperAdmin} onChange={e => setEditIsSuperAdmin(e.target.checked)} />
+              {currentT.super_admin}
             </label>
           </div>
 
-          {/* STATS SECTION */}
-          <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '8px' }}>
-            <span style={{ fontSize: '0.8rem', color: 'var(--gold-primary)', fontWeight: '600', display: 'block', marginBottom: '8px' }}>
-              📊 {currentT.stats_label}
-            </span>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                <label style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{currentT.points}</label>
-                <input type="number" min="0" value={editPoints} onChange={e => setEditPoints(e.target.value)} style={{ background: 'rgba(0,0,0,0.3)', border: 'var(--border-glass)', borderRadius: '4px', color: '#fff', padding: '6px', fontSize: '0.78rem' }} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                <label style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{currentT.matches}</label>
-                <input type="number" min="0" value={editMatchesPlayed} onChange={e => setEditMatchesPlayed(e.target.value)} style={{ background: 'rgba(0,0,0,0.3)', border: 'var(--border-glass)', borderRadius: '4px', color: '#fff', padding: '6px', fontSize: '0.78rem' }} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                <label style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{currentT.wins}</label>
-                <input type="number" min="0" value={editWins} onChange={e => setEditWins(e.target.value)} style={{ background: 'rgba(0,0,0,0.3)', border: 'var(--border-glass)', borderRadius: '4px', color: '#fff', padding: '6px', fontSize: '0.78rem' }} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                <label style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{currentT.draws}</label>
-                <input type="number" min="0" value={editDraws} onChange={e => setEditDraws(e.target.value)} style={{ background: 'rgba(0,0,0,0.3)', border: 'var(--border-glass)', borderRadius: '4px', color: '#fff', padding: '6px', fontSize: '0.78rem' }} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                <label style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{currentT.losses}</label>
-                <input type="number" min="0" value={editLosses} onChange={e => setEditLosses(e.target.value)} style={{ background: 'rgba(0,0,0,0.3)', border: 'var(--border-glass)', borderRadius: '4px', color: '#fff', padding: '6px', fontSize: '0.78rem' }} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                <label style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{currentT.vp_scored}</label>
-                <input type="number" min="0" value={editVpScored} onChange={e => setEditVpScored(e.target.value)} style={{ background: 'rgba(0,0,0,0.3)', border: 'var(--border-glass)', borderRadius: '4px', color: '#fff', padding: '6px', fontSize: '0.78rem' }} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                <label style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{currentT.vp_conceded}</label>
-                <input type="number" min="0" value={editVpConceded} onChange={e => setEditVpConceded(e.target.value)} style={{ background: 'rgba(0,0,0,0.3)', border: 'var(--border-glass)', borderRadius: '4px', color: '#fff', padding: '6px', fontSize: '0.78rem' }} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                <label style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{currentT.leaders_killed}</label>
-                <input type="number" min="0" value={editLeadersKilled} onChange={e => setEditLeadersKilled(e.target.value)} style={{ background: 'rgba(0,0,0,0.3)', border: 'var(--border-glass)', borderRadius: '4px', color: '#fff', padding: '6px', fontSize: '0.78rem' }} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                <label style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{currentT.leaders_lost}</label>
-                <input type="number" min="0" value={editLeadersLost} onChange={e => setEditLeadersLost(e.target.value)} style={{ background: 'rgba(0,0,0,0.3)', border: 'var(--border-glass)', borderRadius: '4px', color: '#fff', padding: '6px', fontSize: '0.78rem' }} />
-              </div>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
+          <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
             <button type="submit" className="btn btn-primary" disabled={isSaving} style={{ flex: 1 }}>
               {isSaving ? currentT.saving : currentT.save}
             </button>
@@ -489,11 +587,11 @@ export default function UserManagement({ lang, currentUserId, currentUsername, s
           </div>
         </form>
       ) : banningUser ? (
-        /* QUICK BAN VIEW */
-        <form onSubmit={handleSaveBan} style={{ display: 'flex', flexDirection: 'column', gap: '14px', background: 'rgba(235, 87, 87, 0.05)', padding: '16px', borderRadius: '8px', border: '1px solid rgba(235, 87, 87, 0.2)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '8px' }}>
-            <span style={{ fontWeight: 'bold', color: 'var(--danger-color)', fontSize: '0.92rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              🚫 {currentT.quick_ban_title}: @{banningUser.username}
+        /* BAN / BLOCK QUICK VIEW */
+        <form onSubmit={handleSaveBan} style={{ display: 'flex', flexDirection: 'column', gap: '12px', background: 'rgba(235, 87, 87, 0.05)', padding: '14px', borderRadius: '8px', border: '1px solid rgba(235, 87, 87, 0.3)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(235, 87, 87, 0.15)', paddingBottom: '6px' }}>
+            <span style={{ fontWeight: 'bold', color: '#ff6b6b', fontSize: '0.9rem' }}>
+              {currentT.quick_ban_title}: @{banningUser.username}
             </span>
             <button type="button" className="btn btn-secondary btn-small" onClick={() => setBanningUser(null)} style={{ padding: '2px 8px', minHeight: '26px' }}>
               {currentT.cancel}
@@ -540,38 +638,191 @@ export default function UserManagement({ lang, currentUserId, currentUsername, s
           </div>
         </form>
       ) : (
-        /* USER LIST VIEW */
+        /* MAIN USER LIST VIEW */
         <>
-          <div style={{ position: 'relative', width: '100%' }}>
-            <input
-              type="text"
-              placeholder={currentT.search_placeholder}
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              style={{
-                width: '100%',
-                background: 'rgba(0,0,0,0.3)',
-                border: 'var(--border-glass)',
-                borderRadius: '8px',
-                color: '#fff',
-                padding: '10px 12px',
-                outline: 'none',
-                fontSize: '0.85rem'
-              }}
-            />
+          {/* BARRA DE HERRAMIENTAS: BÚSQUEDA, ORDENACIÓN Y MODO DE VISTA */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+              <div style={{ position: 'relative', flex: '1 1 220px' }}>
+                <input
+                  type="text"
+                  placeholder={currentT.search_placeholder}
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  style={{
+                    width: '100%',
+                    background: 'rgba(0,0,0,0.3)',
+                    border: 'var(--border-glass)',
+                    borderRadius: '8px',
+                    color: '#fff',
+                    padding: '8px 12px',
+                    outline: 'none',
+                    fontSize: '0.82rem'
+                  }}
+                />
+              </div>
+
+              {/* Selector de ordenación */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(0,0,0,0.3)', border: 'var(--border-glass)', borderRadius: '8px', padding: '4px 8px' }}>
+                <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>{currentT.sort_by}</span>
+                <select
+                  value={sortBy}
+                  onChange={e => setSortBy(e.target.value)}
+                  style={{
+                    background: '#111',
+                    border: 'none',
+                    color: 'var(--gold-primary)',
+                    fontSize: '0.75rem',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    outline: 'none',
+                    padding: '2px 4px'
+                  }}
+                >
+                  <option value="registered_desc">{currentT.sort_registered_desc}</option>
+                  <option value="registered_asc">{currentT.sort_registered_asc}</option>
+                  <option value="name_asc">{currentT.sort_name_asc}</option>
+                  <option value="last_seen_desc">{currentT.sort_last_seen}</option>
+                  <option value="ai_desc">{currentT.sort_ai}</option>
+                  <option value="points_desc">{currentT.sort_points}</option>
+                </select>
+              </div>
+
+              {/* Selector de modo de visualización: Tarjetas vs Tabla */}
+              <div style={{ display: 'flex', background: 'rgba(0,0,0,0.4)', borderRadius: '8px', padding: '2px', border: 'var(--border-glass)' }}>
+                <button
+                  type="button"
+                  onClick={() => setViewMode('cards')}
+                  style={{
+                    background: viewMode === 'cards' ? 'var(--gold-primary)' : 'transparent',
+                    color: viewMode === 'cards' ? '#000' : 'var(--text-secondary)',
+                    border: 'none',
+                    padding: '4px 8px',
+                    borderRadius: '6px',
+                    fontSize: '0.72rem',
+                    fontWeight: 'bold',
+                    cursor: 'pointer'
+                  }}
+                  title={currentT.view_cards}
+                >
+                  📇 {lang === 'es' ? 'Tarjetas' : 'Cards'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode('table')}
+                  style={{
+                    background: viewMode === 'table' ? 'var(--gold-primary)' : 'transparent',
+                    color: viewMode === 'table' ? '#000' : 'var(--text-secondary)',
+                    border: 'none',
+                    padding: '4px 8px',
+                    borderRadius: '6px',
+                    fontSize: '0.72rem',
+                    fontWeight: 'bold',
+                    cursor: 'pointer'
+                  }}
+                  title={currentT.view_table}
+                >
+                  📑 {lang === 'es' ? 'Histórico / Tabla' : 'History / Table'}
+                </button>
+              </div>
+            </div>
           </div>
 
           {loading ? (
             <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)' }}>
               {currentT.loading}
             </div>
-          ) : filteredUsers.length === 0 ? (
+          ) : sortedUsers.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
               {currentT.no_users}
             </div>
+          ) : viewMode === 'table' ? (
+            /* VISTA DE TABLA / HISTÓRICO COMPACTO */
+            <div style={{ overflowX: 'auto', background: 'rgba(0,0,0,0.25)', border: 'var(--border-glass)', borderRadius: '8px' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.76rem', textAlign: 'left' }}>
+                <thead>
+                  <tr style={{ background: 'rgba(255,255,255,0.04)', borderBottom: '1px solid rgba(255,255,255,0.1)', color: 'var(--gold-primary)' }}>
+                    <th style={{ padding: '8px 10px' }}>#</th>
+                    <th style={{ padding: '8px 10px' }}>{currentT.user_label}</th>
+                    <th style={{ padding: '8px 10px' }}>{currentT.email_label}</th>
+                    <th style={{ padding: '8px 10px' }}>{currentT.registered_date}</th>
+                    <th style={{ padding: '8px 10px' }}>{currentT.last_active}</th>
+                    <th style={{ padding: '8px 10px' }}>🤖 {currentT.ai_queries}</th>
+                    <th style={{ padding: '8px 10px' }}>🏆 {currentT.matches}</th>
+                    <th style={{ padding: '8px 10px', textAlign: 'center' }}>{currentT.actions}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sortedUsers.map((u, idx) => {
+                    const isUserMatias = u.username?.toLowerCase() === 'matias';
+                    const feats = u.userAnalytics?.features || {};
+                    const roleBadge = u.isSuperAdmin ? '👑 Super' : (u.isAdmin ? '🛡️ Admin' : '👤');
+
+                    return (
+                      <tr 
+                        key={u.id} 
+                        style={{ 
+                          borderBottom: '1px solid rgba(255,255,255,0.03)',
+                          background: idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)'
+                        }}
+                      >
+                        <td style={{ padding: '8px 10px', color: 'var(--text-muted)' }}>{idx + 1}</td>
+                        <td style={{ padding: '8px 10px' }}>
+                          <div style={{ fontWeight: 'bold', color: '#fff' }}>{u.name}</div>
+                          <div style={{ fontSize: '0.7rem', color: 'var(--gold-primary)' }}>@{u.username} <span style={{ color: 'var(--text-muted)' }}>({roleBadge})</span></div>
+                        </td>
+                        <td style={{ padding: '8px 10px', color: 'var(--text-secondary)' }}>{u.email}</td>
+                        <td style={{ padding: '8px 10px', color: 'var(--text-secondary)' }}>
+                          {formatRegistrationDate(u.createdAt)}
+                        </td>
+                        <td style={{ padding: '8px 10px', color: 'var(--text-secondary)' }}>
+                          {formatLastSeen(u.userAnalytics?.lastSeen || u.lastSeen)}
+                        </td>
+                        <td style={{ padding: '8px 10px', fontWeight: 'bold', color: 'var(--gold-primary)' }}>
+                          {feats.ai_query || 0}
+                        </td>
+                        <td style={{ padding: '8px 10px', color: '#2ecc71' }}>
+                          {u.points || 0} pts ({u.matchesPlayed || 0}P)
+                        </td>
+                        <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                          <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
+                            <button
+                              type="button"
+                              onClick={() => setSelectedAnalyticsUser(u)}
+                              style={{ background: 'rgba(203,161,53,0.15)', border: '1px solid rgba(203,161,53,0.3)', color: 'var(--gold-primary)', borderRadius: '4px', padding: '2px 6px', cursor: 'pointer', fontSize: '0.7rem' }}
+                              title="Ver analíticas"
+                            >
+                              📊
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleEditClick(u)}
+                              style={{ background: 'rgba(255,255,255,0.08)', border: 'var(--border-glass)', color: '#fff', borderRadius: '4px', padding: '2px 6px', cursor: 'pointer', fontSize: '0.7rem' }}
+                              title="Editar usuario"
+                            >
+                              ✏️
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleBanClick(u)}
+                              disabled={isUserMatias}
+                              style={{ background: 'rgba(235,87,87,0.15)', border: '1px solid rgba(235,87,87,0.3)', color: '#ff6b6b', borderRadius: '4px', padding: '2px 6px', cursor: 'pointer', fontSize: '0.7rem', opacity: isUserMatias ? 0.3 : 1 }}
+                              title="Banear usuario"
+                            >
+                              🚫
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           ) : (
+            /* VISTA DE TARJETAS DETALLADAS CON HISTÓRICO Y ACTIVIDAD */
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {filteredUsers.map(u => {
+              {sortedUsers.map((u, idx) => {
                 const isUserMatias = u.username?.toLowerCase() === 'matias';
                 const roleLabel = u.isSuperAdmin 
                   ? currentT.super_admin 
@@ -587,12 +838,15 @@ export default function UserManagement({ lang, currentUserId, currentUsername, s
                   statusLabel = currentT.blocked;
                 }
 
+                const uA = u.userAnalytics || {};
+                const feats = uA.features || {};
+
                 return (
                   <div 
                     key={u.id} 
                     style={{
                       background: 'rgba(255,255,255,0.02)',
-                      border: '1px solid rgba(255,255,255,0.05)',
+                      border: '1px solid rgba(255,255,255,0.06)',
                       borderRadius: '8px',
                       padding: '12px',
                       display: 'flex',
@@ -600,11 +854,13 @@ export default function UserManagement({ lang, currentUserId, currentUsername, s
                       gap: '8px'
                     }}
                   >
+                    {/* Header de la tarjeta */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                       <div>
                         <div style={{ fontWeight: '600', color: '#fff', fontSize: '0.92rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>#{idx + 1}</span>
                           {u.name} 
-                          <span style={{ fontSize: '0.72rem', background: 'rgba(255,255,255,0.08)', color: 'var(--text-muted)', padding: '2px 6px', borderRadius: '4px' }}>
+                          <span style={{ fontSize: '0.72rem', background: 'rgba(255,255,255,0.08)', color: 'var(--gold-primary)', padding: '2px 6px', borderRadius: '4px' }}>
                             @{u.username}
                           </span>
                         </div>
@@ -630,11 +886,56 @@ export default function UserManagement({ lang, currentUserId, currentUsername, s
                       </div>
                     </div>
 
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px', background: 'rgba(0,0,0,0.15)', padding: '8px', borderRadius: '4px' }}>
+                    {/* Fila de Fechas de Registro y Conexión */}
+                    <div style={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      justifyContent: 'space-between',
+                      gap: '6px',
+                      background: 'rgba(203, 161, 53, 0.05)',
+                      border: '1px solid rgba(203, 161, 53, 0.15)',
+                      borderRadius: '6px',
+                      padding: '6px 10px',
+                      fontSize: '0.73rem'
+                    }}>
+                      <div style={{ color: 'var(--text-secondary)' }}>
+                        📅 <strong>{currentT.registered_date}:</strong> <span style={{ color: '#fff' }}>{formatRegistrationDate(u.createdAt)}</span>
+                      </div>
+                      <div style={{ color: 'var(--text-secondary)' }}>
+                        🕒 <strong>{currentT.last_active}:</strong> <span style={{ color: 'var(--gold-primary)' }}>{formatLastSeen(uA.lastSeen || u.lastSeen)}</span>
+                      </div>
+                    </div>
+
+                    {/* Resumen de actividad y uso de la web por este usuario */}
+                    <div style={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: '6px',
+                      alignItems: 'center'
+                    }}>
+                      <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        {currentT.recent_activity}:
+                      </span>
+                      <span style={{ fontSize: '0.7rem', background: 'rgba(0,0,0,0.3)', border: 'var(--border-glass)', padding: '2px 6px', borderRadius: '4px', color: 'var(--gold-primary)' }}>
+                        🤖 {feats.ai_query || 0} {currentT.ai_queries}
+                      </span>
+                      <span style={{ fontSize: '0.7rem', background: 'rgba(0,0,0,0.3)', border: 'var(--border-glass)', padding: '2px 6px', borderRadius: '4px', color: '#fff' }}>
+                        🎲 {feats.calculator_run || 0} {currentT.calc_runs}
+                      </span>
+                      <span style={{ fontSize: '0.7rem', background: 'rgba(0,0,0,0.3)', border: 'var(--border-glass)', padding: '2px 6px', borderRadius: '4px', color: '#fff' }}>
+                        📜 {feats.mission_view || 0} {currentT.mission_views}
+                      </span>
+                      <span style={{ fontSize: '0.7rem', background: 'rgba(0,0,0,0.3)', border: 'var(--border-glass)', padding: '2px 6px', borderRadius: '4px', color: '#2ecc71' }}>
+                        🏆 {u.points || 0} pts ({u.wins || 0}V-{u.draws || 0}E-{u.losses || 0}D)
+                      </span>
+                    </div>
+
+                    {/* Datos de contacto y facción */}
+                    <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px', background: 'rgba(0,0,0,0.15)', padding: '6px 8px', borderRadius: '4px' }}>
                       <div><strong>{currentT.location_label}:</strong> {u.location || '-'}</div>
                       <div><strong>{currentT.phone_label}:</strong> {u.phone || '-'}</div>
                       <div><strong>{currentT.faction}:</strong> {u.faction || '-'} ({u.alignment === 'oscuridad' ? currentT.oscuridad : currentT.luz})</div>
-                      <div><strong>{currentT.points}:</strong> {u.points || 0} pts ({u.wins || 0}V - {u.draws || 0}E - {u.losses || 0}D)</div>
+                      <div><strong>{currentT.matches}:</strong> {u.matchesPlayed || 0} {lang === 'es' ? 'jugadas' : 'played'}</div>
                     </div>
 
                     {u.banReason && (
@@ -643,7 +944,8 @@ export default function UserManagement({ lang, currentUserId, currentUsername, s
                       </div>
                     )}
 
-                    <div style={{ display: 'flex', gap: '6px', marginTop: '4px', flexWrap: 'wrap' }}>
+                    {/* Botones de acción */}
+                    <div style={{ display: 'flex', gap: '6px', marginTop: '2px', flexWrap: 'wrap' }}>
                       <button 
                         type="button" 
                         className="btn btn-secondary btn-small" 
@@ -656,9 +958,9 @@ export default function UserManagement({ lang, currentUserId, currentUsername, s
                           color: 'var(--gold-primary)', 
                           border: '1px solid rgba(203, 161, 53, 0.35)' 
                         }}
-                        title={lang === 'es' ? 'Ver analíticas de este usuario' : 'View user analytics'}
+                        title={lang === 'es' ? 'Ver qué ha hecho este usuario en la app' : 'View what this user did on the app'}
                       >
-                        📊 {lang === 'es' ? 'Analíticas' : 'Analytics'}
+                        📊 {lang === 'es' ? 'Ver Qué Hizo (Analíticas)' : 'Activity & Analytics'}
                       </button>
                       <button 
                         type="button" 
@@ -778,12 +1080,8 @@ export default function UserManagement({ lang, currentUserId, currentUsername, s
                 ? `${(durMin / 60).toFixed(1)} h (${durMin} min)`
                 : `${durMin}m ${durSecRem}s`;
 
-              const lastSeenFormatted = uA.lastSeen 
-                ? new Date(uA.lastSeen).toLocaleString(lang === 'es' ? 'es-ES' : 'en-US', { 
-                    dateStyle: 'short', 
-                    timeStyle: 'short' 
-                  })
-                : (lang === 'es' ? 'Reciente' : 'Recent');
+              const lastSeenFormatted = formatLastSeen(uA.lastSeen || selectedAnalyticsUser.lastSeen);
+              const registeredFormatted = formatRegistrationDate(selectedAnalyticsUser.createdAt);
 
               return (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -791,22 +1089,20 @@ export default function UserManagement({ lang, currentUserId, currentUsername, s
                   {/* Grid 1: Conexión y Tiempo */}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                     <div style={{ background: 'rgba(255,255,255,0.03)', border: 'var(--border-glass)', borderRadius: '8px', padding: '10px' }}>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>📅 {currentT.registered_date}:</div>
+                      <div style={{ fontSize: '0.85rem', fontWeight: 'bold', color: 'var(--gold-primary)', marginTop: '2px' }}>{registeredFormatted}</div>
+                    </div>
+                    <div style={{ background: 'rgba(255,255,255,0.03)', border: 'var(--border-glass)', borderRadius: '8px', padding: '10px' }}>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>🕒 {currentT.last_active}:</div>
+                      <div style={{ fontSize: '0.85rem', fontWeight: 'bold', color: '#2ecc71', marginTop: '2px' }}>{lastSeenFormatted}</div>
+                    </div>
+                    <div style={{ background: 'rgba(255,255,255,0.03)', border: 'var(--border-glass)', borderRadius: '8px', padding: '10px' }}>
                       <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>⏱️ {lang === 'es' ? 'Tiempo en App:' : 'Time on App:'}</div>
-                      <div style={{ fontSize: '1rem', fontWeight: 'bold', color: '#2ecc71', marginTop: '2px' }}>{durFormatted}</div>
+                      <div style={{ fontSize: '0.95rem', fontWeight: 'bold', color: '#fff', marginTop: '2px' }}>{durFormatted}</div>
                     </div>
                     <div style={{ background: 'rgba(255,255,255,0.03)', border: 'var(--border-glass)', borderRadius: '8px', padding: '10px' }}>
                       <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>🔄 {lang === 'es' ? 'Sesiones totales:' : 'Total Sessions:'}</div>
-                      <div style={{ fontSize: '1rem', fontWeight: 'bold', color: '#fff', marginTop: '2px' }}>{uA.sessionsCount || 1} {lang === 'es' ? 'visitas' : 'visits'}</div>
-                    </div>
-                    <div style={{ background: 'rgba(255,255,255,0.03)', border: 'var(--border-glass)', borderRadius: '8px', padding: '10px' }}>
-                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>🕒 {lang === 'es' ? 'Última conexión:' : 'Last active:'}</div>
-                      <div style={{ fontSize: '0.82rem', fontWeight: '600', color: 'var(--gold-primary)', marginTop: '2px' }}>{lastSeenFormatted}</div>
-                    </div>
-                    <div style={{ background: 'rgba(255,255,255,0.03)', border: 'var(--border-glass)', borderRadius: '8px', padding: '10px' }}>
-                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>📱 {lang === 'es' ? 'Dispositivo habitual:' : 'Primary device:'}</div>
-                      <div style={{ fontSize: '0.82rem', fontWeight: '600', color: '#fff', marginTop: '2px' }}>
-                        {uA.lastDevice === 'mobile' ? '📱 Móvil' : '💻 PC / Escritorio'} ({uA.lastOs || 'Web'})
-                      </div>
+                      <div style={{ fontSize: '0.95rem', fontWeight: 'bold', color: '#fff', marginTop: '2px' }}>{uA.sessionsCount || 1} {lang === 'es' ? 'visitas' : 'visits'}</div>
                     </div>
                   </div>
 

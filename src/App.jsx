@@ -560,7 +560,8 @@ export default function App() {
               vpScored: 0,
               vpConceded: 0,
               leadersKilled: 0,
-              leadersLost: 0
+              leadersLost: 0,
+              createdAt: new Date().toISOString()
             };
 
             try {
@@ -1137,7 +1138,8 @@ export default function App() {
         vpConceded: 0,
         leadersKilled: 0,
         leadersLost: 0,
-        emailNotifications: true
+        emailNotifications: true,
+        createdAt: new Date().toISOString()
       };
 
       await setDoc(doc(db, "players", cred.user.uid), newProfile);
@@ -1251,7 +1253,8 @@ export default function App() {
         vpConceded: 0,
         leadersKilled: 0,
         leadersLost: 0,
-        emailNotifications: true
+        emailNotifications: true,
+        createdAt: new Date().toISOString()
       };
 
       await setDoc(doc(db, "players", currentUser.uid), newProfile);

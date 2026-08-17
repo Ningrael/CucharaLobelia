@@ -53,6 +53,8 @@ export function initSessionTracking(currentUser, profile, lang = 'es') {
     lastHeartbeat: Date.now(),
     durationSeconds: 0,
     isRegistered,
+    originallyCountedAsAnon: !isRegistered,
+    hasConverted: false,
     username,
     deviceType,
     os,
@@ -101,8 +103,10 @@ export function updateSessionUser(currentUser, profile) {
   activeSession.userUid = currentUser?.uid || null;
   activeSession.username = profile?.username || (currentUser ? currentUser.email?.split('@')[0] : null);
 
-  // If user just logged in during this session, adjust stats
-  if (!wasRegistered && currentUser) {
+  // If user just logged in during this session and was originally counted as anonymous
+  if (!wasRegistered && currentUser && activeSession.originallyCountedAsAnon && !activeSession.hasConverted) {
+    activeSession.hasConverted = true;
+    activeSession.originallyCountedAsAnon = false;
     recordRegisteredConversion(activeSession);
   }
 }
@@ -313,6 +317,64 @@ async function atomicUpdateAnalytics(updatePayload) {
 }
 
 /**
+ * Sanitize and heal analytics data ensuring no negative counts and valid totals
+ */
+export function sanitizeAnalyticsData(data) {
+  if (!data) return data;
+  const clone = { ...data };
+
+  if (clone.sessions) {
+    const rawTotal = Math.max(0, clone.sessions.total || 0);
+    const reg = Math.max(0, clone.sessions.registered || 0);
+    let anon = clone.sessions.anonymous || 0;
+
+    // Heal negative anonymous sessions
+    if (anon < 0) {
+      anon = Math.max(0, rawTotal - reg);
+    }
+    
+    // Total must be at least the sum of registered and anonymous
+    const realTotal = Math.max(rawTotal, reg + anon);
+
+    clone.sessions = {
+      ...clone.sessions,
+      total: realTotal,
+      registered: reg,
+      anonymous: anon,
+      totalDurationSec: Math.max(0, clone.sessions.totalDurationSec || 0)
+    };
+  }
+
+  // Sanitize daily records if present
+  if (clone.daily && typeof clone.daily === 'object') {
+    const cleanDaily = {};
+    for (const [dayKey, dayVal] of Object.entries(clone.daily)) {
+      if (!dayVal || typeof dayVal !== 'object') continue;
+      const dSess = dayVal.sessions || {};
+      const dRawTot = Math.max(0, dSess.total || 0);
+      const dReg = Math.max(0, dSess.registered || 0);
+      let dAnon = dSess.anonymous || 0;
+      if (dAnon < 0) dAnon = Math.max(0, dRawTot - dReg);
+      const dTot = Math.max(dRawTot, dReg + dAnon);
+
+      cleanDaily[dayKey] = {
+        ...dayVal,
+        sessions: {
+          ...dSess,
+          total: dTot,
+          registered: dReg,
+          anonymous: dAnon,
+          totalDurationSec: Math.max(0, dSess.totalDurationSec || 0)
+        }
+      };
+    }
+    clone.daily = cleanDaily;
+  }
+
+  return clone;
+}
+
+/**
  * Subscribes to real-time analytics updates for the Admin Dashboard
  */
 export function subscribeToAnalytics(callback) {
@@ -320,7 +382,8 @@ export function subscribeToAnalytics(callback) {
     const sumRef = SUMMARY_DOC_REF();
     return onSnapshot(sumRef, (snap) => {
       if (snap.exists()) {
-        const data = snap.data();
+        const rawData = snap.data();
+        const data = sanitizeAnalyticsData(rawData);
         getDoc(ADMIN_DOC_REF()).then((adminSnap) => {
           if (adminSnap.exists() && adminSnap.data()?.analytics?.recentUsers) {
             data.recentUsers = adminSnap.data().analytics.recentUsers;
@@ -333,7 +396,7 @@ export function subscribeToAnalytics(callback) {
         // Fallback to admin doc
         getDoc(ADMIN_DOC_REF()).then((adminSnap) => {
           if (adminSnap.exists() && adminSnap.data()?.analytics) {
-            if (callback) callback(adminSnap.data().analytics);
+            if (callback) callback(sanitizeAnalyticsData(adminSnap.data().analytics));
           } else {
             if (callback) callback({});
           }
@@ -345,7 +408,7 @@ export function subscribeToAnalytics(callback) {
       console.warn('[Analytics] Error in summary snapshot listener, trying admin doc:', err);
       getDoc(ADMIN_DOC_REF()).then((adminSnap) => {
         if (adminSnap.exists() && adminSnap.data()?.analytics) {
-          if (callback) callback(adminSnap.data().analytics);
+          if (callback) callback(sanitizeAnalyticsData(adminSnap.data().analytics));
         } else {
           if (callback) callback({});
         }
@@ -369,7 +432,14 @@ export async function getAnalyticsSummary() {
     try {
       const sumSnap = await getDoc(SUMMARY_DOC_REF());
       if (sumSnap.exists()) {
-        const data = sumSnap.data();
+        const rawData = sumSnap.data();
+        const data = sanitizeAnalyticsData(rawData);
+
+        // If corrupted data was detected in summary doc, auto-repair it in Firestore
+        if (rawData.sessions?.anonymous < 0) {
+          setDoc(SUMMARY_DOC_REF(), data, { merge: true }).catch(() => {});
+        }
+
         // Also fetch recent users from admin doc if available
         try {
           const adminSnap = await getDoc(ADMIN_DOC_REF());
@@ -384,7 +454,7 @@ export async function getAnalyticsSummary() {
     // 2. Check players/{adminUid}.analytics
     const adminSnap = await getDoc(ADMIN_DOC_REF());
     if (adminSnap.exists() && adminSnap.data()?.analytics) {
-      return adminSnap.data().analytics;
+      return sanitizeAnalyticsData(adminSnap.data().analytics);
     }
 
     return {};

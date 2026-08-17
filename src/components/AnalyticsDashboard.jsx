@@ -189,10 +189,14 @@ export default function AnalyticsDashboard({ lang, showAlert, showConfirm }) {
   }
 
   // Cálculos de KPI
-  const regPercent = sessions.total > 0 ? Math.round((sessions.registered / sessions.total) * 100) : 0;
-  const anonPercent = sessions.total > 0 ? 100 - regPercent : 0;
+  const safeRegistered = Math.max(0, sessions.registered || 0);
+  const safeAnonymous = Math.max(0, sessions.anonymous || 0);
+  const effectiveTotalSessions = Math.max(sessions.total || 0, safeRegistered + safeAnonymous);
 
-  const avgSeconds = sessions.total > 0 ? Math.round(sessions.totalDurationSec / sessions.total) : 0;
+  const regPercent = effectiveTotalSessions > 0 ? Math.min(100, Math.round((safeRegistered / effectiveTotalSessions) * 100)) : 0;
+  const anonPercent = effectiveTotalSessions > 0 ? Math.max(0, 100 - regPercent) : 0;
+
+  const avgSeconds = effectiveTotalSessions > 0 ? Math.round((sessions.totalDurationSec || 0) / effectiveTotalSessions) : 0;
   const avgMin = Math.floor(avgSeconds / 60);
   const avgSec = avgSeconds % 60;
   const avgDurationFormatted = `${avgMin}m ${avgSec < 10 ? '0' : ''}${avgSec}s`;
@@ -424,7 +428,7 @@ export default function AnalyticsDashboard({ lang, showAlert, showConfirm }) {
             <span style={{ fontSize: '1.2rem' }}>👥</span>
           </div>
           <div style={{ fontSize: '1.6rem', fontWeight: 'bold', color: '#fff', fontFamily: 'var(--font-heading)' }}>
-            {sessions.total.toLocaleString()}
+            {effectiveTotalSessions.toLocaleString()}
           </div>
           <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
             {timeFilter === 'today' ? (lang === 'es' ? 'Visitas registradas hoy' : 'Visits today') : (lang === 'es' ? 'Visitas totales acumuladas' : 'Cumulative visits')}
@@ -450,10 +454,10 @@ export default function AnalyticsDashboard({ lang, showAlert, showConfirm }) {
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
             <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: 'var(--gold-primary)' }}>
-              {sessions.registered} <span style={{ fontSize: '0.75rem', fontWeight: 'normal', color: 'var(--text-secondary)' }}>({regPercent}%)</span>
+              {safeRegistered} <span style={{ fontSize: '0.75rem', fontWeight: 'normal', color: 'var(--text-secondary)' }}>({regPercent}%)</span>
             </span>
             <span style={{ fontSize: '0.95rem', fontWeight: 'bold', color: 'var(--text-secondary)' }}>
-              {sessions.anonymous} <span style={{ fontSize: '0.75rem', fontWeight: 'normal', color: 'var(--text-muted)' }}>({anonPercent}%)</span>
+              {safeAnonymous} <span style={{ fontSize: '0.75rem', fontWeight: 'normal', color: 'var(--text-muted)' }}>({anonPercent}%)</span>
             </span>
           </div>
 
