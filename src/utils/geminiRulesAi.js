@@ -289,7 +289,7 @@ function findRelevantPages(query, maxResults = 45) {
   return [...faqPages, ...topBookPages];
 }
 
-const SYSTEM_INSTRUCTION = `
+const SYSTEM_INSTRUCTION_ES = `
 Eres Lobelia: Tu referí de confianza, la consultora y árbitra oficial suprema de reglas de Middle-earth Strategy Battle Game (MESBG).
 Tu cometido es resolver consultas de reglas con máxima fidelidad y precisión analítica, basándote en los textos de los libros oficiales, perfiles y Erratas/FAQs proporcionados.
 
@@ -298,9 +298,23 @@ NORMAS CRÍTICAS DE ARBITRAJE:
 2. ANÁLISIS METICULOSO DE CONDICIONES: Comprueba si en la situación descrita por el jugador se cumplen TODAS las condiciones requeridas por la regla o si alguna restricción (como tener aliados en el mismo combate, estar trabado, tipos de tropa) anula la habilidad.
 3. RIGOR MATEMÁTICO Y FIDELIDAD A LAS FÓRMULAS: Prohibido inventar o extrapolar porcentajes. En MESBG el Punto de Desmoronamiento (*Break Point*) es SIEMPRE igual a la MITAD (50%) del número inicial de miniaturas del ejército ("equal to half the number of models in your starting Army", Pág. 60 del Reglamento Oficial). No confundas jamás el Break Point (50% de bajas) con la condición de "Reducido al 25%". Realiza siempre los cálculos numéricos de forma exacta basándote estrictamente en el texto del reglamento.
 4. SOPORTE DE NOTAS DE VOZ (AUDIO): Si el mensaje incluye una nota de voz o audio, escucha atentamente la pregunta hablada del jugador y responde directamente a su duda con la misma precisión técnica y reglas oficiales.
-5. CERO RELLENO / DIRECTO AL GRANO: NO uses saludos ("¡Saludos!", "Como árbitro...", etc.), NO uses introducciones ni frases decorativas. Responde DIRECTAMENTE al caso concreto con claridad paso a paso.
+5. CERO RELLENO / DIRECTO AL GRANO: NO uses saludos ("¡Saludos!", "Como árbitro...", etc.), NO uses introducciones ni frases decorativas. Responde DIRECTAMENTE al caso concreto con claridad paso a paso en español.
 6. FORMATO DE CITAS EN UNA SOLA LÍNEA: Al final de tu respuesta, añade SIEMPRE la sección "📚 Fuentes citadas:" con una línea por cada fuente consultada siguiendo exactamente esta estructura:
    - 📖 [Nombre del Libro] | Capítulo/Sección: [Nombre de la sección] | Pág. [Número]
+`;
+
+const SYSTEM_INSTRUCTION_EN = `
+You are Lobelia: Your Trusted Referee, the supreme official rules referee and consultant for the Middle-earth Strategy Battle Game (MESBG).
+Your mission is to resolve rules queries with maximum fidelity, analytical precision, and strict adherence to official rulebooks, army profiles, and Erratas/FAQs.
+
+CRITICAL REFEREE RULES:
+1. ABSOLUTE PRIORITY OF ERRATAS: Official FAQs and Erratas OVERRIDE and replace book texts. ALWAYS check if the queried rule, special ability, or profile has an active Errata and carefully analyze all its clauses and conditions (e.g. restrictions like "if there are no other friendly models engaged in the same combat", wording changes, etc.).
+2. METICULOUS CONDITION ANALYSIS: Check if ALL conditions required by the rule are met in the scenario described by the player, or if any restriction (such as having allies in the same combat, being engaged, troop types) cancels the ability.
+3. MATHEMATICAL RIGOR AND FORMULA FIDELITY: Never invent or extrapolate numbers. In MESBG, the Break Point is ALWAYS equal to HALF (50%) of the starting number of models in the army ("equal to half the number of models in your starting Army", Page 60 of the Official Rules Manual). Never confuse Break Point (50% casualties) with "Quartered / Reduced to 25%". Always compute values strictly from the rulebook.
+4. VOICE NOTE (AUDIO) SUPPORT: If the message includes an audio/voice note, listen carefully to the player's spoken question and respond directly to their doubt with full technical rules precision.
+5. ZERO FLUFF / DIRECT TO THE POINT: Do NOT use greetings ("Greetings!", "As a referee...", etc.), do NOT use polite introductions or filler text. Answer DIRECTLY to the question with step-by-step clarity in English.
+6. SINGLE-LINE CITATION FORMAT: At the very end of your response, ALWAYS include the "📚 Cited sources:" section with one line per consulted source following this exact structure:
+   - 📖 [Book Name] | Section/Chapter: [Section Name] | Page [Number]
 `;
 
 const CANDIDATE_MODELS = [
@@ -337,14 +351,16 @@ export function getApiKeysPool(customApiKey = '') {
  * @param {string|object} input - Either query text or an object { text, audioBase64, mimeType }
  * @param {string} customApiKey - Optional user custom Gemini API Key
  * @param {Array} conversationHistory - Past messages in the chat session
+ * @param {string} lang - Application language ('es' or 'en')
  */
-export async function askRulesAi(input, customApiKey = '', conversationHistory = []) {
+export async function askRulesAi(input, customApiKey = '', conversationHistory = [], lang = 'es') {
   const keysPool = getApiKeysPool(customApiKey);
 
   if (keysPool.length === 0) {
     throw new Error('No se ha configurado ninguna clave API de Gemini (VITE_GEMINI_API_KEY).');
   }
 
+  const isEnglish = (lang === 'en' || lang === 'EN');
   const queryText = typeof input === 'string' ? input : (input?.text || '');
   const audioBase64 = typeof input === 'object' ? input?.audioBase64 : null;
   const mimeType = typeof input === 'object' ? (input?.mimeType || 'audio/webm') : null;
@@ -356,21 +372,29 @@ export async function askRulesAi(input, customApiKey = '', conversationHistory =
   let contextSnippet = '';
   if (relevantDocs.length > 0) {
     contextSnippet = relevantDocs.map((doc, idx) => (
-      `=== DOCUMENTO OFICIAL #${idx + 1} ===
-LIBRO: ${doc.book} (${doc.category})
-PÁGINA: ${doc.page} de ${doc.total_pages}
-CONTENIDO:
+      `=== OFFICIAL DOCUMENT #${idx + 1} ===
+BOOK: ${doc.book} (${doc.category})
+PAGE: ${doc.page} of ${doc.total_pages}
+CONTENT:
 ${doc.content}
 `
     )).join('\n\n');
   }
 
-  const userPromptWithContext = `
+  const userPromptWithContext = isEnglish
+    ? `
+OFFICIAL EXCERPTS FROM MESBG RULEBOOKS AND FAQS:
+${contextSnippet}
+
+${queryText ? `PLAYER'S WRITTEN QUESTION:\n"${queryText}"\n` : 'PLAYER\'S ATTACHED VOICE NOTE:\nListen to the attached audio and resolve the player\'s rules question.\n'}
+Respond strictly in English in a direct and concise manner, analyzing all applicable conditions of the rules and official erratas, and add cited sources at the end in a single line per book.
+`
+    : `
 FRAGMENTOS OFICIALES DE LOS LIBROS Y FAQS DE MESBG:
 ${contextSnippet}
 
 ${queryText ? `PREGUNTA ESCRITA DEL JUGADOR:\n"${queryText}"\n` : 'CONSULTA EN NOTA DE VOZ ADJUNTA:\nEscucha el audio adjunto y resuelve la duda de reglas que plantea el jugador.\n'}
-Responde en español de forma directa, analizando todas las condiciones de las reglas y erratas oficiales aplicables, y añade al final las fuentes citadas en una sola línea por libro.
+Responde estrictamente en español de forma directa, analizando todas las condiciones de las reglas y erratas oficiales aplicables, y añade al final las fuentes citadas en una sola línea por libro.
 `;
 
   const userParts = [];
@@ -387,7 +411,7 @@ Responde en español de forma directa, analizando todas las condiciones de las r
   const contents = [
     ...conversationHistory.map(msg => ({
       role: msg.sender === 'user' ? 'user' : 'model',
-      parts: [{ text: msg.text || (msg.hasAudio ? '[Nota de voz enviada]' : '') }]
+      parts: [{ text: msg.text || (msg.hasAudio ? (isEnglish ? '[Voice note sent]' : '[Nota de voz enviada]') : '') }]
     })),
     {
       role: 'user',
@@ -397,7 +421,7 @@ Responde en español de forma directa, analizando todas las condiciones de las r
 
   const payload = {
     system_instruction: {
-      parts: [{ text: SYSTEM_INSTRUCTION }]
+      parts: [{ text: isEnglish ? SYSTEM_INSTRUCTION_EN : SYSTEM_INSTRUCTION_ES }]
     },
     contents: contents,
     generationConfig: {

@@ -278,14 +278,14 @@ export default function AiRulesWidget({ user, profile, lang, onOpenAuthModal }) 
         mimeType: blob ? blob.type : null
       };
 
-      const answer = await askRulesAi(payload, customApiKey, chatHistory);
+      const answer = await askRulesAi(payload, customApiKey, chatHistory, lang);
       setChatHistory([...newHistory, { sender: 'ai', text: answer }]);
       incrementAiUsage(user.uid);
       trackFeature('ai_query', { hasAudio: true });
       setRemainingQueries(getRemainingAiQueries(user.uid));
     } catch (err) {
       console.error('Error in AI Rules Assistant:', err);
-      setErrorMessage(err.message || 'Error al obtener respuesta de la IA.');
+      setErrorMessage(err.message || (lang === 'es' ? 'Error al obtener respuesta de la IA.' : 'Error getting AI response.'));
     }
 
     setIsLoading(false);
@@ -409,14 +409,14 @@ export default function AiRulesWidget({ user, profile, lang, onOpenAuthModal }) 
         mimeType: null
       };
 
-      const answer = await askRulesAi(payload, customApiKey, chatHistory);
+      const answer = await askRulesAi(payload, customApiKey, chatHistory, lang);
       setChatHistory([...newHistory, { sender: 'ai', text: answer }]);
       incrementAiUsage(user.uid);
       trackFeature('ai_query', { hasAudio: false });
       setRemainingQueries(getRemainingAiQueries(user.uid));
     } catch (err) {
       console.error('Error in AI Rules Assistant:', err);
-      setErrorMessage(err.message || 'Error al obtener respuesta de la IA.');
+      setErrorMessage(err.message || (lang === 'es' ? 'Error al obtener respuesta de la IA.' : 'Error getting AI response.'));
     }
 
     setIsLoading(false);
