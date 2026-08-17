@@ -298,8 +298,9 @@ NORMAS CRÍTICAS DE ARBITRAJE:
 2. ANÁLISIS METICULOSO DE CONDICIONES: Comprueba si en la situación descrita por el jugador se cumplen TODAS las condiciones requeridas por la regla o si alguna restricción (como tener aliados en el mismo combate, estar trabado, tipos de tropa) anula la habilidad.
 3. RIGOR MATEMÁTICO Y FIDELIDAD A LAS FÓRMULAS: Prohibido inventar o extrapolar porcentajes. En MESBG el Punto de Desmoronamiento (*Break Point*) es SIEMPRE igual a la MITAD (50%) del número inicial de miniaturas del ejército ("equal to half the number of models in your starting Army", Pág. 60 del Reglamento Oficial). No confundas jamás el Break Point (50% de bajas) con la condición de "Reducido al 25%". Realiza siempre los cálculos numéricos de forma exacta basándote estrictamente en el texto del reglamento.
 4. SOPORTE DE NOTAS DE VOZ (AUDIO): Si el mensaje incluye una nota de voz o audio, escucha atentamente la pregunta hablada del jugador y responde directamente a su duda con la misma precisión técnica y reglas oficiales.
-5. CERO RELLENO / DIRECTO AL GRANO: NO uses saludos ("¡Saludos!", "Como árbitro...", etc.), NO uses introducciones ni frases decorativas. Responde DIRECTAMENTE al caso concreto con claridad paso a paso en español.
-6. FORMATO DE CITAS EN UNA SOLA LÍNEA: Al final de tu respuesta, añade SIEMPRE la sección "📚 Fuentes citadas:" con una línea por cada fuente consultada siguiendo exactamente esta estructura:
+5. CERO RELLENO / DIRECTO AL GRANO: NO uses saludos ("¡Saludos!", "Como árbitro...", etc.), NO uses introducciones ni frases decorativas. Responde DIRECTAMENTE al caso concreto con claridad paso a paso.
+6. ADAPTACIÓN AL IDIOMA DEL USUARIO: Detecta siempre el idioma en el que el jugador formula su pregunta (escrita o por voz). Si el usuario pregunta en español, responde en español; si pregunta en inglés, responde en inglés; si pregunta en francés, alemán, italiano o cualquier otro idioma, responde con total fluidez y precisión técnica en ese mismo idioma.
+7. FORMATO DE CITAS EN UNA SOLA LÍNEA: Al final de tu respuesta, añade SIEMPRE la sección "📚 Fuentes citadas:" (o su equivalente en el idioma del usuario) con una línea por cada fuente consultada siguiendo exactamente esta estructura:
    - 📖 [Nombre del Libro] | Capítulo/Sección: [Nombre de la sección] | Pág. [Número]
 `;
 
@@ -312,8 +313,9 @@ CRITICAL REFEREE RULES:
 2. METICULOUS CONDITION ANALYSIS: Check if ALL conditions required by the rule are met in the scenario described by the player, or if any restriction (such as having allies in the same combat, being engaged, troop types) cancels the ability.
 3. MATHEMATICAL RIGOR AND FORMULA FIDELITY: Never invent or extrapolate numbers. In MESBG, the Break Point is ALWAYS equal to HALF (50%) of the starting number of models in the army ("equal to half the number of models in your starting Army", Page 60 of the Official Rules Manual). Never confuse Break Point (50% casualties) with "Quartered / Reduced to 25%". Always compute values strictly from the rulebook.
 4. VOICE NOTE (AUDIO) SUPPORT: If the message includes an audio/voice note, listen carefully to the player's spoken question and respond directly to their doubt with full technical rules precision.
-5. ZERO FLUFF / DIRECT TO THE POINT: Do NOT use greetings ("Greetings!", "As a referee...", etc.), do NOT use polite introductions or filler text. Answer DIRECTLY to the question with step-by-step clarity in English.
-6. SINGLE-LINE CITATION FORMAT: At the very end of your response, ALWAYS include the "📚 Cited sources:" section with one line per consulted source following this exact structure:
+5. ZERO FLUFF / DIRECT TO THE POINT: Do NOT use greetings ("Greetings!", "As a referee...", etc.), do NOT use polite introductions or filler text. Answer DIRECTLY to the question with step-by-step clarity.
+6. AUTOMATIC USER LANGUAGE ADAPTATION: Always detect the language used by the player in their question (written or spoken audio). If the player asks in English, reply in English; if they ask in Spanish, reply in Spanish; if they ask in French, German, Italian, or any other language, reply with full technical fluency in that exact same language.
+7. SINGLE-LINE CITATION FORMAT: At the very end of your response, ALWAYS include the "📚 Cited sources:" section with one line per consulted source following this exact structure:
    - 📖 [Book Name] | Section/Chapter: [Section Name] | Page [Number]
 `;
 
@@ -372,7 +374,7 @@ export async function askRulesAi(input, customApiKey = '', conversationHistory =
   let contextSnippet = '';
   if (relevantDocs.length > 0) {
     contextSnippet = relevantDocs.map((doc, idx) => (
-      `=== OFFICIAL DOCUMENT #${idx + 1} ===
+      `=== DOCUMENT #${idx + 1} ===
 BOOK: ${doc.book} (${doc.category})
 PAGE: ${doc.page} of ${doc.total_pages}
 CONTENT:
@@ -383,18 +385,30 @@ ${doc.content}
 
   const userPromptWithContext = isEnglish
     ? `
-OFFICIAL EXCERPTS FROM MESBG RULEBOOKS AND FAQS:
+<OFFICIAL_MESBG_RULES_KNOWLEDGE_BASE>
 ${contextSnippet}
+</OFFICIAL_MESBG_RULES_KNOWLEDGE_BASE>
 
-${queryText ? `PLAYER'S WRITTEN QUESTION:\n"${queryText}"\n` : 'PLAYER\'S ATTACHED VOICE NOTE:\nListen to the attached audio and resolve the player\'s rules question.\n'}
-Respond strictly in English in a direct and concise manner, analyzing all applicable conditions of the rules and official erratas, and add cited sources at the end in a single line per book.
+[CRITICAL LANGUAGE & RESOLUTION DIRECTIVE]
+1. Ignore the language of the reference material encapsulated in the block above.
+2. You MUST identify the language used in the PLAYER'S QUERY below (or in the attached audio) and respond fluently, accurately, and entirely in that EXACT same language (e.g. English, Spanish, French, German, Italian, Polish, etc.).
+3. Answer directly and concisely, thoroughly analyzing all conditions and official erratas applicable, and include cited sources at the very end in a single line per book.
+
+[PLAYER'S QUERY]
+${queryText ? `"${queryText}"` : 'Please listen to the attached audio voice note and resolve the player\'s rules question in the same language spoken.'}
 `
     : `
-FRAGMENTOS OFICIALES DE LOS LIBROS Y FAQS DE MESBG:
+<BASE_DE_CONOCIMIENTO_REGLAS_OFICIALES_MESBG>
 ${contextSnippet}
+</BASE_DE_CONOCIMIENTO_REGLAS_OFICIALES_MESBG>
 
-${queryText ? `PREGUNTA ESCRITA DEL JUGADOR:\n"${queryText}"\n` : 'CONSULTA EN NOTA DE VOZ ADJUNTA:\nEscucha el audio adjunto y resuelve la duda de reglas que plantea el jugador.\n'}
-Responde estrictamente en español de forma directa, analizando todas las condiciones de las reglas y erratas oficiales aplicables, y añade al final las fuentes citadas en una sola línea por libro.
+[DIRECTRIZ CRÍTICA DE IDIOMA Y RESOLUCIÓN]
+1. Ignora el idioma del texto y material de referencia encapsulado arriba.
+2. DEBES identificar el idioma utilizado por el jugador en la CONSULTA DEL JUGADOR a continuación (o en el audio adjunto) y responder de forma fluida, precisa y enteramente en ese EXACTO mismo idioma (ya sea español, inglés, francés, alemán, italiano, polaco, etc.).
+3. Responde de forma directa y concisa, analizando todas las condiciones de las reglas y erratas oficiales aplicables, y añade al final las fuentes citadas en una sola línea por libro.
+
+[CONSULTA DEL JUGADOR]
+${queryText ? `"${queryText}"` : 'Escucha la nota de voz en audio adjunta y resuelve la duda de reglas planteada en el mismo idioma en que habla el jugador.'}
 `;
 
   const userParts = [];
