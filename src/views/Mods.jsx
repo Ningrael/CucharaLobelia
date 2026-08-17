@@ -801,9 +801,9 @@ export default function Mods({ user, profile, lang = 'es' }) {
 
       {/* ── INFO LEGAL ── */}
       <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', lineHeight: '1.5', padding: '12px', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', border: 'var(--border-glass)', marginTop: '20px' }}>
-        <strong>Aviso Legal:</strong> La Cuchara de Lobelia no distribuye ni almacena datos con derechos de autor de Games Workshop.
-        Los mods son creados y publicados de forma independiente por sus autores. Al instalar un mod, lo haces bajo tu propia responsabilidad.
-        Middle-earth Strategy Battle Game © Games Workshop Ltd.
+        <strong>{lang === 'es' ? 'Aviso Legal:' : 'Legal Notice:'}</strong> {lang === 'es'
+          ? 'La Cuchara de Lobelia es un motor neutral que no distribuye ni almacena datos con derechos de autor de terceros. Los mods son creados, mantenidos y publicados de forma independiente por autores de la comunidad. Al instalar un mod en tu navegador, lo haces bajo tu propia responsabilidad.'
+          : 'La Cuchara de Lobelia is a neutral engine that does not distribute or store third-party copyrighted content. Mods are independently created and published by community authors. Installing a mod in your browser is done at your own discretion.'}
       </div>
 
     </div>

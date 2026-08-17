@@ -153,10 +153,20 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // Analytics & Telemetry
-    match /analytics/{docId} {
+    // Army Builder - Listas de ejército por usuario
+    match /army_lists/{userId}/lists/{listId} {
+      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Mods Comunitarios & Catálogo Público
+    match /public_mods/{modId} {
       allow read: if true;
-      allow write: if true;
+      allow write: if isAdmin();
+    }
+
+    match /mod_submissions/{subId} {
+      allow create: if isAuthenticated();
+      allow read, update, delete: if isAdmin() || (isAuthenticated() && resource.data.submittedBy == request.auth.uid);
     }
 
     match /{document=**} {

@@ -278,7 +278,7 @@ export default function AiRulesWidget({ user, profile, lang, onOpenAuthModal }) 
         mimeType: blob ? blob.type : null
       };
 
-      const answer = await askRulesAi(payload, customApiKey, chatHistory, lang);
+      const answer = await askRulesAi(payload, customApiKey, chatHistory, lang, user?.uid);
       setChatHistory([...newHistory, { sender: 'ai', text: answer }]);
       incrementAiUsage(user.uid);
       trackFeature('ai_query', { hasAudio: true });
@@ -409,7 +409,7 @@ export default function AiRulesWidget({ user, profile, lang, onOpenAuthModal }) 
         mimeType: null
       };
 
-      const answer = await askRulesAi(payload, customApiKey, chatHistory, lang);
+      const answer = await askRulesAi(payload, customApiKey, chatHistory, lang, user?.uid);
       setChatHistory([...newHistory, { sender: 'ai', text: answer }]);
       incrementAiUsage(user.uid);
       trackFeature('ai_query', { hasAudio: false });

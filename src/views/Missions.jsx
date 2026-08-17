@@ -358,13 +358,14 @@ export default function Missions({ lang, translations, setLang }) {
 
   // 1. Selector Aleatorio Simple
   const handleRandomSelect = () => {
-    setRoundBadges({});
     if (mode === '1vs1') {
       const allMissions = POOLS_1VS1.flatMap(pool => pool.items);
       const randomMission = allMissions[Math.floor(Math.random() * allMissions.length)];
+      setRoundBadges({ [randomMission]: 1 });
       openPdf(randomMission);
     } else {
       const randomMission = MISSIONS_2VS2[Math.floor(Math.random() * MISSIONS_2VS2.length)];
+      setRoundBadges({ [randomMission]: 1 });
       openPdf(randomMission);
     }
   };
@@ -859,8 +860,8 @@ export default function Missions({ lang, translations, setLang }) {
               </h3>
               <p style={{ color: '#bbb', fontSize: '0.85rem', maxWidth: '480px', margin: '0 auto 18px auto', lineHeight: '1.5' }}>
                 {lang === 'es'
-                  ? 'La Cuchara de Lobelia no almacena ni distribuye PDFs propietarios de Games Workshop. Para visualizar el mapa y el documento oficial de esta misión, instala un Mod de Misiones en la sección Mods.'
-                  : 'La Cuchara de Lobelia does not store or distribute proprietary Games Workshop PDFs. To view the deployment map and official mission document, install a Missions Mod in the Mods tab.'}
+                  ? 'La Cuchara de Lobelia es un motor neutral que no almacena ni distribuye archivos ni mapas de terceros sujetos a derechos de autor. Para visualizar el mapa de despliegue y el documento completo de este escenario, instala un Mod de Misiones compatible desde la sección Mods.'
+                  : 'La Cuchara de Lobelia is a neutral engine that does not store or distribute third-party copyrighted materials or maps. To view the deployment map and official scenario document, please install a compatible Missions Mod in the Mods tab.'}
               </p>
               <button
                 onClick={() => {

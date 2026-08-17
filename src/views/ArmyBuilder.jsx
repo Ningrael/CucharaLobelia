@@ -73,14 +73,32 @@ export default function ArmyBuilder({ user, profile, lang, setView }) {
   // ── Cargar listas guardadas ─────────────────────────────────────────────────
   const loadSavedLists = useCallback(async () => {
     if (!user) return;
+    let localLists = [];
+    try {
+      const raw = localStorage.getItem(`lobelia_army_lists_${user.uid}`);
+      if (raw) localLists = JSON.parse(raw);
+    } catch (_) {}
+
     try {
       const snap = await getDocs(collection(db, 'army_lists', user.uid, 'lists'));
-      const lists = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      lists.sort((a, b) => (b.updatedAt?.seconds || 0) - (a.updatedAt?.seconds || 0));
-      setSavedLists(lists);
+      if (!snap.empty) {
+        const firestoreLists = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        const mergedMap = new Map();
+        localLists.forEach(l => mergedMap.set(l.id, l));
+        firestoreLists.forEach(l => mergedMap.set(l.id, l));
+        const combined = Array.from(mergedMap.values());
+        combined.sort((a, b) => (b.updatedAt?.seconds || b.updatedAtMs || 0) - (a.updatedAt?.seconds || a.updatedAtMs || 0));
+        setSavedLists(combined);
+        try {
+          localStorage.setItem(`lobelia_army_lists_${user.uid}`, JSON.stringify(combined));
+        } catch (_) {}
+        return;
+      }
     } catch (err) {
-      console.error('Error cargando listas:', err);
+      console.warn('[ArmyBuilder] Firestore sync not available, using local cache:', err);
     }
+
+    setSavedLists(localLists);
   }, [user]);
 
   useEffect(() => { loadSavedLists(); }, [loadSavedLists]);
@@ -89,7 +107,7 @@ export default function ArmyBuilder({ user, profile, lang, setView }) {
   const handleNewList = () => {
     setActiveList({
       id: null,
-      name: 'Nueva Lista',
+      name: lang === 'es' ? 'Nueva Lista' : 'New List',
       pointsLimit: 750,
       warbands: [],
       modId: activeMod?.modId || null,
@@ -104,24 +122,49 @@ export default function ArmyBuilder({ user, profile, lang, setView }) {
     try {
       const validation = validateFullList(activeList, activeMod);
       const { stats } = validation;
+      const now = new Date().toISOString();
+      const listId = activeList.id || `list_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+
       const listData = {
         ...activeList,
+        id: listId,
         stats,
-        updatedAt: serverTimestamp(),
+        updatedAtMs: Date.now(),
+        updatedAtStr: now
       };
 
-      if (activeList.id) {
-        await updateDoc(doc(db, 'army_lists', user.uid, 'lists', activeList.id), listData);
-        notify('Lista guardada correctamente.');
+      // 1. Guardar siempre en LocalStorage (100% garantizado)
+      let localLists = [];
+      try {
+        const raw = localStorage.getItem(`lobelia_army_lists_${user.uid}`);
+        if (raw) localLists = JSON.parse(raw);
+      } catch (_) {}
+
+      const existingIdx = localLists.findIndex(l => l.id === listId);
+      if (existingIdx >= 0) {
+        localLists[existingIdx] = listData;
       } else {
-        const ref = await addDoc(collection(db, 'army_lists', user.uid, 'lists'), {
-          ...listData,
-          createdAt: serverTimestamp(),
-        });
-        setActiveList(prev => ({ ...prev, id: ref.id }));
-        notify('Lista creada correctamente.');
+        localLists.unshift(listData);
       }
-      await loadSavedLists();
+      try {
+        localStorage.setItem(`lobelia_army_lists_${user.uid}`, JSON.stringify(localLists));
+      } catch (_) {}
+      setActiveList(listData);
+      setSavedLists(localLists);
+
+      // 2. Sincronizar en Firestore
+      try {
+        if (db) {
+          await setDoc(doc(db, 'army_lists', user.uid, 'lists', listId), {
+            ...listData,
+            updatedAt: serverTimestamp()
+          }, { merge: true });
+        }
+      } catch (fErr) {
+        console.warn('[ArmyBuilder] Saved locally, Firestore sync pending:', fErr);
+      }
+
+      notify(lang === 'es' ? 'Lista guardada correctamente.' : 'Army list saved successfully.');
     } catch (err) {
       notify(`Error al guardar: ${err.message}`, 'error');
     }
@@ -133,22 +176,33 @@ export default function ArmyBuilder({ user, profile, lang, setView }) {
     const duplicated = {
       ...originalList,
       id: null,
-      name: `${originalList.name} (Copia)`,
+      name: `${originalList.name} (${lang === 'es' ? 'Copia' : 'Copy'})`,
       createdAt: null,
       updatedAt: null
     };
     setActiveList(duplicated);
     setBuilderView('edit_list');
-    notify('Copia de lista lista para editar.');
+    notify(lang === 'es' ? 'Copia de lista lista para editar.' : 'Copy of list ready to edit.');
   };
 
   // ── Eliminar lista ──────────────────────────────────────────────────────────
   const handleDeleteList = async (listId, listName) => {
-    if (!confirm(`¿Eliminar la lista "${listName}"? Esta acción no se puede deshacer.`)) return;
+    if (!confirm(lang === 'es' ? `¿Eliminar la lista "${listName}"? Esta acción no se puede deshacer.` : `Delete list "${listName}"? This action cannot be undone.`)) return;
     try {
-      await deleteDoc(doc(db, 'army_lists', user.uid, 'lists', listId));
-      await loadSavedLists();
-      notify('Lista eliminada.');
+      let localLists = [];
+      try {
+        const raw = localStorage.getItem(`lobelia_army_lists_${user.uid}`);
+        if (raw) localLists = JSON.parse(raw);
+      } catch (_) {}
+      localLists = localLists.filter(l => l.id !== listId);
+      localStorage.setItem(`lobelia_army_lists_${user.uid}`, JSON.stringify(localLists));
+      setSavedLists(localLists);
+
+      try {
+        await deleteDoc(doc(db, 'army_lists', user.uid, 'lists', listId));
+      } catch (_) {}
+
+      notify(lang === 'es' ? 'Lista eliminada.' : 'List deleted.');
     } catch (err) {
       notify(`Error: ${err.message}`, 'error');
     }

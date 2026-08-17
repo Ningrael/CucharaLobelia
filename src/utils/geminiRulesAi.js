@@ -305,7 +305,10 @@ function findRelevantPages(query, maxResults = 45, uid = null) {
   const termsArray = Array.from(searchTerms);
 
   const modKnowledge = getRulesKnowledgeFromMod(uid);
-  const activeKnowledge = (modKnowledge && modKnowledge.length > 0) ? modKnowledge : (rulesKnowledge || []);
+  if (!modKnowledge || modKnowledge.length === 0) {
+    return [];
+  }
+  const activeKnowledge = modKnowledge;
 
   // Separate FAQs (always included) from general book pages
   const faqPages = activeKnowledge.filter(doc => doc.category === 'FAQ & Erratas');
@@ -461,13 +464,22 @@ export function getApiKeysPool(customApiKey = '') {
  * @param {string} lang - Application language ('es' or 'en')
  */
 export async function askRulesAi(input, customApiKey = '', conversationHistory = [], lang = 'es', uid = null) {
+  const isEnglish = (lang === 'en' || lang === 'EN');
+
+  // Verificar si hay mod de reglas activo
+  const modKnowledge = getRulesKnowledgeFromMod(uid);
+  if (!modKnowledge || modKnowledge.length === 0) {
+    return isEnglish
+      ? `🧙‍♂️ **Lobelia**: In order to answer rules questions, adjudicate game situations, and cite exact rulebook pages, you need to install and activate a community **Rules / AI Referee Mod** in the **Mods** tab (🧩).\n\nLa Cuchara de Lobelia is a neutral engine that contains no third-party copyrighted rules texts.`
+      : `🧙‍♂️ **Lobelia**: Para poder resolver dudas de reglamento, interpretar situaciones de juego y citar páginas de manuales oficiales, necesitas instalar y activar un **Mod de Reglas / Árbitro IA** creado por la comunidad en la sección **Mods** (🧩).\n\nLa Cuchara de Lobelia es un motor neutral que no almacena ni incluye textos de reglas protegidos por derechos de autor de terceros.`;
+  }
+
   const keysPool = getApiKeysPool(customApiKey);
 
   if (keysPool.length === 0) {
     throw new Error('No se ha configurado ninguna clave API de Gemini (VITE_GEMINI_API_KEY).');
   }
 
-  const isEnglish = (lang === 'en' || lang === 'EN');
   const queryText = typeof input === 'string' ? input : (input?.text || '');
   const audioBase64 = typeof input === 'object' ? input?.audioBase64 : null;
   const mimeType = typeof input === 'object' ? (input?.mimeType || 'audio/webm') : null;

@@ -528,12 +528,38 @@ export function getMissionPdfUrl(missionName, lang = 'es', mode = '1vs1', uid = 
   if (!modData || !modData.missionPdfs) return null;
 
   const pdfConfig = modData.missionPdfs;
-  const baseUrl = pdfConfig.baseUrl || '';
   const mapKey = mode === '2vs2' ? 'missions2v2' : 'missions1v1';
   const missionEntry = pdfConfig[mapKey]?.[missionName];
 
-  if (!missionEntry || !missionEntry.file) return null;
-  return `${baseUrl}${missionEntry.file}`;
+  if (!missionEntry) return null;
+
+  const isEn = (lang === 'en' || lang === 'EN');
+  const targetFile = (isEn
+    ? (missionEntry.fileEn || missionEntry.file_en || missionEntry.file_EN)
+    : (missionEntry.fileEs || missionEntry.file_es || missionEntry.file_ES))
+    || missionEntry.file;
+
+  if (!targetFile) return null;
+
+  if (targetFile.startsWith('http://') || targetFile.startsWith('https://')) {
+    return targetFile;
+  }
+
+  const rawBase = pdfConfig.baseUrl || 'pdfs/';
+  const basePath = (import.meta.env.BASE_URL || '/').replace(/\/$/, '');
+  
+  if (rawBase.startsWith('http://') || rawBase.startsWith('https://')) {
+    return `${rawBase.replace(/\/$/, '')}/${targetFile.replace(/^\//, '')}`;
+  }
+
+  const cleanBase = rawBase.replace(/^\//, '').replace(/\/$/, '');
+  const cleanFile = targetFile.replace(/^\//, '');
+
+  if (cleanFile.startsWith(cleanBase)) {
+    return `${basePath}/${cleanFile}`;
+  }
+
+  return `${basePath}/${cleanBase}/${cleanFile}`;
 }
 
 /**
