@@ -51,6 +51,8 @@ import Calculator from './views/Calculator';
 import Missions from './views/Missions';
 import Calendar from './views/Calendar';
 import League from './views/League';
+import ArmyBuilder from './views/ArmyBuilder';
+import Mods from './views/Mods';
 import logoImg from './assets/logo-horizontal.svg';
 
 // Importar Traducciones
@@ -1387,6 +1389,23 @@ export default function App() {
               setIsAuthModalOpen(true);
             }}
             onStartChat={handleStartChat}
+          />
+        );
+      case 'army':
+        return (
+          <ArmyBuilder
+            lang={lang}
+            user={user}
+            profile={profile}
+            setView={setView}
+          />
+        );
+      case 'mods':
+        return (
+          <Mods
+            lang={lang}
+            user={user}
+            profile={profile}
           />
         );
       default:
