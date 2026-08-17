@@ -12,6 +12,8 @@ import {
   onSnapshot,
   addDoc,
   doc,
+  getDoc,
+  setDoc,
   updateDoc,
   deleteDoc,
   serverTimestamp,
@@ -144,16 +146,24 @@ export default function Duels({ user, profile, lang, setView }) {
     setIsCreatingChallenge(true);
 
     try {
+      const challengerName = profile?.name || profile?.username || user.email?.split('@')[0] || 'Jugador';
+      const challengerUsername = profile?.username || user.email?.split('@')[0] || 'jugador';
+      const rivalName = selectedRival.name || selectedRival.username || 'Rival';
+      const rivalUsername = selectedRival.username || 'rival';
+      const pointsNum = parseInt(challengePoints, 10) || 750;
+
       const challengeData = {
         challengerId: user.uid,
-        challengerName: profile?.name || profile?.username || 'Jugador',
+        challengerName,
+        challengerUsername,
         challengerElo: myElo,
         rivalId: selectedRival.uid,
-        rivalName: selectedRival.name || selectedRival.username || 'Rival',
+        rivalName,
+        rivalUsername,
         rivalElo: selectedRival.elo || 1200,
         status: 'pending', // 'pending' | 'negotiating' | 'accepted' | 'list_selection' | 'mission_selection' | 'live' | 'completed' | 'cancelled'
         params: {
-          points: challengePoints,
+          points: pointsNum,
           allowCivilWar,
           challengerSide
         },
@@ -166,7 +176,59 @@ export default function Duels({ user, profile, lang, setView }) {
       };
 
       const ref = await addDoc(collection(db, 'challenges'), challengeData);
-      showToast('⚔️ ¡Desafío enviado con éxito!');
+
+      // ── Enviar Mensaje Privado (MP) automático al rival para avisarle ──
+      try {
+        const senderUid = user.uid;
+        const recipientUid = selectedRival.uid;
+        const chatId = senderUid < recipientUid ? `${senderUid}_${recipientUid}` : `${recipientUid}_${senderUid}`;
+        const chatDocRef = doc(db, 'chats', chatId);
+        const chatDoc = await getDoc(chatDocRef);
+
+        const challengeMsg = lang === 'es'
+          ? `⚔️ ¡Te he lanzado un desafío de duelo en Lobelia a ${pointsNum} puntos! Entra a la sección Duelos para aceptarlo.`
+          : `⚔️ I've sent you a duel challenge in Lobelia at ${pointsNum} points! Check the Duels section to accept.`;
+
+        if (!chatDoc.exists()) {
+          await setDoc(chatDocRef, {
+            participants: [senderUid, recipientUid],
+            lastMessage: challengeMsg,
+            lastUpdated: new Date(),
+            unread: {
+              [senderUid]: false,
+              [recipientUid]: true
+            },
+            nicks: {
+              [senderUid]: challengerName,
+              [recipientUid]: rivalName
+            },
+            usernames: {
+              [senderUid]: challengerUsername,
+              [recipientUid]: rivalUsername
+            }
+          });
+        } else {
+          await updateDoc(chatDocRef, {
+            lastMessage: challengeMsg,
+            lastUpdated: new Date(),
+            [`unread.${recipientUid}`]: true
+          });
+        }
+
+        const messagesRef = collection(db, 'chats', chatId, 'messages');
+        await addDoc(messagesRef, {
+          senderId: senderUid,
+          text: challengeMsg,
+          challengeId: ref.id,
+          type: 'duel_challenge',
+          points: pointsNum,
+          timestamp: new Date()
+        });
+      } catch (pmErr) {
+        console.warn('Could not send automated challenge PM:', pmErr.message);
+      }
+
+      showToast(lang === 'es' ? '⚔️ ¡Desafío enviado y notificado al rival!' : '⚔️ Challenge sent and notified to rival!');
       setSelectedRival(null);
       setSubView('lobby');
     } catch (err) {
@@ -478,26 +540,56 @@ export default function Duels({ user, profile, lang, setView }) {
               2. Parámetros de la partida
             </div>
 
-            {/* Selector de Puntos */}
+            {/* Selector de Puntos Personalizado */}
             <div style={{ marginBottom: '14px' }}>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '6px' }}>Puntos acordados:</div>
-              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                {[500, 600, 700, 750, 800, 1000].map(pts => (
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>{lang === 'es' ? 'Puntos acordados para la partida:' : 'Agreed match points:'}</span>
+                <strong style={{ color: 'var(--gold-primary)', fontSize: '0.92rem' }}>{challengePoints} pts</strong>
+              </div>
+              
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                <input
+                  type="number"
+                  min="50"
+                  max="10000"
+                  step="1"
+                  value={challengePoints}
+                  onChange={(e) => setChallengePoints(Math.max(1, parseInt(e.target.value, 10) || 0))}
+                  style={{
+                    width: '100%',
+                    background: 'rgba(255,255,255,0.06)',
+                    border: '1px solid var(--gold-primary)',
+                    borderRadius: '8px',
+                    padding: '8px 12px',
+                    color: '#fff',
+                    fontSize: '0.95rem',
+                    fontWeight: 'bold',
+                    outline: 'none',
+                    boxSizing: 'border-box'
+                  }}
+                  placeholder={lang === 'es' ? 'Introduce cualquier puntuación (ej: 666, 750...)' : 'Enter any points value (e.g.: 666, 750...)'}
+                />
+              </div>
+
+              {/* Accesos rápidos habituales */}
+              <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+                {[450, 500, 600, 666, 700, 750, 800, 850, 1000].map(pts => (
                   <button
                     key={pts}
+                    type="button"
                     onClick={() => setChallengePoints(pts)}
                     style={{
-                      padding: '5px 10px',
+                      padding: '4px 8px',
                       borderRadius: '6px',
                       border: 'var(--border-glass)',
                       cursor: 'pointer',
-                      fontSize: '0.75rem',
+                      fontSize: '0.72rem',
                       fontWeight: challengePoints === pts ? 'bold' : 'normal',
-                      background: challengePoints === pts ? 'var(--gold-primary)' : 'transparent',
+                      background: challengePoints === pts ? 'var(--gold-primary)' : 'rgba(255,255,255,0.04)',
                       color: challengePoints === pts ? '#000' : 'var(--text-muted)'
                     }}
                   >
-                    {pts} pts
+                    {pts === 666 ? '🎃 666' : `${pts}`}
                   </button>
                 ))}
               </div>

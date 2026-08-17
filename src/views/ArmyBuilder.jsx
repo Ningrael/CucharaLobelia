@@ -497,13 +497,14 @@ export default function ArmyBuilder({ user, profile, lang, setView }) {
             onRemoveWarrior={handleRemoveWarrior}
             onViewModel={(m) => setInspectedModel(m)}
             activeMod={activeMod}
+            lang={lang}
           />
         ))}
 
         {/* Botón añadir partida de guerra */}
         <button style={{ ...s.btnSecondary, width: '100%', padding: '12px', fontSize: '0.85rem', borderStyle: 'dashed', marginBottom: '16px' }}
           onClick={() => { setSearchQuery(''); setShowAddHeroModal(true); }}>
-          ⚔️ + Nueva Partida de Guerra (Añadir Héroe)
+          {lang === 'es' ? '⚔️ + Nueva Partida de Guerra (Añadir Héroe)' : '⚔️ + New Warband (Add Hero)'}
         </button>
 
         {/* Botones de acción y exportación */}
@@ -512,13 +513,13 @@ export default function ArmyBuilder({ user, profile, lang, setView }) {
             style={{ ...s.btnPrimary, flex: 1, background: 'linear-gradient(135deg, #27ae60 0%, #1e8449 100%)', color: '#fff' }}
             onClick={() => setShowSummaryCard(true)}
           >
-            📸 Tarjeta Gráfica (WhatsApp)
+            {lang === 'es' ? '📸 Tarjeta Gráfica (WhatsApp)' : '📸 Visual Card (WhatsApp)'}
           </button>
           <button
             style={{ ...s.btnPrimary, flex: 1 }}
             onClick={() => setShowExportModal(true)}
           >
-            📤 Exportar (TTS / JSON)
+            {lang === 'es' ? '📤 Exportar (TTS / JSON)' : '📤 Export (TTS / JSON)'}
           </button>
         </div>
 
@@ -527,9 +528,9 @@ export default function ArmyBuilder({ user, profile, lang, setView }) {
           <div style={s.modalOverlay} onClick={() => setShowAddHeroModal(false)}>
             <div style={s.modalSheet} onClick={e => e.stopPropagation()}>
               <div style={{ fontWeight: 'bold', fontSize: '1rem', marginBottom: '12px', color: 'var(--gold-primary)' }}>
-                Seleccionar Héroe Capitán
+                {lang === 'es' ? 'Seleccionar Héroe Capitán' : 'Select Captain Hero'}
               </div>
-              <input style={s.searchInput} placeholder="Buscar héroe..." value={searchQuery}
+              <input style={s.searchInput} placeholder={lang === 'es' ? 'Buscar héroe...' : 'Search hero...'} value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)} autoFocus />
               {filteredHeroes.map(h => (
                 <div key={h.id} style={s.modelRow} onClick={() => handleAddHero(h)}>
@@ -544,7 +545,7 @@ export default function ArmyBuilder({ user, profile, lang, setView }) {
               ))}
               {filteredHeroes.length === 0 && (
                 <div style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '20px', fontSize: '0.82rem' }}>
-                  No se encontraron héroes con ese nombre.
+                  {lang === 'es' ? 'No se encontraron héroes con ese nombre.' : 'No heroes found with that name.'}
                 </div>
               )}
             </div>
@@ -556,9 +557,9 @@ export default function ArmyBuilder({ user, profile, lang, setView }) {
           <div style={s.modalOverlay} onClick={() => setShowAddWarriorModal(null)}>
             <div style={s.modalSheet} onClick={e => e.stopPropagation()}>
               <div style={{ fontWeight: 'bold', fontSize: '1rem', marginBottom: '12px', color: 'var(--gold-primary)' }}>
-                Añadir Guerrero
+                {lang === 'es' ? 'Añadir Guerrero' : 'Add Warrior'}
               </div>
-              <input style={s.searchInput} placeholder="Buscar guerrero..." value={searchQuery}
+              <input style={s.searchInput} placeholder={lang === 'es' ? 'Buscar guerrero...' : 'Search warrior...'} value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)} autoFocus />
               {(() => {
                 const warbandHeroFaction = activeList.warbands[showAddWarriorModal]?.hero?.factionId;
@@ -574,7 +575,7 @@ export default function ArmyBuilder({ user, profile, lang, setView }) {
                   </div>
                 )) : (
                   <div style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '20px', fontSize: '0.82rem' }}>
-                    No se encontraron guerreros compatibles.
+                    {lang === 'es' ? 'No se encontraron guerreros compatibles.' : 'No compatible warriors found.'}
                   </div>
                 );
               })()}
@@ -589,6 +590,7 @@ export default function ArmyBuilder({ user, profile, lang, setView }) {
             onClose={() => setInspectedModel(null)}
             onSelectOption={handleToggleModelOption}
             selectedOptions={inspectedModel.selectedOptions || []}
+            lang={lang}
           />
         )}
 
@@ -598,6 +600,7 @@ export default function ArmyBuilder({ user, profile, lang, setView }) {
             list={activeList}
             activeMod={activeMod}
             onClose={() => setShowSummaryCard(false)}
+            lang={lang}
           />
         )}
 

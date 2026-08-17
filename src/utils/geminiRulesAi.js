@@ -1,6 +1,7 @@
 import rulesKnowledge from '../data/rules_knowledge.json';
 import { db } from './firebase';
 import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
+import { getRulesKnowledgeFromMod } from './modManager';
 
 const DEFAULT_MAX_DAILY_QUERIES = 30;
 let cachedMaxDailyQueries = (() => {
@@ -280,10 +281,10 @@ const MESBG_TRANSLATIONS = {
 };
 
 /**
- * Search the 848-page knowledge base for the most relevant pages,
+ * Search the knowledge base for the most relevant pages,
  * ALWAYS including all official FAQ & Errata pages and meta-rules.
  */
-function findRelevantPages(query, maxResults = 45) {
+function findRelevantPages(query, maxResults = 45, uid = null) {
   const cleanQuery = query.toLowerCase().replace(/[^\wáéíóúñü]/g, ' ');
   const rawTerms = cleanQuery.split(/\s+/).filter(t => t.length > 2 && !STOP_WORDS.has(t));
   
@@ -303,10 +304,13 @@ function findRelevantPages(query, maxResults = 45) {
 
   const termsArray = Array.from(searchTerms);
 
+  const modKnowledge = getRulesKnowledgeFromMod(uid);
+  const activeKnowledge = (modKnowledge && modKnowledge.length > 0) ? modKnowledge : (rulesKnowledge || []);
+
   // Separate FAQs (always included) from general book pages
-  const faqPages = rulesKnowledge.filter(doc => doc.category === 'FAQ & Erratas');
+  const faqPages = activeKnowledge.filter(doc => doc.category === 'FAQ & Erratas');
   
-  const nonFaqPages = rulesKnowledge.filter(doc => doc.category !== 'FAQ & Erratas');
+  const nonFaqPages = activeKnowledge.filter(doc => doc.category !== 'FAQ & Erratas');
   const scoredPages = nonFaqPages.map((doc) => {
     let score = 0;
     const contentLower = (doc.content || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -456,7 +460,7 @@ export function getApiKeysPool(customApiKey = '') {
  * @param {Array} conversationHistory - Past messages in the chat session
  * @param {string} lang - Application language ('es' or 'en')
  */
-export async function askRulesAi(input, customApiKey = '', conversationHistory = [], lang = 'es') {
+export async function askRulesAi(input, customApiKey = '', conversationHistory = [], lang = 'es', uid = null) {
   const keysPool = getApiKeysPool(customApiKey);
 
   if (keysPool.length === 0) {
@@ -470,7 +474,7 @@ export async function askRulesAi(input, customApiKey = '', conversationHistory =
 
   // Search relevant pages based on text query, or general rules for voice-only
   const searchQuery = queryText.trim() || 'reglas combate disparo movimiento héroes magia monstruos';
-  const relevantDocs = findRelevantPages(searchQuery, 40);
+  const relevantDocs = findRelevantPages(searchQuery, 40, uid);
 
   let contextSnippet = '';
   if (relevantDocs.length > 0) {

@@ -761,7 +761,7 @@ export default function Missions({ lang, translations, setLang }) {
       )}
 
       <Modal 
-        isOpen={!!activePdfUrl} 
+        isOpen={!!selectedMission} 
         onClose={() => { setSelectedMission(null); setActivePdfUrl(null); }}
         title={selectedMission ? `${MISSION_DISPLAY_INFO[selectedMission]?.[lang] || selectedMission}` : ''}
         size="large"
@@ -825,26 +825,60 @@ export default function Missions({ lang, translations, setLang }) {
             );
           })()}
 
-          <PdfCanvasViewer 
-            url={activePdfUrl} 
-            lang={pdfLang} 
-            onChangeLang={(newLang) => {
-              setPdfLang(newLang);
-              try {
-                localStorage.setItem('lobelia_pdf_lang', newLang);
-              } catch (_) {}
-            }} 
-          />
-          <div style={{ textAlign: 'center', fontSize: '0.8rem' }}>
-            <a 
-              href={activePdfUrl || '#'} 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              style={{ color: 'var(--gold-primary)', textDecoration: 'underline' }}
-            >
-              {lang === 'es' ? '¿Problemas con el visor? Abre el PDF directo' : 'Trouble viewing? Open PDF directly'}
-            </a>
-          </div>
+          {activePdfUrl ? (
+            <>
+              <PdfCanvasViewer 
+                url={activePdfUrl} 
+                lang={pdfLang} 
+                onChangeLang={(newLang) => {
+                  setPdfLang(newLang);
+                  try {
+                    localStorage.setItem('lobelia_pdf_lang', newLang);
+                  } catch (_) {}
+                }} 
+              />
+              <div style={{ textAlign: 'center', fontSize: '0.8rem' }}>
+                <a 
+                  href={activePdfUrl || '#'} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  style={{ color: 'var(--gold-primary)', textDecoration: 'underline' }}
+                >
+                  {lang === 'es' ? '¿Problemas con el visor? Abre el PDF directo' : 'Trouble viewing? Open PDF directly'}
+                </a>
+              </div>
+            </>
+          ) : (
+            <div style={{
+              textAlign: 'center', padding: '32px 16px', background: 'rgba(0,0,0,0.3)',
+              borderRadius: '12px', border: '1px dashed rgba(203,161,53,0.4)', marginTop: '8px'
+            }}>
+              <div style={{ fontSize: '2.5rem', marginBottom: '10px' }}>📦</div>
+              <h3 style={{ color: 'var(--gold-primary)', margin: '0 0 8px 0', fontSize: '1.15rem' }}>
+                {lang === 'es' ? 'Mod de Misiones Requerido' : 'Missions Mod Required'}
+              </h3>
+              <p style={{ color: '#bbb', fontSize: '0.85rem', maxWidth: '480px', margin: '0 auto 18px auto', lineHeight: '1.5' }}>
+                {lang === 'es'
+                  ? 'La Cuchara de Lobelia no almacena ni distribuye PDFs propietarios de Games Workshop. Para visualizar el mapa y el documento oficial de esta misión, instala un Mod de Misiones en la sección Mods.'
+                  : 'La Cuchara de Lobelia does not store or distribute proprietary Games Workshop PDFs. To view the deployment map and official mission document, install a Missions Mod in the Mods tab.'}
+              </p>
+              <button
+                onClick={() => {
+                  setSelectedMission(null);
+                  setActivePdfUrl(null);
+                  const modsTabBtn = document.querySelector('[data-tab="mods"]');
+                  if (modsTabBtn) modsTabBtn.click();
+                  else window.location.hash = '#mods';
+                }}
+                style={{
+                  background: 'var(--gold-primary)', color: '#111', border: 'none', padding: '10px 22px',
+                  borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.88rem', boxShadow: '0 4px 12px rgba(203,161,53,0.3)'
+                }}
+              >
+                🧩 {lang === 'es' ? 'Ir a la Sección de Mods' : 'Go to Mods Section'}
+              </button>
+            </div>
+          )}
         </div>
       </Modal>
 

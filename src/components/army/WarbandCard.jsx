@@ -15,7 +15,8 @@ export default function WarbandCard({
   onViewModel,
   onToggleHeroOption,
   onToggleWarriorOption,
-  activeMod
+  activeMod,
+  lang = 'es'
 }) {
   const { hero, warriors = [] } = warband;
 
@@ -78,7 +79,7 @@ export default function WarbandCard({
               fontWeight: isFull || isOverLimit ? 'bold' : 'normal'
             }}
           >
-            Capacidad: {warriorCount} / {maxWarriors} guerreros
+            {lang === 'es' ? `Capacidad: ${warriorCount} / ${maxWarriors} guerreros` : `Capacity: ${warriorCount} / ${maxWarriors} warriors`}
           </span>
         </div>
 
@@ -93,9 +94,9 @@ export default function WarbandCard({
             fontSize: '0.72rem',
             cursor: 'pointer'
           }}
-          title="Eliminar partida de guerra"
+          title={lang === 'es' ? 'Eliminar partida de guerra' : 'Remove warband'}
         >
-          🗑 Eliminar Warband
+          🗑 {lang === 'es' ? 'Eliminar Warband' : 'Remove Warband'}
         </button>
       </div>
 
@@ -140,7 +141,7 @@ export default function WarbandCard({
                 textDecoration: 'underline',
                 textUnderlineOffset: '2px'
               }}
-              title="Ver perfil completo"
+              title={lang === 'es' ? 'Ver perfil completo' : 'View full profile'}
             >
               {hero.name}
             </div>
@@ -168,8 +169,8 @@ export default function WarbandCard({
         {warriors.length === 0 ? (
           <div style={{ fontSize: '0.75rem', color: '#777', fontStyle: 'italic', padding: '6px 0', textAlign: 'center' }}>
             {hero.heroTier === 'independent_hero'
-              ? 'Los Héroes Independientes no pueden liderar guerreros.'
-              : 'Esta partida de guerra no tiene guerreros aún.'}
+              ? (lang === 'es' ? 'Los Héroes Independientes no pueden liderar guerreros.' : 'Independent Heroes cannot lead warriors.')
+              : (lang === 'es' ? 'Esta partida de guerra no tiene guerreros aún.' : 'This warband has no warriors yet.')}
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -206,7 +207,7 @@ export default function WarbandCard({
                       <span
                         onClick={() => onViewModel && onViewModel(w)}
                         style={{ fontSize: '0.82rem', color: '#e0d5c1', cursor: 'pointer', fontWeight: '500' }}
-                        title="Ver perfil de tropa"
+                        title={lang === 'es' ? 'Ver perfil de tropa' : 'View warrior profile'}
                       >
                         {w.name}
                       </span>
@@ -232,7 +233,7 @@ export default function WarbandCard({
                         fontSize: '0.85rem',
                         padding: '2px 4px'
                       }}
-                      title="Eliminar guerrero"
+                      title={lang === 'es' ? 'Eliminar guerrero' : 'Remove warrior'}
                     >
                       ✕
                     </button>
@@ -265,7 +266,7 @@ export default function WarbandCard({
             gap: '6px'
           }}
         >
-          <span>+</span> Añadir Guerrero a esta Warband
+          <span>+</span> {lang === 'es' ? 'Añadir Guerrero a esta Warband' : 'Add Warrior to this Warband'}
         </button>
       )}
     </div>

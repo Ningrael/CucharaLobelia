@@ -5,7 +5,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 import React from 'react';
 
-export default function ModelCard({ model, onClose, onSelectOption, selectedOptions = [] }) {
+export default function ModelCard({ model, onClose, onSelectOption, selectedOptions = [], lang = 'es' }) {
   if (!model) return null;
 
   const {
@@ -241,7 +241,7 @@ export default function ModelCard({ model, onClose, onSelectOption, selectedOpti
         {options.length > 0 && (
           <div style={{ marginBottom: '14px' }}>
             <div style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#d4af37', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '6px' }}>
-              Opciones de Equipo (Options)
+              {lang === 'es' ? 'Opciones de Equipo (Options)' : 'Wargear Upgrades & Options'}
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
               {options.map((opt, oIdx) => {
@@ -277,7 +277,7 @@ export default function ModelCard({ model, onClose, onSelectOption, selectedOpti
         {wargear.length > 0 && (
           <div style={{ marginBottom: '14px' }}>
             <div style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#d4af37', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '4px' }}>
-              Equipo Base (Wargear)
+              {lang === 'es' ? 'Equipo Base (Wargear)' : 'Base Wargear'}
             </div>
             <div style={{ fontSize: '0.82rem', color: '#c5b8a5' }}>
               {wargear.join(', ')}
@@ -289,7 +289,7 @@ export default function ModelCard({ model, onClose, onSelectOption, selectedOpti
         {heroicActions.length > 0 && (
           <div style={{ marginBottom: '14px' }}>
             <div style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#d4af37', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '4px' }}>
-              Acciones Heroicas (Heroic Actions)
+              {lang === 'es' ? 'Acciones Heroicas (Heroic Actions)' : 'Heroic Actions'}
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
               {heroicActions.map((act, aIdx) => (
@@ -315,7 +315,7 @@ export default function ModelCard({ model, onClose, onSelectOption, selectedOpti
         {magicalPowers.length > 0 && (
           <div style={{ marginBottom: '14px' }}>
             <div style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#3498db', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '6px' }}>
-              Poderes Mágicos (Magical Powers)
+              {lang === 'es' ? 'Poderes Mágicos (Magical Powers)' : 'Magical Powers'}
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '6px' }}>
               {magicalPowers.map((mag, mIdx) => (
@@ -343,7 +343,7 @@ export default function ModelCard({ model, onClose, onSelectOption, selectedOpti
         {specialRules.length > 0 && (
           <div style={{ marginBottom: '14px' }}>
             <div style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#d4af37', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '6px' }}>
-              Reglas Especiales (Special Rules)
+              {lang === 'es' ? 'Reglas Especiales (Special Rules)' : 'Special Rules'}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {specialRules.map((rule, rIdx) => (
@@ -398,7 +398,7 @@ export default function ModelCard({ model, onClose, onSelectOption, selectedOpti
                 }}
               >
                 <div style={{ fontSize: '0.78rem', fontWeight: 'bold', color: '#d4af37', marginBottom: '6px' }}>
-                  🐎 Montura: {mount.name}
+                  {lang === 'es' ? `🐎 Montura: ${mount.name}` : `🐎 Mount: ${mount.name}`}
                 </div>
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                   {statKeys.map((k) => (
