@@ -632,20 +632,21 @@ h1, h2, h3, h4, h5, h6 {
   grid-template-columns: 1fr;
   gap: 12px;
   width: 100%;
+  max-width: 100%;
   box-sizing: border-box;
   margin-top: 10px;
 }
 
-@media (min-width: 580px) {
+@media (min-width: 600px) {
   .missions-dashboard-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
   }
 }
 
-@media (min-width: 900px) {
+@media (min-width: 960px) {
   .missions-dashboard-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 14px;
   }
 }
@@ -661,6 +662,7 @@ h1, h2, h3, h4, h5, h6 {
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
   box-sizing: border-box;
   width: 100%;
+  max-width: 100%;
   min-width: 0;
   overflow: hidden;
 }
@@ -681,9 +683,10 @@ h1, h2, h3, h4, h5, h6 {
 
 .pool-missions-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 6px;
   width: 100%;
+  max-width: 100%;
   box-sizing: border-box;
 }
 

@@ -468,7 +468,7 @@ export default function Missions({ lang, translations, setLang }) {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%', maxWidth: '100%', boxSizing: 'border-box', overflowX: 'hidden' }}>
       {/* Selector de Modo (1vs1 / 2vs2) */}
       <div 
         style={{
