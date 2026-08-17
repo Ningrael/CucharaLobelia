@@ -658,17 +658,18 @@ export default function Missions({ lang, translations, setLang }) {
                       {faqData && (
                         <span 
                           style={{
-                            fontSize: '0.62rem',
+                            fontSize: '0.52rem',
                             fontWeight: 'bold',
-                            padding: '1px 6px',
-                            borderRadius: '4px',
+                            padding: '0px 4px',
+                            borderRadius: '3px',
                             background: faqData.type === 'errata' ? 'rgba(231, 76, 60, 0.25)' : 'rgba(203, 161, 53, 0.2)',
                             color: faqData.type === 'errata' ? '#ff7675' : 'var(--gold-primary)',
                             border: faqData.type === 'errata' ? '1px solid rgba(231, 76, 60, 0.5)' : '1px solid rgba(203, 161, 53, 0.4)',
-                            marginTop: '2px'
+                            marginTop: '1px',
+                            lineHeight: 1.2
                           }}
                         >
-                          {faqData.type === 'errata' ? (lang === 'es' ? '🔴 Errata' : '🔴 Errata') : '⚡ FAQ'}
+                          {faqData.type === 'errata' ? '🔴 Errata' : '⚡ FAQ'}
                         </span>
                       )}
                       {roundNum && (

@@ -626,28 +626,21 @@ h1, h2, h3, h4, h5, h6 {
   line-height: 1.2;
 }
 
-/* Dashboard de Misiones (24 Escenarios a la Vista) */
+/* Dashboard de Misiones (24 Escenarios en Grid 2x3 compacto) */
 .missions-dashboard-grid {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
-  margin-top: 10px;
+  margin-top: 8px;
 }
 
-@media (min-width: 600px) {
-  .missions-dashboard-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
-  }
-}
-
-@media (min-width: 960px) {
+@media (min-width: 768px) {
   .missions-dashboard-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 14px;
+    gap: 12px;
   }
 }
 
@@ -655,10 +648,10 @@ h1, h2, h3, h4, h5, h6 {
   background: rgba(11, 22, 13, 0.85);
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: var(--radius-sm);
-  padding: 10px 8px;
+  padding: 6px 4px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
   box-sizing: border-box;
   width: 100%;
@@ -669,22 +662,23 @@ h1, h2, h3, h4, h5, h6 {
 
 .pool-title {
   font-family: var(--font-title);
-  font-size: 0.75rem;
+  font-size: 0.65rem;
   color: var(--gold-primary);
   text-transform: uppercase;
   border-bottom: 1px solid rgba(203, 161, 53, 0.15);
-  padding-bottom: 4px;
+  padding-bottom: 2px;
   margin-bottom: 2px;
   text-align: center;
-  white-space: normal;
-  line-height: 1.25;
-  word-break: break-word;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  line-height: 1.2;
 }
 
 .pool-missions-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 6px;
+  gap: 4px;
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
@@ -696,22 +690,23 @@ h1, h2, h3, h4, h5, h6 {
   border-radius: 4px;
   color: var(--text-primary);
   font-family: var(--font-body);
-  font-size: 0.68rem;
+  font-size: 0.58rem;
   font-weight: 500;
-  padding: 6px 4px;
+  padding: 4px 2px;
   cursor: pointer;
   text-align: center;
-  min-height: 44px;
+  min-height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
-  line-height: 1.25;
+  line-height: 1.15;
   transition: all var(--transition-fast);
   word-break: break-word;
   position: relative;
   box-sizing: border-box;
   width: 100%;
   min-width: 0;
+  overflow: hidden;
 }
 
 .mission-pill-btn:active {
