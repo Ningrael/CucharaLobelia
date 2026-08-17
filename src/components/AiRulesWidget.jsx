@@ -57,7 +57,7 @@ function AiMessageBubble({ msg, lang }) {
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
         <span style={{ fontSize: '0.75rem', color: isUser ? 'var(--gold-primary)' : 'var(--text-secondary)', fontWeight: 'bold', letterSpacing: '0.5px' }}>
-          {isUser ? '👤 Tú' : (lang === 'es' ? '🧙‍♂️ Lobelia: Tu referí de confianza' : '🧙‍♂️ Lobelia: Your Trusted Referee')}
+          {isUser ? (lang === 'es' ? '👤 Tú' : '👤 You') : (lang === 'es' ? '🧙‍♂️ Lobelia: Tu referí de confianza' : '🧙‍♂️ Lobelia: Your Trusted Referee')}
         </span>
         {msg.hasAudio && (
           <span style={{ fontSize: '0.72rem', background: 'rgba(203, 161, 53, 0.2)', padding: '2px 8px', borderRadius: '12px', color: 'var(--gold-primary)' }}>
