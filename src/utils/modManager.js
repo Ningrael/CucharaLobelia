@@ -469,19 +469,32 @@ export const SUPERADMIN_EMAILS = [
   'cuchara@lobelia.com'
 ];
 
+const PUBLIC_MODS_DOC = '00_LOBELIA_PUBLIC_MODS_00';
+const MOD_SUBMISSIONS_DOC = '00_LOBELIA_MOD_SUBMISSIONS_00';
+
 export async function submitModForReview(submission, user = null) {
   if (!db) return { success: false, error: 'Base de datos no disponible.' };
 
   try {
-    const subRef = collection(db, 'mod_submissions');
-    const docRef = await addDoc(subRef, {
+    const subId = `sub_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    const subDocRef = doc(db, 'players', MOD_SUBMISSIONS_DOC);
+    
+    const newSubmission = {
       ...submission,
+      id: subId,
       submittedBy: user?.uid || 'anonymous',
       submittedByEmail: user?.email || submission.contactEmail || '',
       status: 'pending',
-      submittedAt: serverTimestamp()
-    });
-    return { success: true, id: docRef.id };
+      submittedAt: new Date().toISOString()
+    };
+
+    await setDoc(subDocRef, {
+      submissions: {
+        [subId]: newSubmission
+      }
+    }, { merge: true });
+
+    return { success: true, id: subId };
   } catch (err) {
     return { success: false, error: err.message };
   }
@@ -490,12 +503,11 @@ export async function submitModForReview(submission, user = null) {
 export async function getPendingSubmissions() {
   if (!db) return [];
   try {
-    const subRef = collection(db, 'mod_submissions');
-    const snap = await getDocs(subRef);
-    if (!snap.empty) {
-      return snap.docs
-        .map(d => ({ id: d.id, ...d.data() }))
-        .filter(d => d.status === 'pending');
+    const subDocRef = doc(db, 'players', MOD_SUBMISSIONS_DOC);
+    const snap = await getDoc(subDocRef);
+    if (snap.exists() && snap.data().submissions) {
+      const all = Object.values(snap.data().submissions);
+      return all.filter(s => s.status === 'pending');
     }
   } catch (err) {
     console.warn('[ModManager] Error fetching pending submissions:', err);
@@ -507,18 +519,37 @@ export async function approveModSubmission(submission, adminUser = null) {
   if (!db || !submission) return { success: false, error: 'Error de base de datos.' };
 
   try {
-    const pubRef = doc(db, 'public_mods', submission.modId || submission.id);
-    await setDoc(pubRef, {
+    const modId = submission.modId || submission.id || `mod_${Date.now()}`;
+    const pubDocRef = doc(db, 'players', PUBLIC_MODS_DOC);
+    
+    const approvedMod = {
       ...submission,
+      modId,
       isVerified: true,
       status: 'approved',
-      approvedAt: serverTimestamp(),
+      approvedAt: new Date().toISOString(),
       approvedBy: adminUser?.email || 'SuperAdmin'
+    };
+
+    // 1. Guardar en mods públicos
+    await setDoc(pubDocRef, {
+      publicMods: {
+        [modId]: approvedMod
+      }
     }, { merge: true });
 
+    // 2. Marcar submission como aprobada
     if (submission.id) {
-      const subDocRef = doc(db, 'mod_submissions', submission.id);
-      await setDoc(subDocRef, { status: 'approved', approvedAt: serverTimestamp() }, { merge: true });
+      const subDocRef = doc(db, 'players', MOD_SUBMISSIONS_DOC);
+      await setDoc(subDocRef, {
+        submissions: {
+          [submission.id]: {
+            ...submission,
+            status: 'approved',
+            approvedAt: new Date().toISOString()
+          }
+        }
+      }, { merge: true });
     }
 
     return { success: true };
@@ -531,12 +562,20 @@ export async function rejectModSubmission(submissionId, reason = '', adminUser =
   if (!db || !submissionId) return { success: false, error: 'ID inválido.' };
 
   try {
-    const subDocRef = doc(db, 'mod_submissions', submissionId);
+    const subDocRef = doc(db, 'players', MOD_SUBMISSIONS_DOC);
+    const snap = await getDoc(subDocRef);
+    const existing = snap.exists() ? snap.data().submissions?.[submissionId] || {} : {};
+
     await setDoc(subDocRef, {
-      status: 'rejected',
-      rejectionReason: reason,
-      rejectedAt: serverTimestamp(),
-      rejectedBy: adminUser?.email || 'SuperAdmin'
+      submissions: {
+        [submissionId]: {
+          ...existing,
+          status: 'rejected',
+          rejectionReason: reason,
+          rejectedAt: new Date().toISOString(),
+          rejectedBy: adminUser?.email || 'SuperAdmin'
+        }
+      }
     }, { merge: true });
 
     return { success: true };
@@ -548,10 +587,10 @@ export async function rejectModSubmission(submissionId, reason = '', adminUser =
 export async function getPublicModsRegistry() {
   if (!db) return [];
   try {
-    const publicModsRef = collection(db, 'public_mods');
-    const snap = await getDocs(publicModsRef);
-    if (!snap.empty) {
-      return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const pubDocRef = doc(db, 'players', PUBLIC_MODS_DOC);
+    const snap = await getDoc(pubDocRef);
+    if (snap.exists() && snap.data().publicMods) {
+      return Object.values(snap.data().publicMods);
     }
   } catch (err) {
     console.warn('[ModManager] Error fetching public mods from Firestore:', err);
