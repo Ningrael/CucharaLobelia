@@ -362,11 +362,54 @@ export async function installModFromUrl(uid, downloadUrl) {
   if (!downloadUrl) return { success: false, error: 'URL de descarga inválida.' };
 
   try {
-    const res = await fetch(downloadUrl);
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status}: No se pudo descargar el mod.`);
+    let json = null;
+
+    // Si es una URL de GitHub Release (https://github.com/owner/repo/releases/download/tag/filename)
+    const ghReleaseMatch = downloadUrl.match(/github\.com\/([^\/]+)\/([^\/]+)\/releases\/download\/([^\/]+)\/(.+)$/);
+    if (ghReleaseMatch) {
+      const [, owner, repo, tag, filename] = ghReleaseMatch;
+
+      // 1. Intentar vía API de GitHub Assets (Con soporte nativo de CORS)
+      try {
+        const apiUrl = `https://api.github.com/repos/${owner}/${repo}/releases/tags/${tag}`;
+        const apiRes = await fetch(apiUrl);
+        if (apiRes.ok) {
+          const releaseData = await apiRes.json();
+          const asset = releaseData.assets?.find(a => a.name === filename);
+          if (asset && asset.url) {
+            const assetRes = await fetch(asset.url, {
+              headers: { 'Accept': 'application/octet-stream' }
+            });
+            if (assetRes.ok) {
+              json = await assetRes.json();
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('[ModManager] Fallo descarga vía GitHub Release API, intentando raw...', err);
+      }
+
+      // 2. Intentar vía raw.githubusercontent.com
+      if (!json) {
+        try {
+          const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${tag}/${filename}`;
+          const rawRes = await fetch(rawUrl);
+          if (rawRes.ok) {
+            json = await rawRes.json();
+          }
+        } catch (_) {}
+      }
     }
-    const json = await res.json();
+
+    // 3. Fallback directo a la URL proporcionada
+    if (!json) {
+      const res = await fetch(downloadUrl);
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}: No se pudo descargar el mod.`);
+      }
+      json = await res.json();
+    }
+
     return await installMod(uid, json, downloadUrl);
   } catch (err) {
     return { success: false, error: `Error descargando mod: ${err.message}` };
