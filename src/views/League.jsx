@@ -23,6 +23,8 @@ import {
 } from 'firebase/firestore';
 import Modal from '../components/Modal';
 import PdfCanvasViewer from '../components/PdfCanvasViewer';
+import { getEloTier, DEFAULT_ELO, calculateMatchElo } from '../utils/eloRating';
+import { getMissionPdfUrl } from '../utils/modManager';
 
 // --- CONFIGURACIÓN Y CONSTANTES ---
 
@@ -942,6 +944,7 @@ export default function League({ lang, translations, user, profile, isAdmin: isG
         username: p.username,
         faction: p.faction,
         alignment: p.alignment,
+        elo: Number(p.elo) || DEFAULT_ELO,
         points: 0,
         matchesPlayed: 0,
         wins: 0,
@@ -1008,6 +1011,14 @@ export default function League({ lang, translations, user, profile, isAdmin: isG
           p2Stats.points += 1;
           p2Stats.draws += 1;
         }
+      }
+
+      // Cálculo de ELO para enfrentamientos directos entre jugadores reales
+      if (p1Stats && p2Stats && p2 !== 'BYE') {
+        const resultP1 = vp1 > vp2 ? 'win' : vp1 < vp2 ? 'loss' : 'draw';
+        const { newRatingA, newRatingB } = calculateMatchElo(p1Stats.elo, p2Stats.elo, resultP1, vp1, vp2);
+        p1Stats.elo = newRatingA;
+        p2Stats.elo = newRatingB;
       }
     });
 
@@ -2017,33 +2028,9 @@ export default function League({ lang, translations, user, profile, isAdmin: isG
       setActivePdfUrl(null);
       return;
     }
-
-    const STANDARD_MISSIONS = new Set([
-      'DOMINATION', 'CAPTURE & CONTROL', 'BREAKTHROUGH', 'STAKE A CLAIM',
-      'TO THE DEATH!', 'LORDS OF BATTLE', 'ASSASSINATION', 'CONTEST OF CHAMPIONS',
-      'HOLD GROUND', 'HEIRLOOM OF AGES PAST', 'SITES OF POWER', 'COMMAND THE BATTLEFIELD',
-      'DESTROY THE SUPPLIES', 'RETRIEVAL', 'SEIZE THE PRIZES', 'TREASURE HOARD',
-      'RECONNOITRE', 'STORM THE CAMP', 'DIVIDE & CONQUER', 'ESCORT THE WOUNDED',
-      'FOG OF WAR', 'CLASH BY MOONLIGHT', 'LEAD FROM THE FRONT', 'CONVERGENCE'
-    ]);
-
-    const STANDARD_2VS2_MISSIONS = new Set([
-      'NO ESCAPE', 'TOTAL CONQUEST', 'TAKE & HOLD', 'CLASH OF CHAMPIONS',
-      'CORNERED', 'DUEL OF WITS'
-    ]);
-
-    const upperName = selectedMissionPdf.trim().toUpperCase();
-    const base = import.meta.env.BASE_URL.replace(/\/$/, '');
-    let relativePath = `${base}/pdfs/placeholder.pdf`;
-
-    if (STANDARD_MISSIONS.has(upperName)) {
-      relativePath = `${base}/pdfs/${upperName}_${pdfLang.toUpperCase()}.pdf`;
-    } else if (STANDARD_2VS2_MISSIONS.has(upperName)) {
-      relativePath = `${base}/pdfs/2vs2/${upperName}_${pdfLang.toUpperCase()}.pdf`;
-    }
-    
-    setActivePdfUrl(relativePath);
-  }, [selectedMissionPdf, pdfLang]);
+    const url = getMissionPdfUrl(selectedMissionPdf, pdfLang, '1vs1', user?.uid);
+    setActivePdfUrl(url);
+  }, [selectedMissionPdf, pdfLang, user]);
 
   // Helper para obtener nombres legibles de rondas eliminatorias
   const getRoundLabel = (rIdx, totalRounds) => {
@@ -2867,6 +2854,7 @@ export default function League({ lang, translations, user, profile, isAdmin: isG
                   <th style={{ padding: '8px 6px' }}>Jugador</th>
                   <th style={{ padding: '8px 6px' }}>Facción</th>
                   <th style={{ padding: '8px 6px', textAlign: 'center', width: '40px' }}>Pts</th>
+                  <th style={{ padding: '8px 6px', textAlign: 'center', width: '56px' }}>ELO</th>
                   <th style={{ padding: '8px 6px', textAlign: 'center', width: '60px' }}>P/V/E/D</th>
                   <th style={{ padding: '8px 6px', textAlign: 'center', width: '54px' }}>PV ±</th>
                   <th style={{ padding: '8px 6px', textAlign: 'center', width: '50px' }}>Líd ±</th>
@@ -2875,11 +2863,11 @@ export default function League({ lang, translations, user, profile, isAdmin: isG
               <tbody>
                 {loadingData ? (
                   <tr>
-                    <td colSpan="7" style={{ textAlign: 'center', padding: '24px', color: 'var(--text-secondary)' }}>Cargando datos...</td>
+                    <td colSpan="8" style={{ textAlign: 'center', padding: '24px', color: 'var(--text-secondary)' }}>Cargando datos...</td>
                   </tr>
                 ) : standings.length === 0 ? (
                   <tr>
-                    <td colSpan="7" style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>
+                    <td colSpan="8" style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>
                       No hay jugadores activos en el ranking regular.
                     </td>
                   </tr>
@@ -2889,6 +2877,8 @@ export default function League({ lang, translations, user, profile, isAdmin: isG
                   const alignmentColor = p.alignment === 'luz' ? 'var(--gold-primary)' : 'var(--danger-color)';
                   const diffVp = p.vpScored - p.vpConceded;
                   const diffLid = p.leadersKilled - p.leadersLost;
+                  const eloVal = p.elo || DEFAULT_ELO;
+                  const eloTier = getEloTier(eloVal, lang);
 
                   return (
                     <tr 
@@ -2930,6 +2920,26 @@ export default function League({ lang, translations, user, profile, isAdmin: isG
                       </td>
                       <td style={{ padding: '12px 6px', color: 'var(--text-secondary)', fontSize: '0.78rem' }}>{p.faction}</td>
                       <td style={{ padding: '12px 6px', textAlign: 'center', fontWeight: 'bold', fontSize: '0.9rem', color: 'var(--gold-primary)' }}>{p.points}</td>
+                      <td style={{ padding: '12px 6px', textAlign: 'center', fontSize: '0.76rem' }}>
+                        <span
+                          style={{
+                            background: eloTier.bg,
+                            color: eloTier.color,
+                            border: `1px solid ${eloTier.border}`,
+                            borderRadius: '4px',
+                            padding: '2px 5px',
+                            fontWeight: 'bold',
+                            whiteSpace: 'nowrap',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '3px'
+                          }}
+                          title={`${eloTier.name} (${eloVal} ELO)`}
+                        >
+                          <span>{eloTier.badge}</span>
+                          <span>{eloVal}</span>
+                        </span>
+                      </td>
                       <td style={{ padding: '12px 6px', textAlign: 'center', color: 'var(--text-secondary)' }}>{p.matchesPlayed}/{p.wins}/{p.draws}/{p.losses}</td>
                       <td style={{ padding: '12px 6px', textAlign: 'center', fontSize: '0.78rem' }}>
                         <span style={{ color: diffVp > 0 ? 'var(--success-color)' : diffVp < 0 ? 'var(--danger-color)' : 'inherit' }}>
@@ -4581,6 +4591,34 @@ export default function League({ lang, translations, user, profile, isAdmin: isG
 
               <span style={{ color: 'var(--text-muted)' }}>{lang === 'es' ? "Facción:" : "Faction:"}</span>
               <span style={{ fontWeight: '500' }}>{selectedPlayerProfile.faction || (lang === 'es' ? 'Desconocida' : 'Unknown')}</span>
+
+              <span style={{ color: 'var(--text-muted)' }}>{lang === 'es' ? "Ranking ELO:" : "ELO Rating:"}</span>
+              <span>
+                {(() => {
+                  const eloVal = selectedPlayerProfile.elo || DEFAULT_ELO;
+                  const tier = getEloTier(eloVal, lang);
+                  return (
+                    <span
+                      style={{
+                        background: tier.bg,
+                        color: tier.color,
+                        border: `1px solid ${tier.border}`,
+                        borderRadius: '4px',
+                        padding: '3px 8px',
+                        fontWeight: 'bold',
+                        fontSize: '0.82rem',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '5px'
+                      }}
+                    >
+                      <span>{tier.badge}</span>
+                      <span>{eloVal}</span>
+                      <span style={{ fontSize: '0.72rem', opacity: 0.85 }}>({tier.name})</span>
+                    </span>
+                  );
+                })()}
+              </span>
 
               <span style={{ color: 'var(--text-muted)' }}>{lang === 'es' ? "Ubicación:" : "Location:"}</span>
               <span>{selectedPlayerProfile.location || (lang === 'es' ? 'No especificada' : 'Not specified')}</span>

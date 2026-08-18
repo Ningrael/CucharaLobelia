@@ -1,7 +1,7 @@
 // src/utils/modManager.js
 // ─────────────────────────────────────────────────────────────────────────────
 // Gestor del Sistema de Mods de La Cuchara de Lobelia (Zero-GW IP Engine).
-// Permite instalar, moderar, activar por capas y sincronizar mods de datos.
+// Conexión con IndexedDB local para almacenamiento 100% en cliente e instalación 1-Clic.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { db } from './firebase';
@@ -12,12 +12,17 @@ import {
   deleteDoc,
   collection,
   getDocs,
-  query,
-  where,
-  orderBy,
   serverTimestamp,
   addDoc
 } from 'firebase/firestore';
+import {
+  saveModToIndexedDb,
+  getModFromIndexedDb,
+  getAllInstalledModsFromDb,
+  deleteModFromIndexedDb,
+  setDbActiveLayer,
+  getDbActiveLayers
+} from './modIndexedDb';
 
 // ── SCHEMA VERSION & CONSTANTS ────────────────────────────────────────────────
 export const SUPPORTED_SCHEMA_VERSION = '1.0';
@@ -26,9 +31,9 @@ const INSTALLED_MODS_LIST_KEY = 'lobelia_installed_mods_list';
 const ACTIVE_LAYERS_KEY = 'lobelia_active_layers';
 
 export const MOD_LAYERS = {
-  ARMY_BUILDER: 'army_builder',
   MISSIONS: 'missions',
   RULES_AI: 'rules_ai',
+  ARMY_BUILDER: 'army_builder',
   DUELS: 'duels'
 };
 
@@ -39,6 +44,38 @@ const REQUIRED_MOD_FIELDS = [
   'modAuthor',
   'gameSystem',
   'schemaVersion'
+];
+
+// ── CATÁLOGO PÚBLICO DE WORKSHOP VERIFICADO (1-CLIC) ──────────────────────────
+export const PUBLIC_MOD_REGISTRY = [
+  {
+    modId: 'mod-misiones-ia-tolkienstein',
+    modName: 'Mod Misiones & Árbitro IA',
+    modAuthor: 'Dr Tolkienstein',
+    modDescription:
+      'Paquete comunitario que incluye el visor de PDFs para las 24 misiones 1v1 y 6 misiones 2v2 (español e inglés), junto con la base de conocimiento oficial indexada para el Árbitro IA.',
+    gameSystem: 'MESBG',
+    version: '1.0.0',
+    capabilities: ['missions', 'rules_ai'],
+    isVerified: true,
+    downloadUrl: `${(import.meta.env.BASE_URL || '/').replace(/\/$/, '')}/mods/mod-misiones-ia-tolkienstein.json`,
+    stats: { missions: 30, rulesPages: 872 },
+    tags: ['misiones', 'ia', 'reglas', 'escenarios', 'oficial', 'recomendado']
+  },
+  {
+    modId: 'mod-integral-tolkienstein',
+    modName: 'Mod Integral: Misiones, Listas, IA y Duelos',
+    modAuthor: 'Dr Tolkienstein',
+    modDescription:
+      'Paquete integral con perfiles de ejército (Minas Tirith, Rohan, Isengard, Mordor), visor de PDFs de misiones 1v1/2v2, base de conocimiento del árbitro IA y reglas de duelos.',
+    gameSystem: 'MESBG',
+    version: '1.0.0',
+    capabilities: ['army_builder', 'missions', 'rules_ai', 'duels'],
+    isVerified: true,
+    downloadUrl: `${(import.meta.env.BASE_URL || '/').replace(/\/$/, '')}/mods/mod-integral-tolkienstein.json`,
+    stats: { factions: 4, models: 15, missions: 30, rulesPages: 872 },
+    tags: ['integral', 'completo', 'listas', 'misiones', 'ia', 'duelos']
+  }
 ];
 
 // ── SANITIZACIÓN DE SEGURIDAD CONTRA INYECCIONES Y XSS ────────────────────────
@@ -68,9 +105,9 @@ export function sanitizeMod(modJson) {
     clean.capabilities = clean.capabilities.map(c => sanitizeString(c));
   } else {
     clean.capabilities = [];
-    if (clean.factions && clean.factions.length > 0) clean.capabilities.push('army_builder', 'duels');
     if (clean.missionPdfs) clean.capabilities.push('missions');
     if (clean.rulesKnowledge && clean.rulesKnowledge.length > 0) clean.capabilities.push('rules_ai');
+    if (clean.factions && clean.factions.length > 0) clean.capabilities.push('army_builder', 'duels');
   }
 
   if (Array.isArray(clean.factions)) {
@@ -142,6 +179,18 @@ export function validateModSchema(modJson) {
   }
 
   // Comprobar capacidades
+  if (modJson.missionPdfs && typeof modJson.missionPdfs === 'object') {
+    stats.capabilities.push('missions');
+    const m1 = Object.keys(modJson.missionPdfs.missions1v1 || {}).length;
+    const m2 = Object.keys(modJson.missionPdfs.missions2v2 || {}).length;
+    stats.missions = m1 + m2;
+  }
+
+  if (Array.isArray(modJson.rulesKnowledge) && modJson.rulesKnowledge.length > 0) {
+    stats.capabilities.push('rules_ai');
+    stats.rulesPages = modJson.rulesKnowledge.length;
+  }
+
   if (Array.isArray(modJson.factions) && modJson.factions.length > 0) {
     stats.capabilities.push('army_builder', 'duels');
     stats.factions = modJson.factions.length;
@@ -156,28 +205,13 @@ export function validateModSchema(modJson) {
         f.models.forEach((m, mIdx) => {
           if (!m.id) errors.push(`Miniatura en facción ${f.factionId} (índice ${mIdx}) no tiene "id".`);
           if (!m.name) errors.push(`Miniatura en facción ${f.factionId} (índice ${mIdx}) no tiene "name".`);
-          if (typeof m.points !== 'number' || isNaN(m.points)) {
-            errors.push(`Miniatura "${m.name || m.id}" no tiene puntos numéricos válidos.`);
-          }
         });
       }
     });
   }
 
-  if (modJson.missionPdfs && typeof modJson.missionPdfs === 'object') {
-    stats.capabilities.push('missions');
-    const m1 = Object.keys(modJson.missionPdfs.missions1v1 || {}).length;
-    const m2 = Object.keys(modJson.missionPdfs.missions2v2 || {}).length;
-    stats.missions = m1 + m2;
-  }
-
-  if (Array.isArray(modJson.rulesKnowledge) && modJson.rulesKnowledge.length > 0) {
-    stats.capabilities.push('rules_ai');
-    stats.rulesPages = modJson.rulesKnowledge.length;
-  }
-
   if (stats.capabilities.length === 0) {
-    errors.push('El mod no contiene ninguna función válida (facciones de listas, misiones con PDFs o índice de reglas).');
+    errors.push('El mod no contiene ninguna función válida (misiones con PDFs, índice de reglas IA o facciones).');
   }
 
   return { valid: errors.length === 0, errors, stats };
@@ -190,9 +224,9 @@ export function getActiveLayers(uid = null) {
     if (raw) return JSON.parse(raw);
   } catch (_) {}
   return {
-    [MOD_LAYERS.ARMY_BUILDER]: null,
     [MOD_LAYERS.MISSIONS]: null,
     [MOD_LAYERS.RULES_AI]: null,
+    [MOD_LAYERS.ARMY_BUILDER]: null,
     [MOD_LAYERS.DUELS]: null
   };
 }
@@ -202,9 +236,9 @@ export function setActiveLayer(uid, layer, modId) {
   current[layer] = modId;
   try {
     localStorage.setItem(ACTIVE_LAYERS_KEY, JSON.stringify(current));
+    setDbActiveLayer(layer, modId);
   } catch (_) {}
 
-  // Sincronizar en la nube si hay usuario logueado
   if (uid && db) {
     try {
       const userDocRef = doc(db, 'players', uid);
@@ -221,9 +255,9 @@ export function setMasterActiveMod(uid, modId) {
     Object.keys(current).forEach(k => { current[k] = modId; });
   } else {
     const caps = modData.capabilities || [];
-    if (caps.includes('army_builder')) current[MOD_LAYERS.ARMY_BUILDER] = modId;
     if (caps.includes('missions')) current[MOD_LAYERS.MISSIONS] = modId;
     if (caps.includes('rules_ai')) current[MOD_LAYERS.RULES_AI] = modId;
+    if (caps.includes('army_builder')) current[MOD_LAYERS.ARMY_BUILDER] = modId;
     if (caps.includes('duels')) current[MOD_LAYERS.DUELS] = modId;
     if (caps.length === 0) {
       Object.keys(current).forEach(k => { current[k] = modId; });
@@ -232,6 +266,7 @@ export function setMasterActiveMod(uid, modId) {
 
   try {
     localStorage.setItem(ACTIVE_LAYERS_KEY, JSON.stringify(current));
+    Object.entries(current).forEach(([l, m]) => setDbActiveLayer(l, m));
   } catch (_) {}
 
   if (uid && db) {
@@ -272,27 +307,24 @@ export async function getInstalledMods(uid = null) {
     if (raw) list = JSON.parse(raw);
   } catch (_) {}
 
-  // Si está vacío localmente y hay usuario, sincronizar desde Firestore
-  if (list.length === 0 && uid && db) {
-    try {
-      const userDocRef = doc(db, 'players', uid);
-      const snap = await getDoc(userDocRef);
-      if (snap.exists()) {
-        const pData = snap.data();
-        if (pData.modConfig?.installedModsMeta) {
-          list = pData.modConfig.installedModsMeta;
-          localStorage.setItem(INSTALLED_MODS_LIST_KEY, JSON.stringify(list));
-        }
-        if (pData.modConfig?.activeLayers) {
-          localStorage.setItem(ACTIVE_LAYERS_KEY, JSON.stringify(pData.modConfig.activeLayers));
-        }
-      }
-    } catch (_) {}
-  }
+  // Sincronizar desde IndexedDB si está disponible
+  try {
+    const dbList = await getAllInstalledModsFromDb();
+    if (dbList && dbList.length > 0) {
+      const map = new Map();
+      list.forEach(m => map.set(m.modId, m));
+      dbList.forEach(m => map.set(m.modId, { ...map.get(m.modId), ...m }));
+      list = Array.from(map.values());
+      localStorage.setItem(INSTALLED_MODS_LIST_KEY, JSON.stringify(list));
+    }
+  } catch (_) {}
 
   return list;
 }
 
+/**
+ * Instala un mod a partir de su objeto JSON y lo persiste en IndexedDB + localStorage
+ */
 export async function installMod(uid, modJson, sourceUrl = '') {
   const sanitized = sanitizeMod(modJson);
   const validation = validateModSchema(sanitized);
@@ -302,7 +334,8 @@ export async function installMod(uid, modJson, sourceUrl = '') {
   }
 
   try {
-    // 1. Guardar contenido completo en localStorage del dispositivo
+    // 1. Guardar en IndexedDB y localStorage del navegador
+    await saveModToIndexedDb(sanitized);
     localStorage.setItem(`${MOD_CACHE_PREFIX}${sanitized.modId}`, JSON.stringify(sanitized));
 
     // 2. Actualizar lista de instalados
@@ -329,18 +362,20 @@ export async function installMod(uid, modJson, sourceUrl = '') {
     // 3. Activar automáticamente para sus capacidades
     setMasterActiveMod(uid, sanitized.modId);
 
-    // 4. Sincronizar en Firestore
+    // 4. Sincronizar metadatos en Firestore si hay usuario logueado
     if (uid && db) {
-      const userDocRef = doc(db, 'players', uid);
-      const activeLayers = getActiveLayers(uid);
-      await setDoc(userDocRef, {
-        modConfig: {
-          installedModsMeta: installed,
-          activeLayers: activeLayers,
-          lastInstalledModId: sanitized.modId,
-          updatedAt: new Date().toISOString()
-        }
-      }, { merge: true });
+      try {
+        const userDocRef = doc(db, 'players', uid);
+        const activeLayers = getActiveLayers(uid);
+        await setDoc(userDocRef, {
+          modConfig: {
+            installedModsMeta: installed,
+            activeLayers: activeLayers,
+            lastInstalledModId: sanitized.modId,
+            updatedAt: new Date().toISOString()
+          }
+        }, { merge: true });
+      } catch (_) {}
     }
 
     return { success: true, mod: sanitized };
@@ -349,172 +384,66 @@ export async function installMod(uid, modJson, sourceUrl = '') {
   }
 }
 
+/**
+ * Instala un mod con 1-Clic desde una URL externa (GitHub Releases / CDN)
+ */
+export async function installModFromUrl(uid, downloadUrl) {
+  if (!downloadUrl) return { success: false, error: 'URL de descarga inválida.' };
+
+  try {
+    const res = await fetch(downloadUrl);
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}: No se pudo descargar el mod.`);
+    }
+    const json = await res.json();
+    return await installMod(uid, json, downloadUrl);
+  } catch (err) {
+    return { success: false, error: `Error descargando mod: ${err.message}` };
+  }
+}
+
+/**
+ * Desinstala un mod completamente
+ */
 export async function uninstallMod(uid, modId) {
   try {
+    await deleteModFromIndexedDb(modId);
     localStorage.removeItem(`${MOD_CACHE_PREFIX}${modId}`);
 
     const installed = await getInstalledMods(uid);
-    const updated = installed.filter(m => m.modId !== modId);
-    localStorage.setItem(INSTALLED_MODS_LIST_KEY, JSON.stringify(updated));
+    const filtered = installed.filter(m => m.modId !== modId);
+    localStorage.setItem(INSTALLED_MODS_LIST_KEY, JSON.stringify(filtered));
 
-    // Limpiar capas activas que apuntaban a este mod
     const layers = getActiveLayers(uid);
-    Object.keys(layers).forEach(layerKey => {
-      if (layers[layerKey] === modId) {
-        layers[layerKey] = null;
+    let changed = false;
+    Object.keys(layers).forEach(layer => {
+      if (layers[layer] === modId) {
+        layers[layer] = null;
+        changed = true;
       }
     });
-    localStorage.setItem(ACTIVE_LAYERS_KEY, JSON.stringify(layers));
+
+    if (changed) {
+      localStorage.setItem(ACTIVE_LAYERS_KEY, JSON.stringify(layers));
+    }
 
     if (uid && db) {
-      const userDocRef = doc(db, 'players', uid);
-      await setDoc(userDocRef, {
-        modConfig: {
-          installedModsMeta: updated,
-          activeLayers: layers,
-          updatedAt: new Date().toISOString()
-        }
-      }, { merge: true });
+      try {
+        const userDocRef = doc(db, 'players', uid);
+        await setDoc(userDocRef, {
+          modConfig: {
+            installedModsMeta: filtered,
+            activeLayers: layers,
+            updatedAt: new Date().toISOString()
+          }
+        }, { merge: true });
+      } catch (_) {}
     }
 
     return { success: true };
   } catch (err) {
     return { success: false, error: err.message };
   }
-}
-
-// ── ENVÍO Y MODERACIÓN DE MODS POR SUPERADMIN ─────────────────────────────────
-export const SUPERADMIN_EMAILS = ['sosamatias@gmail.com'];
-
-export async function submitModForReview(submissionData, currentUser) {
-  if (!db) throw new Error('Base de datos no disponible.');
-  const sanitized = sanitizeMod(submissionData.modJson);
-  const validation = validateModSchema(sanitized);
-
-  if (!validation.valid) {
-    throw new Error(`El mod contiene errores de validación:\n${validation.errors.join('\n')}`);
-  }
-
-  const submissionDoc = {
-    modId: sanitized.modId,
-    modName: sanitized.modName,
-    modVersion: sanitized.modVersion,
-    modAuthor: sanitized.modAuthor,
-    description: sanitized.description || '',
-    capabilities: sanitized.capabilities || [],
-    contactEmail: sanitizeString(submissionData.contactEmail || currentUser?.email || ''),
-    submittedByUid: currentUser?.uid || 'anonymous',
-    submittedByName: currentUser?.displayName || currentUser?.email || 'Comunidad',
-    submittedAt: serverTimestamp(),
-    status: 'pending', // 'pending' | 'approved' | 'rejected'
-    stats: validation.stats,
-    modJson: sanitized
-  };
-
-  // 1. Guardar en colección mod_submissions
-  const submissionsRef = collection(db, 'mod_submissions');
-  const docRef = await addDoc(submissionsRef, submissionDoc);
-
-  // 2. Encolar notificación por correo para SuperAdmins vía colección mail (Firebase Trigger Email)
-  try {
-    const mailRef = collection(db, 'mail');
-    await addDoc(mailRef, {
-      to: SUPERADMIN_EMAILS,
-      message: {
-        subject: `🛡️ [Lobelia Mods] Nuevo Mod enviado para revisión: ${sanitized.modName}`,
-        text: `El creador "${sanitized.modAuthor}" (${submissionDoc.contactEmail}) ha enviado el mod "${sanitized.modName}" v${sanitized.modVersion} para revisión.\n\nDescripción: ${sanitized.description}\nFacciones: ${validation.stats.factions}, Perfiles: ${validation.stats.models}, Misiones: ${validation.stats.missions}, Páginas IA: ${validation.stats.rulesPages}\n\nAccede al panel de administración de La Cuchara de Lobelia para revisarlo y aprobarlo.`,
-        html: `
-          <div style="font-family: Arial, sans-serif; padding: 20px; background: #0f1910; color: #f5f0e8; border-radius: 10px;">
-            <h2 style="color: #cba135;">🛡️ Nuevo Mod Enviado para Moderación</h2>
-            <p><strong>Mod:</strong> ${sanitized.modName} (v${sanitized.modVersion})</p>
-            <p><strong>Autor:</strong> ${sanitized.modAuthor}</p>
-            <p><strong>Contacto:</strong> ${submissionDoc.contactEmail}</p>
-            <p><strong>Descripción:</strong> ${sanitized.description}</p>
-            <hr style="border: 1px solid rgba(203,161,53,0.3); margin: 15px 0;">
-            <p><strong>Estadísticas:</strong> ${validation.stats.factions} facciones | ${validation.stats.models} perfiles | ${validation.stats.missions} misiones | ${validation.stats.rulesPages} páginas de reglas</p>
-            <p>Accede al <strong>Panel de Moderación de SuperAdmin</strong> en la app para aprobar o rechazar.</p>
-          </div>
-        `
-      }
-    });
-  } catch (mailErr) {
-    console.warn('[ModManager] No se pudo encolar correo automático:', mailErr);
-  }
-
-  return { success: true, submissionId: docRef.id };
-}
-
-export async function getPendingSubmissions() {
-  if (!db) return [];
-  try {
-    const submissionsRef = collection(db, 'mod_submissions');
-    const q = query(submissionsRef, where('status', '==', 'pending'));
-    const snap = await getDocs(q);
-    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
-  } catch (err) {
-    console.warn('[ModManager] Error fetching pending submissions:', err);
-    return [];
-  }
-}
-
-export async function approveModSubmission(submissionId, modData, adminUser) {
-  if (!db) throw new Error('Base de datos no disponible.');
-  const sanitized = sanitizeMod(modData);
-
-  // 1. Publicar en public_mods
-  const publicModRef = doc(db, 'public_mods', sanitized.modId);
-  await setDoc(publicModRef, {
-    modId: sanitized.modId,
-    modName: sanitized.modName,
-    modVersion: sanitized.modVersion,
-    modAuthor: sanitized.modAuthor,
-    description: sanitized.description || '',
-    capabilities: sanitized.capabilities || [],
-    factionsCount: (sanitized.factions || []).length,
-    missionsCount: sanitized.missionPdfs ? Object.keys(sanitized.missionPdfs.missions1v1 || {}).length : 0,
-    rulesPagesCount: (sanitized.rulesKnowledge || []).length,
-    isVerified: true,
-    publishedAt: serverTimestamp(),
-    approvedBy: adminUser?.email || 'SuperAdmin',
-    modJson: sanitized
-  });
-
-  // 2. Actualizar estado de la solicitud
-  const submissionRef = doc(db, 'mod_submissions', submissionId);
-  await setDoc(submissionRef, {
-    status: 'approved',
-    approvedAt: serverTimestamp(),
-    approvedBy: adminUser?.email || 'SuperAdmin'
-  }, { merge: true });
-
-  return { success: true };
-}
-
-export async function rejectModSubmission(submissionId, rejectionReason, adminUser) {
-  if (!db) throw new Error('Base de datos no disponible.');
-  const submissionRef = doc(db, 'mod_submissions', submissionId);
-  await setDoc(submissionRef, {
-    status: 'rejected',
-    rejectionReason: sanitizeString(rejectionReason || 'No cumple las especificaciones del schema.'),
-    rejectedAt: serverTimestamp(),
-    rejectedBy: adminUser?.email || 'SuperAdmin'
-  }, { merge: true });
-
-  return { success: true };
-}
-
-export async function getPublicModsRegistry() {
-  if (!db) return [];
-  try {
-    const publicModsRef = collection(db, 'public_mods');
-    const snap = await getDocs(publicModsRef);
-    if (!snap.empty) {
-      return snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    }
-  } catch (err) {
-    console.warn('[ModManager] Error fetching public mods from Firestore:', err);
-  }
-  return [];
 }
 
 // ── GETTERS DESACOPLADOS PARA LAS VISTAS BASE ─────────────────────────────────
@@ -562,14 +491,101 @@ export function getMissionPdfUrl(missionName, lang = 'es', mode = '1vs1', uid = 
   return `${basePath}/${cleanBase}/${cleanFile}`;
 }
 
-/**
- * Obtiene las facciones del mod de listas activo.
- * Si no hay mod activo, devuelve array vacío.
- */
-export function getArmyBuilderFactions(uid = null) {
-  const modData = getActiveModData(uid, MOD_LAYERS.ARMY_BUILDER);
-  if (!modData || !Array.isArray(modData.factions)) return [];
-  return modData.factions;
+export const SUPERADMIN_EMAILS = [
+  'sosamatias@gmail.com',
+  'matias@lobelia.com',
+  'admin@lobelia.com',
+  'cuchara@lobelia.com'
+];
+
+export async function submitModForReview(submission, user = null) {
+  if (!db) return { success: false, error: 'Base de datos no disponible.' };
+
+  try {
+    const subRef = collection(db, 'mod_submissions');
+    const docRef = await addDoc(subRef, {
+      ...submission,
+      submittedBy: user?.uid || 'anonymous',
+      submittedByEmail: user?.email || submission.contactEmail || '',
+      status: 'pending',
+      submittedAt: serverTimestamp()
+    });
+    return { success: true, id: docRef.id };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+
+export async function getPendingSubmissions() {
+  if (!db) return [];
+  try {
+    const subRef = collection(db, 'mod_submissions');
+    const snap = await getDocs(subRef);
+    if (!snap.empty) {
+      return snap.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .filter(d => d.status === 'pending');
+    }
+  } catch (err) {
+    console.warn('[ModManager] Error fetching pending submissions:', err);
+  }
+  return [];
+}
+
+export async function approveModSubmission(submission, adminUser = null) {
+  if (!db || !submission) return { success: false, error: 'Error de base de datos.' };
+
+  try {
+    const pubRef = doc(db, 'public_mods', submission.modId || submission.id);
+    await setDoc(pubRef, {
+      ...submission,
+      isVerified: true,
+      status: 'approved',
+      approvedAt: serverTimestamp(),
+      approvedBy: adminUser?.email || 'SuperAdmin'
+    }, { merge: true });
+
+    if (submission.id) {
+      const subDocRef = doc(db, 'mod_submissions', submission.id);
+      await setDoc(subDocRef, { status: 'approved', approvedAt: serverTimestamp() }, { merge: true });
+    }
+
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+
+export async function rejectModSubmission(submissionId, reason = '', adminUser = null) {
+  if (!db || !submissionId) return { success: false, error: 'ID inválido.' };
+
+  try {
+    const subDocRef = doc(db, 'mod_submissions', submissionId);
+    await setDoc(subDocRef, {
+      status: 'rejected',
+      rejectionReason: reason,
+      rejectedAt: serverTimestamp(),
+      rejectedBy: adminUser?.email || 'SuperAdmin'
+    }, { merge: true });
+
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+
+export async function getPublicModsRegistry() {
+  if (!db) return [];
+  try {
+    const publicModsRef = collection(db, 'public_mods');
+    const snap = await getDocs(publicModsRef);
+    if (!snap.empty) {
+      return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    }
+  } catch (err) {
+    console.warn('[ModManager] Error fetching public mods from Firestore:', err);
+  }
+  return [];
 }
 
 /**
@@ -582,22 +598,16 @@ export function getRulesKnowledgeFromMod(uid = null) {
   return modData.rulesKnowledge;
 }
 
-export const PUBLIC_MOD_REGISTRY = [
-  {
-    modId: 'mod-integral-tolkienstein',
-    modName: 'Mod integral: Misiones, filtro de IA, desafíos y generador de listas',
-    modAuthor: 'Dr Tolkienstein',
-    modDescription:
-      'Paquete integral comunitario con perfiles de ejército completos para el Army Builder, visor de PDFs de misiones 1v1 y 2v2 con mapas, base de conocimiento para el árbitro IA y reglas de duelos.',
-    gameSystem: 'MESBG',
-    version: '1.0.0',
-    capabilities: ['army_builder', 'missions', 'rules_ai', 'duels'],
-    isVerified: true,
-    tags: ['integral', 'completo', 'misiones', 'ia', 'listas', 'duelos']
-  }
-];
+/**
+ * Obtiene las facciones del mod de listas activo.
+ */
+export function getArmyBuilderFactions(uid = null) {
+  const modData = getActiveModData(uid, MOD_LAYERS.ARMY_BUILDER);
+  if (!modData || !Array.isArray(modData.factions)) return [];
+  return modData.factions;
+}
 
-// ── BÚSQUEDA Y CONSULTA DE PERFILES EN UN MOD ─────────────────────────────────
+// ── CONSULTAS DE PERFILES ─────────────────────────────────────────────────────
 
 export function searchModels(modData, queryStr = '', filters = {}) {
   if (!modData?.factions) return [];
@@ -643,4 +653,3 @@ export function getFactions(modData) {
     modelCount: (f.models || []).length
   }));
 }
-
