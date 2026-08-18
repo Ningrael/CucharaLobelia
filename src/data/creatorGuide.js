@@ -7,46 +7,44 @@
 export const CREATOR_GUIDE_MD = `# 📚 Manual Oficial para Creadores de Mods
 ### La Cuchara de Lobelia — Engine v3.0 (Schema v1.0)
 
-Bienvenido a la guía oficial para creadores de la comunidad de **La Cuchara de Lobelia**. Este motor es 100% neutral y modular, permitiendo a los jugadores crear, compartir e instalar extensiones sin necesidad de saber programar.
+Bienvenido a la guía oficial para creadores de la comunidad de **La Cuchara de Lobelia**. Este motor es **100% neutral y modular**, lo que significa que el servidor no aloja ningún contenido propietario; todo el material es aportado por la comunidad mediante archivos de datos y alojamientos independientes.
 
 ---
 
 ## 🧩 Los 4 Tipos de Mods en La Cuchara de Lobelia
 
-Un mod puede especializarse en un solo tipo de contenido o combinar varios si el autor lo desea:
+Un mod puede especializarse en una sola funcionalidad o combinar varias:
 
-1. **🗺️ TIPO 1: Mod de Misiones & Visor de PDFs** (Mapas de despliegue, objetivos y escenarios 1v1 y 2v2).
-2. **🧙‍♂️ TIPO 2: Mod de Árbitro IA** (Base de conocimiento indexada, FAQs y directivas para resolver dudas de reglamento con citas).
-3. **⚔️ TIPO 3: Mod de Army Builder (Creador de Listas)** (Facciones, héroes, guerreros, equipo, puntos y reglas de composición).
-4. **🎲 TIPO 4: Mod de Duelos & Live Tracker** (Perfiles de combate, tiradas de dados, cálculo de desmoronamiento al 50%/25% y seguimiento de partidas en vivo).
+1. **🗺️ TIPO 1: Mod de Misiones & Visor de PDFs** (Escenarios 1v1 y 2v2, mapas de despliegue y objetivos).
+2. **🧙‍♂️ TIPO 2: Mod de Árbitro IA** (Base de conocimiento indexada, FAQs y citas exactas de manuales).
+3. **⚔️ TIPO 3: Mod de Army Builder** (Facciones, miniaturas, atributos, puntos y opciones de equipo).
+4. **🎲 TIPO 4: Mod de Duelos & Live Tracker** (Puntos de desmoronamiento al 50%/25% y seguimiento en vivo).
 
 ---
 
-## 🗺️ TIPO 1 EN DETALLE: Mod de Misiones & Visor de PDFs
+## 🗺️ GUÍA PASO A PASO: Cómo Crear y Publicar un Mod de Misiones (Tipo 1)
 
-Este tipo de mod permite al usuario visualizar los mapas de despliegue y las reglas completas de las **24 misiones oficiales 1v1** y las **6 misiones de 2v2** (en español e inglés).
+Esta sección te enseñará desde cero a preparar tu archivo de mod, alojarlo de forma gratuita en GitHub y publicarlo en el Workshop para que cualquier jugador del mundo pueda instalarlo con **1 solo clic**.
 
-El creador del mod puede ofrecer su contenido en dos metodologías distintas, y el usuario puede elegir cómo usarlo según el dispositivo:
+---
 
-### 🌐 Metodología A: Mod Online (Streaming / Enlaces Directos)
-* **¿Cómo funciona?:** El autor sube sus archivos PDF a su propio repositorio público en **GitHub**, **GitLab** o a un servidor web público con enlace directo.
-* **Peso del Mod:** Menos de **5 KB** (solo contiene el archivo \`mod.json\` con las direcciones web).
-* **Ventajas:** Instalación instantánea en 1 segundo. No ocupa espacio de almacenamiento en el móvil del usuario.
-* **Ideal para:** Dispositivos con poco espacio o usuarios con conexión continua a internet.
+### 📝 PASO 1: Estructura del Archivo JSON (\`mod-misiones.json\`)
 
-#### Estructura del JSON para Mod Online:
+Crea un archivo llamado \`mod-misiones.json\` en tu ordenador con la siguiente estructura:
+
 \`\`\`json
 {
-  "modId": "misiones-fanmade-2026",
-  "modName": "Misiones de Torneo Fan-Made 2026",
+  "modId": "mi-mod-misiones-2026",
+  "modName": "Misiones Oficiales MESBG 2026",
   "modVersion": "1.0.0",
-  "modAuthor": "Concilio Blanco",
+  "modAuthor": "Tu Nombre o Nick",
   "gameSystem": "MESBG",
   "schemaVersion": "1.0",
-  "description": "Escenarios 1v1 y 2v2 con mapas y reglas actualizadas para torneos.",
+  "description": "Colección completa de 24 escenarios 1v1 y 6 escenarios 2v2 con mapas en español e inglés.",
   "capabilities": ["missions"],
+  "tags": ["misiones", "escenarios", "mapas", "torneo"],
   "missionPdfs": {
-    "baseUrl": "https://raw.githubusercontent.com/mi-usuario/mis-misiones/main/pdfs/",
+    "baseUrl": "https://raw.githubusercontent.com/TU_USUARIO/TU_REPOSITORIO/main/pdfs/",
     "missions1v1": {
       "Domination": { "fileEs": "DOMINATION_ES.pdf", "fileEn": "DOMINATION_EN.pdf" },
       "To the Death!": { "fileEs": "TO THE DEATH!_ES.pdf", "fileEn": "TO THE DEATH!_EN.pdf" },
@@ -85,75 +83,78 @@ El creador del mod puede ofrecer su contenido en dos metodologías distintas, y 
 }
 \`\`\`
 
----
-
-### 📦 Metodología B: Mod Offline (Paquete Local Todo-en-Uno)
-* **¿Cómo funciona?:** El autor empaqueta en un archivo \`.zip\` o \`.lobeliamod\` el archivo \`manifest.json\` junto con todos los archivos PDF en una carpeta local.
-* **Almacenamiento:** Cuando el usuario instala el paquete, la app guarda los archivos PDF directamente en el **IndexedDB del navegador de ese dispositivo**.
-* **Ventajas:** **100% funcional sin conexión a internet.** Los PDFs abren al instante incluso en sótanos de tiendas de wargames o modo avión.
-* **Ideal para:** Ordenadores portátiles de torneos, tablets o usuarios que no dependen de WiFi.
+> 💡 **Consejo:** Puedes descargar una plantilla lista para usar haciendo clic en el botón **\`[Plantilla Tipo 1: Misiones & PDFs]\`** en esta misma pestaña.
 
 ---
 
-## 🧙‍♂️ TIPO 2: Mod de Árbitro IA
+### 🌐 PASO 2: Alojamiento Gratuito en GitHub
 
-Permite al motor de IA responder dudas con citas de páginas de libros oficiales o manuales de torneos:
+Para que tu mod pueda descargarse de forma universal y sin bloqueos de navegador (CORS), lo alojaremos en **GitHub**:
 
-\`\`\`json
-{
-  "modId": "arbitro-ia-reglas",
-  "modName": "Base de Conocimiento y FAQs Oficiales",
-  "capabilities": ["rules_ai"],
-  "rulesKnowledge": [
-    {
-      "id": "movimiento_heroico_faq",
-      "title": "Movimiento Heroico",
-      "category": "Acciones Heroicas",
-      "page": "Pág. 68",
-      "book": "Rules Manual",
-      "summary": "Se declara al inicio de la fase de movimiento antes de tirar prioridad...",
-      "tags": ["movimiento", "heroico", "prioridad"]
-    }
-  ]
-}
-\`\`\`
+1. **Crear el Repositorio:**
+   * Entra en [GitHub.com](https://github.com) con tu cuenta.
+   * Crea un nuevo repositorio público (ejemplo: \`mesbg-missions-mod\`).
+   * Asegúrate de marcarlo como **Public** y crear el archivo **README.md** inicial.
+
+2. **Subir el archivo JSON:**
+   * En la página principal de tu repositorio, haz clic en **\`Add file\`** ➔ **\`Upload files\`**.
+   * Arrastra tu archivo \`mod-misiones.json\` (solo pesa unos 4 KB).
+   * Pulsa el botón verde **\`Commit changes\`**.
+
+3. **Subir la carpeta de PDFs:**
+   * Puedes subir tus archivos PDF en una carpeta llamada \`pdfs/\` dentro del mismo repositorio, o crear un **Release** adjuntando el paquete \`.zip\`.
 
 ---
 
-## ⚔️ TIPO 3: Mod de Army Builder (Creador de Listas)
+### 🔗 PASO 3: Obtener tu Enlace de Instalación en 1 Clic
 
-Define facciones, perfiles de héroes/tropas, costes en puntos y opciones:
+Una vez subido tu archivo JSON al repositorio, tu enlace directo universal tiene el siguiente formato:
 
-\`\`\`json
-{
-  "modId": "perfiles-facciones-comunidad",
-  "modName": "Perfiles y Facciones Completas",
-  "capabilities": ["army_builder"],
-  "factions": [
-    {
-      "factionId": "minas_tirith",
-      "factionName": "Minas Tirith",
-      "side": "good",
-      "armyBonus": "Un Reino de Hombres: +1 al Coraje en todos los Héroes.",
-      "models": [ ... ]
-    }
-  ]
-}
-\`\`\`
+👉 **\`https://raw.githubusercontent.com/TU_USUARIO/TU_REPOSITORIO/main/mod-misiones.json\`**
+
+*(Ejemplo real: \`https://raw.githubusercontent.com/agentsmithmatiasbot-dev/mesbg-missions-tolkienstein/main/mod-misiones-tolkienstein.json\`)*
 
 ---
 
-## 🎲 TIPO 4: Mod de Duelos & Live Tracker
+### 📤 PASO 4: Enviar tu Mod a la Workshop de La Cuchara de Lobelia
 
-Contiene las tablas de desmoronamiento y reglas de puntuación de partidas en vivo.
+1. En la aplicación, ve a la sección **Mods (🧩)** ➔ Pestaña **📤 Envía tu Mod**.
+2. Rellena el formulario:
+   * **Nombre del Mod:** El título visible para la comunidad.
+   * **Autor / Creador:** Tu nombre o seudónimo.
+   * **Enlace Directo de Descarga:** Pega tu enlace de GitHub (\`https://raw.githubusercontent.com/...\` o enlace del Release).
+   * **Capacidades que incluye:** Marca la casilla **\`[x] 🗺️ Misiones (PDFs)\`**.
+   * **Descripción:** Explica brevemente qué escenarios incluye.
+3. Haz clic en **\`[🚀 Enviar a Moderación]\`**.
 
 ---
 
-## 🚀 Publicación Oficial en GitHub Releases
+### ✅ PASO 5: Aprobación y Publicación
 
-1. Sube tu archivo a un **Release público en GitHub** (o enlace directo sin publicidad).
-2. Entra a la pestaña **📤 Envía tu Mod** en La Cuchara de Lobelia y pega el enlace directo.
-3. El equipo de administración revisará la compatibilidad técnica antes de que aparezca en el **Workshop público**.
+1. El equipo de administración revisará la solicitud desde el **🛡️ Panel SuperAdmin** y pulsará **\`[✅ Aprobar y Publicar]\`**.
+2. ¡Listo! Tu mod aparecerá inmediatamente en la pestaña **🛍️ Workshop**.
+3. Cualquier jugador podrá pulsar **\`[⬇️ Instalar con 1 Clic]\`**:
+   * El navegador descargará el JSON y lo guardará en el almacenamiento local (**IndexedDB**) de su dispositivo.
+   * Al entrar en la sección **Misiones** o en las partidas de la **Liga**, todos los PDFs y mapas se abrirán de forma nativa e instantánea.
+
+---
+
+## 🧙‍♂️ TIPO 2: Mod de Árbitro IA (Resumen)
+
+Permite que Lobelia responda dudas de reglamento con citas exactas de páginas:
+* Capacidad: \`"capabilities": ["rules_ai"]\`
+* Contenido: Array \`rulesKnowledge\` con artículos, resúmenes de reglas y etiquetas de búsqueda.
+
+## ⚔️ TIPO 3: Mod de Army Builder (Resumen)
+
+Permite desbloquear facciones y miniaturas para el creador de listas:
+* Capacidad: \`"capabilities": ["army_builder"]\`
+* Contenido: Array \`factions\` con atributos (\`M\`, \`F\`, \`S\`, \`D\`, \`A\`, \`W\`, \`C\`, \`Might/Will/Fate\`), equipo y reglas especiales.
+
+## 🎲 TIPO 4: Mod de Duelos & Live Tracker (Resumen)
+
+Permite calcular desmoronamiento y realizar tiradas de combate en tiempo real:
+* Capacidad: \`"capabilities": ["duels"]\`
 `;
 
 // ── PLANTILLAS DESCARGABLES PARA CADA TIPO DE MOD ────────────────────────────
