@@ -177,6 +177,66 @@ export default function Mods({ user, profile, lang = 'es' }) {
     }
   };
 
+  // Estado de Diálogos y Alertas Modales in-app
+  const [dialog, setDialog] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'alert', // 'alert' | 'confirm' | 'prompt'
+    confirmText: 'Aceptar',
+    cancelText: 'Cancelar',
+    promptValue: '',
+    onConfirm: null
+  });
+
+  const closeDialog = () => setDialog(d => ({ ...d, isOpen: false }));
+
+  const showAlert = (title, message) => {
+    setDialog({
+      isOpen: true,
+      title,
+      message,
+      type: 'alert',
+      confirmText: lang === 'es' ? 'Aceptar' : 'OK',
+      cancelText: '',
+      promptValue: '',
+      onConfirm: closeDialog
+    });
+  };
+
+  const showConfirm = (title, message, onConfirmCallback) => {
+    setDialog({
+      isOpen: true,
+      title,
+      message,
+      type: 'confirm',
+      confirmText: lang === 'es' ? 'Confirmar' : 'Confirm',
+      cancelText: lang === 'es' ? 'Cancelar' : 'Cancel',
+      promptValue: '',
+      onConfirm: () => {
+        closeDialog();
+        if (onConfirmCallback) onConfirmCallback();
+      }
+    });
+  };
+
+  const showPrompt = (title, message, placeholder, onConfirmCallback) => {
+    setDialog({
+      isOpen: true,
+      title,
+      message,
+      type: 'prompt',
+      placeholder: placeholder || '',
+      promptValue: '',
+      confirmText: lang === 'es' ? 'Enviar' : 'Submit',
+      cancelText: lang === 'es' ? 'Cancelar' : 'Cancel',
+      onConfirm: (val) => {
+        closeDialog();
+        if (onConfirmCallback) onConfirmCallback(val);
+      }
+    });
+  };
+
   const handleFileUpload = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -197,16 +257,21 @@ export default function Mods({ user, profile, lang = 'es' }) {
     e.target.value = '';
   };
 
-  const handleUninstall = async (modId) => {
-    if (!confirm(lang === 'es' ? '¿Desinstalar este mod de tu dispositivo?' : 'Uninstall this mod from your device?')) return;
-    const res = await uninstallMod(user?.uid || null, modId);
-    if (res.success) {
-      setActionStatus({
-        type: 'info',
-        message: lang === 'es' ? 'Mod desinstalado.' : 'Mod uninstalled.'
-      });
-      await reloadData();
-    }
+  const handleUninstall = (modId) => {
+    showConfirm(
+      lang === 'es' ? '¿Desinstalar Mod?' : 'Uninstall Mod?',
+      lang === 'es' ? '¿Estás seguro de que deseas eliminar este mod de tu dispositivo local?' : 'Are you sure you want to remove this mod from your local device?',
+      async () => {
+        const res = await uninstallMod(user?.uid || null, modId);
+        if (res.success) {
+          setActionStatus({
+            type: 'info',
+            message: lang === 'es' ? 'Mod desinstalado.' : 'Mod uninstalled.'
+          });
+          await reloadData();
+        }
+      }
+    );
   };
 
   // ── Cambiar Capa Activa ─────────────────────────────────────────────────────
@@ -247,7 +312,10 @@ export default function Mods({ user, profile, lang = 'es' }) {
   const handleSubmitMod = async (e) => {
     e.preventDefault();
     if (!submitModName || !submitAuthor || !submitDownloadUrl) {
-      alert(lang === 'es' ? 'Por favor completa los campos obligatorios.' : 'Please complete all required fields.');
+      showAlert(
+        lang === 'es' ? 'Campos Incompletos' : 'Incomplete Fields',
+        lang === 'es' ? 'Por favor completa todos los campos obligatorios marcados con (*).' : 'Please complete all required fields marked with (*).'
+      );
       return;
     }
 
@@ -266,35 +334,63 @@ export default function Mods({ user, profile, lang = 'es' }) {
 
       const res = await submitModForReview(submission, user);
       if (res.success) {
-        alert(lang === 'es' ? '¡Mod enviado a revisión correctamente! Los administradores lo evaluarán.' : 'Mod submitted for review! Admins will inspect it.');
+        showAlert(
+          lang === 'es' ? '¡Mod Enviado con Éxito!' : 'Mod Submitted Successfully!',
+          lang === 'es' ? 'Tu mod ha sido enviado a revisión correctamente. Los administradores lo evaluarán en breve.' : 'Your mod has been submitted for review! Administrators will inspect it shortly.'
+        );
         setSubmitModName('');
         setSubmitDownloadUrl('');
         setSubmitDescription('');
       } else {
-        alert(`Error: ${res.error}`);
+        showAlert(
+          lang === 'es' ? 'Error al Enviar' : 'Submission Error',
+          res.error
+        );
       }
     } catch (err) {
-      alert(`Error: ${err.message}`);
+      showAlert(
+        lang === 'es' ? 'Error' : 'Error',
+        err.message
+      );
     }
     setSubmitting(false);
   };
 
   // ── Acciones SuperAdmin ─────────────────────────────────────────────────────
-  const handleApprove = async (sub) => {
-    if (!confirm(`¿Aprobar y publicar el mod "${sub.modName}"?`)) return;
-    const res = await approveModSubmission(sub, user);
-    if (res.success) {
-      alert('Mod aprobado y publicado en el catálogo público.');
-      await reloadData();
-    }
+  const handleApprove = (sub) => {
+    showConfirm(
+      lang === 'es' ? 'Aprobar Mod' : 'Approve Mod',
+      lang === 'es' ? `¿Aprobar y publicar el mod "${sub.modName}" en el catálogo público?` : `Approve and publish mod "${sub.modName}" to the public workshop?`,
+      async () => {
+        const res = await approveModSubmission(sub, user);
+        if (res.success) {
+          showAlert(
+            lang === 'es' ? 'Mod Publicado' : 'Mod Published',
+            lang === 'es' ? 'El mod ha sido aprobado y ya está visible en el Workshop público.' : 'The mod has been approved and is now live in the public Workshop.'
+          );
+          await reloadData();
+        }
+      }
+    );
   };
 
-  const handleReject = async (sub, reason) => {
-    const res = await rejectModSubmission(sub.id, reason, user, sub.ownerUid || sub.submittedBy);
-    if (res.success) {
-      alert('Solicitud rechazada.');
-      await reloadData();
-    }
+  const handleReject = (sub) => {
+    showPrompt(
+      lang === 'es' ? 'Rechazar Mod' : 'Reject Mod',
+      lang === 'es' ? `Indica el motivo del rechazo para "${sub.modName}":` : `Specify rejection reason for "${sub.modName}":`,
+      lang === 'es' ? 'Motivo del rechazo...' : 'Rejection reason...',
+      async (reason) => {
+        if (!reason || !reason.trim()) return;
+        const res = await rejectModSubmission(sub.id, reason.trim(), user, sub.ownerUid || sub.submittedBy);
+        if (res.success) {
+          showAlert(
+            lang === 'es' ? 'Solicitud Rechazada' : 'Submission Rejected',
+            lang === 'es' ? 'La solicitud ha sido rechazada correctamente.' : 'The submission has been rejected.'
+          );
+          await reloadData();
+        }
+      }
+    );
   };
 
   return (
@@ -1084,10 +1180,7 @@ export default function Mods({ user, profile, lang = 'es' }) {
                       ✅ {lang === 'es' ? 'Aprobar y Publicar' : 'Approve & Publish'}
                     </button>
                     <button
-                      onClick={() => {
-                        const reason = prompt(lang === 'es' ? 'Motivo del rechazo:' : 'Rejection reason:');
-                        if (reason) handleReject(sub, reason);
-                      }}
+                      onClick={() => handleReject(sub)}
                       style={{ background: 'rgba(231,76,60,0.2)', color: '#e74c3c', border: '1px solid #e74c3c', padding: '6px 14px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.78rem' }}
                     >
                       ❌ {lang === 'es' ? 'Rechazar' : 'Reject'}
@@ -1129,6 +1222,86 @@ export default function Mods({ user, profile, lang = 'es' }) {
             <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit', background: 'rgba(0,0,0,0.3)', padding: '16px', borderRadius: '8px', border: 'var(--border-glass)', margin: 0 }}>
               {CREATOR_GUIDE_MD}
             </pre>
+          </div>
+        </Modal>
+      )}
+
+      {/* ── MODAL DE DIÁLOGO / CONFIRMACIÓN IN-APP (CENTRADO) ── */}
+      {dialog.isOpen && (
+        <Modal
+          isOpen={true}
+          onClose={closeDialog}
+          title={dialog.title}
+          zIndex={9999}
+        >
+          <div style={{ padding: '10px 0', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <p style={{ color: 'var(--text-primary)', fontSize: '0.9rem', lineHeight: '1.5', margin: 0 }}>
+              {dialog.message}
+            </p>
+
+            {dialog.type === 'prompt' && (
+              <input
+                autoFocus
+                type="text"
+                value={dialog.promptValue}
+                onChange={(e) => setDialog(d => ({ ...d, promptValue: e.target.value }))}
+                placeholder={dialog.placeholder}
+                style={{
+                  width: '100%',
+                  background: 'rgba(255,255,255,0.06)',
+                  border: '1px solid rgba(203, 161, 53, 0.4)',
+                  borderRadius: '6px',
+                  padding: '8px 10px',
+                  color: '#fff',
+                  fontSize: '0.84rem',
+                  boxSizing: 'border-box'
+                }}
+              />
+            )}
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
+              {dialog.cancelText && (
+                <button
+                  type="button"
+                  onClick={closeDialog}
+                  style={{
+                    background: 'rgba(255,255,255,0.06)',
+                    border: '1px solid rgba(255,255,255,0.15)',
+                    color: 'var(--text-secondary)',
+                    borderRadius: '6px',
+                    padding: '7px 16px',
+                    fontSize: '0.8rem',
+                    fontWeight: 'bold',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {dialog.cancelText}
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (dialog.onConfirm) {
+                    dialog.onConfirm(dialog.promptValue);
+                  } else {
+                    closeDialog();
+                  }
+                }}
+                style={{
+                  background: 'var(--gold-primary)',
+                  border: 'none',
+                  color: '#111',
+                  borderRadius: '6px',
+                  padding: '7px 18px',
+                  fontSize: '0.8rem',
+                  fontWeight: 'bold',
+                  cursor: 'pointer'
+                }}
+              >
+                {dialog.confirmText}
+              </button>
+            </div>
           </div>
         </Modal>
       )}
