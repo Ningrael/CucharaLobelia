@@ -289,8 +289,8 @@ export default function Mods({ user, profile, lang = 'es' }) {
     }
   };
 
-  const handleReject = async (subId, reason) => {
-    const res = await rejectModSubmission(subId, reason, user);
+  const handleReject = async (sub, reason) => {
+    const res = await rejectModSubmission(sub.id, reason, user, sub.ownerUid || sub.submittedBy);
     if (res.success) {
       alert('Solicitud rechazada.');
       await reloadData();
@@ -1086,7 +1086,7 @@ export default function Mods({ user, profile, lang = 'es' }) {
                     <button
                       onClick={() => {
                         const reason = prompt(lang === 'es' ? 'Motivo del rechazo:' : 'Rejection reason:');
-                        if (reason) handleReject(sub.id, reason);
+                        if (reason) handleReject(sub, reason);
                       }}
                       style={{ background: 'rgba(231,76,60,0.2)', color: '#e74c3c', border: '1px solid #e74c3c', padding: '6px 14px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.78rem' }}
                     >
