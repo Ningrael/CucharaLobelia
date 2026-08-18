@@ -975,6 +975,35 @@ export default function Mods({ user, profile, lang = 'es' }) {
           </div>
 
           <div style={{ marginBottom: '16px' }}>
+            <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
+              {lang === 'es' ? 'Capacidades que incluye el Mod:' : 'Included Mod Capabilities:'}
+            </label>
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+              {[
+                { id: 'missions', label: '🗺️ Misiones (PDFs)' },
+                { id: 'rules_ai', label: '🧙‍♂️ Árbitro IA' },
+                { id: 'army_builder', label: '⚔️ Army Builder' },
+                { id: 'duels', label: '🎲 Duelos' }
+              ].map(cap => (
+                <label key={cap.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', color: '#fff', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={submitCapabilities.includes(cap.id)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSubmitCapabilities([...submitCapabilities, cap.id]);
+                      } else {
+                        setSubmitCapabilities(submitCapabilities.filter(c => c !== cap.id));
+                      }
+                    }}
+                  />
+                  <span>{cap.label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ marginBottom: '16px' }}>
             <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
               {lang === 'es' ? 'Descripción del Mod' : 'Mod Description'}
             </label>
