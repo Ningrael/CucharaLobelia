@@ -1,59 +1,52 @@
 // src/data/creatorGuide.js
 // ─────────────────────────────────────────────────────────────────────────────
 // Manual Oficial y Plantillas para Creadores de Mods de La Cuchara de Lobelia
+// Estructura de 4 Tipos de Mods Independientes (Schema v1.0)
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const CREATOR_GUIDE_MD = `# 📚 Manual Oficial para Creadores de Mods
 ### La Cuchara de Lobelia — Engine v3.0 (Schema v1.0)
 
-Bienvenido a la guía oficial de creación de Mods para **La Cuchara de Lobelia**. Este documento te guiará paso a paso para construir, empaquetar, alojar y publicar tu propio mod sin necesidad de conocimientos de programación.
+Bienvenido a la guía oficial para creadores de la comunidad de **La Cuchara de Lobelia**. Este motor es 100% neutral y modular, permitiendo a los jugadores crear, compartir e instalar extensiones sin necesidad de saber programar.
 
 ---
 
-## 🎯 1. ¿Qué es un Mod de La Cuchara de Lobelia?
+## 🧩 Los 4 Tipos de Mods en La Cuchara de Lobelia
 
-La Cuchara de Lobelia es un motor neutral que **no contiene ni aloja datos con derechos de autor**. Las reglas, perfiles, misiones y textos son aportados por la comunidad a través de archivos de datos estructurados en formato **JSON**.
+Un mod puede especializarse en un solo tipo de contenido o combinar varios si el autor lo desea:
 
-Existen 4 capacidades o capas independientes que tu mod puede implementar (una sola, varias o todas):
-
-| Capa | Capacidad (\`capabilities\`) | ¿Qué proporciona? |
-| :--- | :--- | :--- |
-| **🗺️ Misiones y Mapas** | \`"missions"\` | Rutas a PDFs/mapas para los 24 escenarios 1v1 y 6 de 2v2. |
-| **🧙‍♂️ Árbitro IA** | \`"rules_ai"\` | Artículos, FAQs y páginas indexadas para que la IA resuelva dudas citando el reglamento. |
-| **⚔️ Army Builder** | \`"army_builder"\` | Facciones, héroes, guerreros, equipo y reglas especiales. |
-| **🎲 Duelos y Tracker** | \`"duels"\` | Perfiles de combate para el simulador de duelos 1v1 y desmoronamiento. |
+1. **🗺️ TIPO 1: Mod de Misiones & Visor de PDFs** (Mapas de despliegue, objetivos y escenarios 1v1 y 2v2).
+2. **🧙‍♂️ TIPO 2: Mod de Árbitro IA** (Base de conocimiento indexada, FAQs y directivas para resolver dudas de reglamento con citas).
+3. **⚔️ TIPO 3: Mod de Army Builder (Creador de Listas)** (Facciones, héroes, guerreros, equipo, puntos y reglas de composición).
+4. **🎲 TIPO 4: Mod de Duelos & Live Tracker** (Perfiles de combate, tiradas de dados, cálculo de desmoronamiento al 50%/25% y seguimiento de partidas en vivo).
 
 ---
 
-## 🏗️ 2. Estructura Obligatoria de la Cabecera
+## 🗺️ TIPO 1 EN DETALLE: Mod de Misiones & Visor de PDFs
 
-Todo archivo de mod debe comenzar con los siguientes metadatos obligatorios:
+Este tipo de mod permite al usuario visualizar los mapas de despliegue y las reglas completas de las **24 misiones oficiales 1v1** y las **6 misiones de 2v2** (en español e inglés).
 
+El creador del mod puede ofrecer su contenido en dos metodologías distintas, y el usuario puede elegir cómo usarlo según el dispositivo:
+
+### 🌐 Metodología A: Mod Online (Streaming / Enlaces Directos)
+* **¿Cómo funciona?:** El autor sube sus archivos PDF a su propio repositorio público en **GitHub**, **GitLab** o a un servidor web público con enlace directo.
+* **Peso del Mod:** Menos de **5 KB** (solo contiene el archivo \`mod.json\` con las direcciones web).
+* **Ventajas:** Instalación instantánea en 1 segundo. No ocupa espacio de almacenamiento en el móvil del usuario.
+* **Ideal para:** Dispositivos con poco espacio o usuarios con conexión continua a internet.
+
+#### Estructura del JSON para Mod Online:
 \`\`\`json
 {
-  "modId": "nombre-unico-de-tu-mod",
-  "modName": "Título Visible de tu Mod",
+  "modId": "misiones-fanmade-2026",
+  "modName": "Misiones de Torneo Fan-Made 2026",
   "modVersion": "1.0.0",
-  "modAuthor": "Tu Nick o Grupo",
+  "modAuthor": "Concilio Blanco",
   "gameSystem": "MESBG",
   "schemaVersion": "1.0",
-  "description": "Breve descripción de lo que incluye tu paquete.",
-  "capabilities": ["missions", "rules_ai"],
-  "tags": ["misiones", "ia", "comunidad"]
-}
-\`\`\`
-
----
-
-## 🗺️ 3. Capa de Misiones y Mapas (\`missionPdfs\`)
-
-Si tu mod incluye la capacidad \`"missions"\`, debes añadir el objeto \`missionPdfs\`. 
-Puedes especificar una URL base (\`baseUrl\`) o enlaces completos a cada archivo:
-
-\`\`\`json
-{
+  "description": "Escenarios 1v1 y 2v2 con mapas y reglas actualizadas para torneos.",
+  "capabilities": ["missions"],
   "missionPdfs": {
-    "baseUrl": "https://raw.githubusercontent.com/tu-usuario/tu-repo/main/pdfs/",
+    "baseUrl": "https://raw.githubusercontent.com/mi-usuario/mis-misiones/main/pdfs/",
     "missions1v1": {
       "Domination": { "fileEs": "DOMINATION_ES.pdf", "fileEn": "DOMINATION_EN.pdf" },
       "To the Death!": { "fileEs": "TO THE DEATH!_ES.pdf", "fileEn": "TO THE DEATH!_EN.pdf" },
@@ -94,22 +87,32 @@ Puedes especificar una URL base (\`baseUrl\`) o enlaces completos a cada archivo
 
 ---
 
-## 🧙‍♂️ 4. Capa de Árbitro IA (\`rulesKnowledge\`)
+### 📦 Metodología B: Mod Offline (Paquete Local Todo-en-Uno)
+* **¿Cómo funciona?:** El autor empaqueta en un archivo \`.zip\` o \`.lobeliamod\` el archivo \`manifest.json\` junto con todos los archivos PDF en una carpeta local.
+* **Almacenamiento:** Cuando el usuario instala el paquete, la app guarda los archivos PDF directamente en el **IndexedDB del navegador de ese dispositivo**.
+* **Ventajas:** **100% funcional sin conexión a internet.** Los PDFs abren al instante incluso en sótanos de tiendas de wargames o modo avión.
+* **Ideal para:** Ordenadores portátiles de torneos, tablets o usuarios que no dependen de WiFi.
 
-Para que el Árbitro IA pueda interpretar y citar reglas con exactitud, añade el array \`rulesKnowledge\` con artículos estructurados:
+---
+
+## 🧙‍♂️ TIPO 2: Mod de Árbitro IA
+
+Permite al motor de IA responder dudas con citas de páginas de libros oficiales o manuales de torneos:
 
 \`\`\`json
 {
+  "modId": "arbitro-ia-reglas",
+  "modName": "Base de Conocimiento y FAQs Oficiales",
+  "capabilities": ["rules_ai"],
   "rulesKnowledge": [
     {
-      "id": "regla_combate_duelo",
-      "title": "Resolución de Duelos en Combate",
-      "category": "Reglas Básicas",
-      "page": "Pág. 44-46",
+      "id": "movimiento_heroico_faq",
+      "title": "Movimiento Heroico",
+      "category": "Acciones Heroicas",
+      "page": "Pág. 68",
       "book": "Rules Manual",
-      "summary": "Cada jugador tira tantos dados como su atributo de Ataques. El resultado más alto gana el combate. En caso de empate, gana el mayor atributo de Combate (F). Si persiste el empate, se tira un dado a 1-3 / 4-6.",
-      "fullText": "Explicación detallada de la tirada de dados, elección de apoyo con lanza y modificadores por arma a dos manos.",
-      "tags": ["combate", "duelo", "ataques", "empate", "combate"]
+      "summary": "Se declara al inicio de la fase de movimiento antes de tirar prioridad...",
+      "tags": ["movimiento", "heroico", "prioridad"]
     }
   ]
 }
@@ -117,45 +120,22 @@ Para que el Árbitro IA pueda interpretar y citar reglas con exactitud, añade e
 
 ---
 
-## ⚔️ 5. Capa de Army Builder (\`factions\`)
+## ⚔️ TIPO 3: Mod de Army Builder (Creador de Listas)
 
-Si creas perfiles de miniaturas para el Creador de Listas:
+Define facciones, perfiles de héroes/tropas, costes en puntos y opciones:
 
 \`\`\`json
 {
+  "modId": "perfiles-facciones-comunidad",
+  "modName": "Perfiles y Facciones Completas",
+  "capabilities": ["army_builder"],
   "factions": [
     {
       "factionId": "minas_tirith",
       "factionName": "Minas Tirith",
       "side": "good",
-      "armyBonus": "Un Reino de Hombres: Todos los Héroes ganan +1 al Coraje.",
-      "models": [
-        {
-          "id": "aragorn_rey_elessar",
-          "name": "Aragorn, Rey Elessar",
-          "type": "hero",
-          "heroicTier": "Hero of Legend",
-          "points": 225,
-          "movement": "6\\"",
-          "fight": "6/4+",
-          "strength": 4,
-          "defense": 5,
-          "attacks": 3,
-          "wounds": 3,
-          "courage": 6,
-          "might": 3,
-          "will": 3,
-          "fate": 3,
-          "wargear": ["Andúril", "Armadura pesada"],
-          "options": [
-            { "name": "Caballo con barda", "points": 15, "isBow": false },
-            { "name": "Capa élfica", "points": 10, "isBow": false }
-          ],
-          "specialRules": [
-            { "name": "Señor del Oeste", "description": "Aragorn puede gastar 1 punto de Poder gratuito por turno." }
-          ]
-        }
-      ]
+      "armyBonus": "Un Reino de Hombres: +1 al Coraje en todos los Héroes.",
+      "models": [ ... ]
     }
   ]
 }
@@ -163,69 +143,107 @@ Si creas perfiles de miniaturas para el Creador de Listas:
 
 ---
 
-## 🚀 6. Publicación en GitHub Releases (Estándar Oficial)
+## 🎲 TIPO 4: Mod de Duelos & Live Tracker
 
-Para que toda la comunidad pueda instalar tu mod con **1 solo clic**:
+Contiene las tablas de desmoronamiento y reglas de puntuación de partidas en vivo.
 
-1. Crea una cuenta gratuita en [GitHub.com](https://github.com).
-2. Crea un repositorio público (ejemplo: \`mi-mod-misiones-lobelia\`).
-3. En la barra lateral derecha, haz clic en **Releases** ➔ **Draft a new release**.
-4. Ponle una etiqueta de versión (ej: \`v1.0.0\`) y arrastra tu archivo \`mod.json\`.
-5. Pulsa **Publish release**.
-6. Haz clic derecho sobre el archivo subido y selecciona **Copiar dirección del enlace**.
-7. Ve a la pestaña **📤 Envía tu Mod** en La Cuchara de Lobelia y pega ese enlace directo.
-8. Una vez aprobado por el equipo de moderación, aparecerá destacado en el **Workshop público**.
+---
+
+## 🚀 Publicación Oficial en GitHub Releases
+
+1. Sube tu archivo a un **Release público en GitHub** (o enlace directo sin publicidad).
+2. Entra a la pestaña **📤 Envía tu Mod** en La Cuchara de Lobelia y pega el enlace directo.
+3. El equipo de administración revisará la compatibilidad técnica antes de que aparezca en el **Workshop público**.
 `;
 
-export const TEMPLATE_MISSIONS_IA = {
-  modId: "mi-mod-misiones-ia",
-  modName: "Mi Mod de Misiones & Árbitro IA",
+// ── PLANTILLAS DESCARGABLES PARA CADA TIPO DE MOD ────────────────────────────
+
+export const TEMPLATE_MOD_1_MISSIONS = {
+  modId: "mi-mod-misiones",
+  modName: "Mi Mod de Misiones y Escenarios",
   modVersion: "1.0.0",
   modAuthor: "Mi Nick",
   gameSystem: "MESBG",
   schemaVersion: "1.0",
-  description: "Plantilla oficial de ejemplo para escenarios de misiones y base de conocimiento de reglas IA.",
-  capabilities: ["missions", "rules_ai"],
-  tags: ["misiones", "ia", "plantilla"],
+  description: "Plantilla oficial para escenarios 1v1 y 2v2 con soporte para visor de PDFs online y offline.",
+  capabilities: ["missions"],
+  tags: ["misiones", "escenarios", "mapas"],
   missionPdfs: {
-    baseUrl: "https://raw.githubusercontent.com/usuario/repo/main/pdfs/",
+    baseUrl: "https://raw.githubusercontent.com/tu-usuario/tu-repo/main/pdfs/",
     missions1v1: {
       "Domination": { "fileEs": "DOMINATION_ES.pdf", "fileEn": "DOMINATION_EN.pdf" },
       "To the Death!": { "fileEs": "TO THE DEATH!_ES.pdf", "fileEn": "TO THE DEATH!_EN.pdf" },
-      "Hold Ground": { "fileEs": "HOLD GROUND_ES.pdf", "fileEn": "HOLD GROUND_EN.pdf" }
+      "Hold Ground": { "fileEs": "HOLD GROUND_ES.pdf", "fileEn": "HOLD GROUND_EN.pdf" },
+      "Destroy the Supplies": { "fileEs": "DESTROY THE SUPPLIES_ES.pdf", "fileEn": "DESTROY THE SUPPLIES_EN.pdf" },
+      "Reconnoitre": { "fileEs": "RECONNOITRE_ES.pdf", "fileEn": "RECONNOITRE_EN.pdf" },
+      "Fog of War": { "fileEs": "FOG OF WAR_ES.pdf", "fileEn": "FOG OF WAR_EN.pdf" },
+      "Capture & Control": { "fileEs": "CAPTURE & CONTROL_ES.pdf", "fileEn": "CAPTURE & CONTROL_EN.pdf" },
+      "Breakthrough": { "fileEs": "BREAKTHROUGH_ES.pdf", "fileEn": "BREAKTHROUGH_EN.pdf" },
+      "Stake a Claim": { "fileEs": "STAKE A CLAIM_ES.pdf", "fileEn": "STAKE A CLAIM_EN.pdf" },
+      "Lords of Battle": { "fileEs": "LORDS OF BATTLE_ES.pdf", "fileEn": "LORDS OF BATTLE_EN.pdf" },
+      "Assassination": { "fileEs": "ASSASSINATION_ES.pdf", "fileEn": "ASSASSINATION_EN.pdf" },
+      "Contest of Champions": { "fileEs": "CONTEST OF CHAMPIONS_ES.pdf", "fileEn": "CONTEST OF CHAMPIONS_EN.pdf" },
+      "Heirloom of Ages Past": { "fileEs": "HEIRLOOM OF AGES PAST_ES.pdf", "fileEn": "HEIRLOOM OF AGES PAST_EN.pdf" },
+      "Sites of Power": { "fileEs": "SITES OF POWER_ES.pdf", "fileEn": "SITES OF POWER_EN.pdf" },
+      "Command the Battlefield": { "fileEs": "COMMAND THE BATTLEFIELD_ES.pdf", "fileEn": "COMMAND THE BATTLEFIELD_EN.pdf" },
+      "Retrieval": { "fileEs": "RETRIEVAL_ES.pdf", "fileEn": "RETRIEVAL_EN.pdf" },
+      "Seize the Prizes": { "fileEs": "SEIZE THE PRIZES_ES.pdf", "fileEn": "SEIZE THE PRIZES_EN.pdf" },
+      "Treasure Hoard": { "fileEs": "TREASURE HOARD_ES.pdf", "fileEn": "TREASURE HOARD_EN.pdf" },
+      "Storm the Camp": { "fileEs": "STORM THE CAMP_ES.pdf", "fileEn": "STORM THE CAMP_EN.pdf" },
+      "Divide & Conquer": { "fileEs": "DIVIDE & CONQUER_ES.pdf", "fileEn": "DIVIDE & CONQUER_EN.pdf" },
+      "Escort the Wounded": { "fileEs": "ESCORT THE WOUNDED_ES.pdf", "fileEn": "ESCORT THE WOUNDED_EN.pdf" },
+      "Clash by Moonlight": { "fileEs": "CLASH BY MOONLIGHT_ES.pdf", "fileEn": "CLASH BY MOONLIGHT_EN.pdf" },
+      "Lead from the Front": { "fileEs": "LEAD FROM THE FRONT_ES.pdf", "fileEn": "LEAD FROM THE FRONT_EN.pdf" },
+      "Convergence": { "fileEs": "CONVERGENCE_ES.pdf", "fileEn": "CONVERGENCE_EN.pdf" }
     },
-    missions2v2: {
+    "missions2v2": {
       "No Escape": { "fileEs": "2vs2/NO ESCAPE_ES.pdf", "fileEn": "2vs2/NO ESCAPE_EN.pdf" },
-      "Total Conquest": { "fileEs": "2vs2/TOTAL CONQUEST_ES.pdf", "fileEn": "2vs2/TOTAL CONQUEST_EN.pdf" }
+      "Total Conquest": { "fileEs": "2vs2/TOTAL CONQUEST_ES.pdf", "fileEn": "2vs2/TOTAL CONQUEST_EN.pdf" },
+      "Take & Hold": { "fileEs": "2vs2/TAKE & HOLD_ES.pdf", "fileEn": "2vs2/TAKE & HOLD_EN.pdf" },
+      "Clash of Champions": { "fileEs": "2vs2/CLASH OF CHAMPIONS_ES.pdf", "fileEn": "2vs2/CLASH OF CHAMPIONS_EN.pdf" },
+      "Cornered": { "fileEs": "2vs2/CORNERED_ES.pdf", "fileEn": "2vs2/CORNERED_EN.pdf" },
+      "Duel of Wits": { "fileEs": "2vs2/DUEL OF WITS_ES.pdf", "fileEn": "2vs2/DUEL OF WITS_EN.pdf" }
     }
-  },
+  }
+};
+
+export const TEMPLATE_MOD_2_RULES_AI = {
+  modId: "mi-mod-arbitro-ia",
+  modName: "Mi Mod de Árbitro IA",
+  modVersion: "1.0.0",
+  modAuthor: "Mi Nick",
+  gameSystem: "MESBG",
+  schemaVersion: "1.0",
+  description: "Base de conocimiento indexada y FAQs oficiales para el árbitro de reglas IA.",
+  capabilities: ["rules_ai"],
+  tags: ["ia", "reglas", "faqs"],
   rulesKnowledge: [
     {
-      id: "ejemplo_regla_1",
+      id: "regla_ejemplo_1",
       title: "Movimiento Heroico",
       category: "Acciones Heroicas",
       page: "Pág. 68",
       book: "Rules Manual",
-      summary: "Se declara al inicio de la fase de movimiento antes de tirar prioridad. Permite al héroe y a los aliados a 6 pulgadas mover primero.",
+      summary: "Se declara al inicio de la fase de movimiento antes de tirar prioridad.",
       fullText: "El jugador activo declara la acción gastando 1 punto de Poder...",
       tags: ["movimiento", "heroico", "prioridad", "poder"]
     }
   ]
 };
 
-export const TEMPLATE_ARMY_BUILDER = {
-  modId: "mi-mod-facciones-listas",
-  modName: "Mi Mod de Facciones & Listas",
+export const TEMPLATE_MOD_3_ARMY_BUILDER = {
+  modId: "mi-mod-army-builder",
+  modName: "Mi Mod de Facciones y Miniaturas",
   modVersion: "1.0.0",
   modAuthor: "Mi Nick",
   gameSystem: "MESBG",
   schemaVersion: "1.0",
-  description: "Plantilla oficial de ejemplo para creación de perfiles y facciones de ejército.",
+  description: "Plantilla oficial para facciones, perfiles y reglas de miniaturas del creador de listas.",
   capabilities: ["army_builder", "duels"],
   tags: ["listas", "perfiles", "facciones"],
   factions: [
     {
-      factionId: "mi_facción_ejemplo",
+      factionId: "mi_faccion_ejemplo",
       factionName: "Mi Facción Temática",
       side: "good",
       armyBonus: "Valor Indomable: +1 al combate al defender objetivos.",
@@ -258,4 +276,16 @@ export const TEMPLATE_ARMY_BUILDER = {
       ]
     }
   ]
+};
+
+export const TEMPLATE_MOD_4_DUELS = {
+  modId: "mi-mod-duelos-tracker",
+  modName: "Mi Mod de Duelos y Tracker",
+  modVersion: "1.0.0",
+  modAuthor: "Mi Nick",
+  gameSystem: "MESBG",
+  schemaVersion: "1.0",
+  description: "Plantilla para cálculo de desmoronamiento y simulador de duelos.",
+  capabilities: ["duels"],
+  tags: ["duelos", "tracker"]
 };

@@ -26,8 +26,10 @@ import {
 } from '../utils/modManager';
 import {
   CREATOR_GUIDE_MD,
-  TEMPLATE_MISSIONS_IA,
-  TEMPLATE_ARMY_BUILDER
+  TEMPLATE_MOD_1_MISSIONS,
+  TEMPLATE_MOD_2_RULES_AI,
+  TEMPLATE_MOD_3_ARMY_BUILDER,
+  TEMPLATE_MOD_4_DUELS
 } from '../data/creatorGuide';
 import Modal from '../components/Modal';
 
@@ -52,7 +54,7 @@ export default function Mods({ user, profile, lang = 'es' }) {
   const [submitAuthor, setSubmitAuthor] = useState('');
   const [submitDownloadUrl, setSubmitDownloadUrl] = useState('');
   const [submitDescription, setSubmitDescription] = useState('');
-  const [submitCapabilities, setSubmitCapabilities] = useState(['missions', 'rules_ai']);
+  const [submitCapabilities, setSubmitCapabilities] = useState(['missions']);
   const [submitContactEmail, setSubmitContactEmail] = useState(user?.email || '');
   const [submitting, setSubmitting] = useState(false);
 
@@ -117,12 +119,16 @@ export default function Mods({ user, profile, lang = 'es' }) {
     downloadTextFile('MANUAL_CREACION_MODS_LOBELIA.md', CREATOR_GUIDE_MD, 'text/markdown');
   };
 
-  const handleDownloadTemplateMissionsIa = () => {
-    downloadTextFile('plantilla_mod_misiones_ia.json', JSON.stringify(TEMPLATE_MISSIONS_IA, null, 2), 'application/json');
+  const handleDownloadTemplateMissions = () => {
+    downloadTextFile('plantilla_mod_1_misiones.json', JSON.stringify(TEMPLATE_MOD_1_MISSIONS, null, 2), 'application/json');
+  };
+
+  const handleDownloadTemplateRulesAi = () => {
+    downloadTextFile('plantilla_mod_2_arbitro_ia.json', JSON.stringify(TEMPLATE_MOD_2_RULES_AI, null, 2), 'application/json');
   };
 
   const handleDownloadTemplateArmyBuilder = () => {
-    downloadTextFile('plantilla_mod_facciones_listas.json', JSON.stringify(TEMPLATE_ARMY_BUILDER, null, 2), 'application/json');
+    downloadTextFile('plantilla_mod_3_army_builder.json', JSON.stringify(TEMPLATE_MOD_3_ARMY_BUILDER, null, 2), 'application/json');
   };
 
   // ── Acciones de Instalación / Desinstalación ────────────────────────────────
@@ -761,12 +767,12 @@ export default function Mods({ user, profile, lang = 'es' }) {
                 </span>
               </button>
 
-              {/* Botón Plantilla Misiones + IA */}
+              {/* Botón Plantilla Tipo 1: Misiones */}
               <button
-                onClick={handleDownloadTemplateMissionsIa}
+                onClick={handleDownloadTemplateMissions}
                 style={{
                   background: 'rgba(52, 152, 219, 0.08)',
-                  border: '1px solid rgba(52, 152, 219, 0.3)',
+                  border: '1px solid rgba(52, 152, 219, 0.4)',
                   color: '#3498db',
                   borderRadius: '10px',
                   padding: '14px',
@@ -778,13 +784,36 @@ export default function Mods({ user, profile, lang = 'es' }) {
                 }}
               >
                 <span style={{ fontSize: '1.2rem' }}>🗺️</span>
-                <strong style={{ fontSize: '0.88rem' }}>{lang === 'es' ? 'Plantilla Misiones & IA' : 'Missions & AI Template'}</strong>
+                <strong style={{ fontSize: '0.88rem' }}>{lang === 'es' ? 'Plantilla Tipo 1: Misiones & PDFs' : 'Type 1: Missions & PDFs Template'}</strong>
                 <span style={{ fontSize: '0.72rem', color: '#ccc' }}>
-                  {lang === 'es' ? 'Descarga un archivo JSON listo para rellenar.' : 'Download ready-to-fill JSON template.'}
+                  {lang === 'es' ? 'Descarga la plantilla con soporte online y offline.' : 'Download template with online & offline support.'}
                 </span>
               </button>
 
-              {/* Botón Plantilla Army Builder */}
+              {/* Botón Plantilla Tipo 2: Árbitro IA */}
+              <button
+                onClick={handleDownloadTemplateRulesAi}
+                style={{
+                  background: 'rgba(155, 89, 182, 0.08)',
+                  border: '1px solid rgba(155, 89, 182, 0.3)',
+                  color: '#9b59b6',
+                  borderRadius: '10px',
+                  padding: '14px',
+                  textAlign: 'left',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '4px'
+                }}
+              >
+                <span style={{ fontSize: '1.2rem' }}>🧙‍♂️</span>
+                <strong style={{ fontSize: '0.88rem' }}>{lang === 'es' ? 'Plantilla Tipo 2: Árbitro IA' : 'Type 2: AI Referee Template'}</strong>
+                <span style={{ fontSize: '0.72rem', color: '#ccc' }}>
+                  {lang === 'es' ? 'Descarga el formato de artículos y FAQs indexadas.' : 'Download indexed rules and FAQs format.'}
+                </span>
+              </button>
+
+              {/* Botón Plantilla Tipo 3: Army Builder */}
               <button
                 onClick={handleDownloadTemplateArmyBuilder}
                 style={{
@@ -801,7 +830,7 @@ export default function Mods({ user, profile, lang = 'es' }) {
                 }}
               >
                 <span style={{ fontSize: '1.2rem' }}>⚔️</span>
-                <strong style={{ fontSize: '0.88rem' }}>{lang === 'es' ? 'Plantilla Army Builder' : 'Army Builder Template'}</strong>
+                <strong style={{ fontSize: '0.88rem' }}>{lang === 'es' ? 'Plantilla Tipo 3: Army Builder' : 'Type 3: Army Builder Template'}</strong>
                 <span style={{ fontSize: '0.72rem', color: '#ccc' }}>
                   {lang === 'es' ? 'Descarga un ejemplo de facciones y miniaturas.' : 'Download sample factions & miniatures.'}
                 </span>
