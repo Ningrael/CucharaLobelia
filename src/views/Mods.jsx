@@ -31,7 +31,6 @@ import {
   TEMPLATE_MOD_3_ARMY_BUILDER,
   TEMPLATE_MOD_4_DUELS
 } from '../data/creatorGuide';
-import { generateCreatorGuidePdf } from '../utils/pdfGenerator';
 import Modal from '../components/Modal';
 
 export default function Mods({ user, profile, lang = 'es' }) {
@@ -116,30 +115,12 @@ export default function Mods({ user, profile, lang = 'es' }) {
     URL.revokeObjectURL(url);
   };
 
-  const handleDownloadPdfGuide = () => {
-    try {
-      const doc = generateCreatorGuidePdf();
-      doc.save('MANUAL_OFICIAL_CREADORES_MODS_LOBELIA.pdf');
-    } catch (err) {
-      console.error(err);
-      showAlert('Error', 'No se pudo generar el archivo PDF: ' + err.message);
-    }
-  };
-
   const handleDownloadGuide = () => {
     downloadTextFile('MANUAL_CREACION_MODS_LOBELIA.md', CREATOR_GUIDE_MD, 'text/markdown');
   };
 
   const handleDownloadTemplateMissions = () => {
     downloadTextFile('plantilla_mod_1_misiones.json', JSON.stringify(TEMPLATE_MOD_1_MISSIONS, null, 2), 'application/json');
-  };
-
-  const handleDownloadTemplateRulesAi = () => {
-    downloadTextFile('plantilla_mod_2_arbitro_ia.json', JSON.stringify(TEMPLATE_MOD_2_RULES_AI, null, 2), 'application/json');
-  };
-
-  const handleDownloadTemplateArmyBuilder = () => {
-    downloadTextFile('plantilla_mod_3_army_builder.json', JSON.stringify(TEMPLATE_MOD_3_ARMY_BUILDER, null, 2), 'application/json');
   };
 
   // ── Acciones de Instalación / Desinstalación ────────────────────────────────
@@ -827,7 +808,7 @@ export default function Mods({ user, profile, lang = 'es' }) {
                 : 'Learn how to build your own Missions, AI Referee, or Army List mod without coding experience.'}
             </p>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '14px' }}>
               {/* Botón Ver Manual */}
               <button
                 onClick={() => setIsGuideModalOpen(true)}
@@ -851,35 +832,12 @@ export default function Mods({ user, profile, lang = 'es' }) {
                 </span>
               </button>
 
-              {/* Botón Descargar PDF */}
-              <button
-                onClick={handleDownloadPdfGuide}
-                style={{
-                  background: 'linear-gradient(135deg, rgba(231, 76, 60, 0.15) 0%, rgba(231, 76, 60, 0.05) 100%)',
-                  border: '1px solid #e74c3c',
-                  color: '#ff7979',
-                  borderRadius: '10px',
-                  padding: '14px',
-                  textAlign: 'left',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '4px'
-                }}
-              >
-                <span style={{ fontSize: '1.2rem' }}>📕</span>
-                <strong style={{ fontSize: '0.88rem' }}>{lang === 'es' ? 'Descargar Manual (PDF)' : 'Download Guide (PDF)'}</strong>
-                <span style={{ fontSize: '0.72rem', color: '#ccc' }}>
-                  {lang === 'es' ? 'Documento PDF oficial maquetado con estilo de La Cuchara de Lobelia.' : 'Official branded PDF document ready to print or share.'}
-                </span>
-              </button>
-
-              {/* Botón Descargar Markdown */}
+              {/* Botón Descargar Manual de Creación de Mods */}
               <button
                 onClick={handleDownloadGuide}
                 style={{
                   background: 'rgba(255,255,255,0.03)',
-                  border: '1px solid rgba(255,255,255,0.1)',
+                  border: '1px solid rgba(255,255,255,0.15)',
                   color: '#fff',
                   borderRadius: '10px',
                   padding: '14px',
@@ -891,13 +849,13 @@ export default function Mods({ user, profile, lang = 'es' }) {
                 }}
               >
                 <span style={{ fontSize: '1.2rem' }}>📥</span>
-                <strong style={{ fontSize: '0.88rem' }}>{lang === 'es' ? 'Descargar Guía (.MD)' : 'Download Guide (.MD)'}</strong>
+                <strong style={{ fontSize: '0.88rem' }}>{lang === 'es' ? 'Descargar Manual de Creación de Mods' : 'Download Mod Creation Guide'}</strong>
                 <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                  {lang === 'es' ? 'Descarga el manual completo en texto Markdown.' : 'Download complete manual in Markdown text.'}
+                  {lang === 'es' ? 'Descarga el manual completo en formato Markdown (.MD).' : 'Download complete manual in Markdown format (.MD).'}
                 </span>
               </button>
 
-              {/* Botón Plantilla Tipo 1: Misiones */}
+              {/* Botón Descargar Plantilla Misiones y PDFs */}
               <button
                 onClick={handleDownloadTemplateMissions}
                 style={{
@@ -914,55 +872,9 @@ export default function Mods({ user, profile, lang = 'es' }) {
                 }}
               >
                 <span style={{ fontSize: '1.2rem' }}>🗺️</span>
-                <strong style={{ fontSize: '0.88rem' }}>{lang === 'es' ? 'Plantilla Tipo 1: Misiones & PDFs' : 'Type 1: Missions & PDFs Template'}</strong>
+                <strong style={{ fontSize: '0.88rem' }}>{lang === 'es' ? 'Descargar Plantilla Misiones y PDFs' : 'Download Missions & PDFs Template'}</strong>
                 <span style={{ fontSize: '0.72rem', color: '#ccc' }}>
-                  {lang === 'es' ? 'Descarga la plantilla con soporte online y offline.' : 'Download template with online & offline support.'}
-                </span>
-              </button>
-
-              {/* Botón Plantilla Tipo 2: Árbitro IA */}
-              <button
-                onClick={handleDownloadTemplateRulesAi}
-                style={{
-                  background: 'rgba(155, 89, 182, 0.08)',
-                  border: '1px solid rgba(155, 89, 182, 0.3)',
-                  color: '#9b59b6',
-                  borderRadius: '10px',
-                  padding: '14px',
-                  textAlign: 'left',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '4px'
-                }}
-              >
-                <span style={{ fontSize: '1.2rem' }}>🧙‍♂️</span>
-                <strong style={{ fontSize: '0.88rem' }}>{lang === 'es' ? 'Plantilla Tipo 2: Árbitro IA' : 'Type 2: AI Referee Template'}</strong>
-                <span style={{ fontSize: '0.72rem', color: '#ccc' }}>
-                  {lang === 'es' ? 'Descarga el formato de artículos y FAQs indexadas.' : 'Download indexed rules and FAQs format.'}
-                </span>
-              </button>
-
-              {/* Botón Plantilla Tipo 3: Army Builder */}
-              <button
-                onClick={handleDownloadTemplateArmyBuilder}
-                style={{
-                  background: 'rgba(46, 204, 113, 0.08)',
-                  border: '1px solid rgba(46, 204, 113, 0.3)',
-                  color: '#2ecc71',
-                  borderRadius: '10px',
-                  padding: '14px',
-                  textAlign: 'left',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '4px'
-                }}
-              >
-                <span style={{ fontSize: '1.2rem' }}>⚔️</span>
-                <strong style={{ fontSize: '0.88rem' }}>{lang === 'es' ? 'Plantilla Tipo 3: Army Builder' : 'Type 3: Army Builder Template'}</strong>
-                <span style={{ fontSize: '0.72rem', color: '#ccc' }}>
-                  {lang === 'es' ? 'Descarga un ejemplo de facciones y miniaturas.' : 'Download sample factions & miniatures.'}
+                  {lang === 'es' ? 'Descarga la plantilla .JSON con las 24 misiones 1v1 y 6 misiones 2v2.' : 'Download .JSON template with all 24 1v1 and 6 2v2 missions.'}
                 </span>
               </button>
             </div>
@@ -1236,25 +1148,7 @@ export default function Mods({ user, profile, lang = 'es' }) {
           title={lang === 'es' ? "Manual Oficial para Creadores de Mods" : "Official Mod Creator Guide"}
         >
           <div style={{ maxHeight: '70vh', overflowY: 'auto', padding: '10px 4px', fontSize: '0.86rem', lineHeight: '1.6', color: '#ddd' }}>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginBottom: '14px', flexWrap: 'wrap' }}>
-              <button
-                onClick={handleDownloadPdfGuide}
-                style={{
-                  background: 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '6px',
-                  padding: '7px 16px',
-                  fontWeight: 'bold',
-                  fontSize: '0.78rem',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px'
-                }}
-              >
-                📕 {lang === 'es' ? 'Descargar en PDF (Oficial)' : 'Download PDF (Official)'}
-              </button>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginBottom: '14px' }}>
               <button
                 onClick={handleDownloadGuide}
                 style={{
@@ -1271,7 +1165,7 @@ export default function Mods({ user, profile, lang = 'es' }) {
                   gap: '6px'
                 }}
               >
-                📥 {lang === 'es' ? 'Descargar como .MD' : 'Download as .MD'}
+                📥 {lang === 'es' ? 'Descargar Manual (.MD)' : 'Download Guide (.MD)'}
               </button>
             </div>
             <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit', background: 'rgba(0,0,0,0.3)', padding: '16px', borderRadius: '8px', border: 'var(--border-glass)', margin: 0 }}>
