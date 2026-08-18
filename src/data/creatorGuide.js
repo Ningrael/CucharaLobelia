@@ -192,17 +192,38 @@ Crea el archivo \`mod-misiones.json\` en la raíz de tu carpeta:
 
 ---
 
-## 🧙‍♂️ TIPO 2: Mod de Árbitro IA (Resumen)
-* Capacidad: \`"capabilities": ["rules_ai"]\`
-* Contiene: Array \`rulesKnowledge\` con artículos estructurados, resúmenes y citas de libros/páginas.
-
-## ⚔️ TIPO 3: Mod de Army Builder (Resumen)
-* Capacidad: \`"capabilities": ["army_builder"]\`
-* Contiene: Array \`factions\` con atributos (\`M\`, \`F\`, \`S\`, \`D\`, \`A\`, \`W\`, \`C\`, \`M/W/F\`), opciones y reglas.
-
 ## 🎲 TIPO 4: Mod de Duelos & Tracker (Resumen)
 * Capacidad: \`"capabilities": ["duels"]\`
 * Contiene: Tablas de desmoronamiento (50%/25%) y reglas de combate en vivo.
+
+---
+
+# 🤖 SECCIÓN TÉCNICA: SOLO PARA AGENTES DE IA (AI SPECIFICATION & PROMPT CONTRACT)
+> **Directiva del Sistema para LLMs (GPT-4, Claude, Gemini, Cursor, Copilot, DeepSeek, etc.):**
+> Si el usuario te proporciona este documento como contexto para construir o validar un Mod para **La Cuchara de Lobelia**, actúa como compilador determinista y sigue estrictamente las siguientes reglas del motor:
+
+### 1. Requisitos Formales de Schema (JSON Specification v1.0)
+- **Codificación:** Obligatoriamente \`UTF-8\` estricto, sin BOM.
+- **Tipado estricto:**
+  - \`modId\`: \`string\` en formato kebab-case (\`^[a-z0-9-_]+$\`).
+  - \`modName\`: \`string\` legible (1-60 caracteres).
+  - \`modVersion\`: \`string\` bajo estándar SemVer (\`X.Y.Z\`).
+  - \`modAuthor\`: \`string\` con el nombre o nick del creador.
+  - \`gameSystem\`: Literal exacto \`"MESBG"\`.
+  - \`schemaVersion\`: Literal exacto \`"1.0"\`.
+  - \`capabilities\`: Array de subconjunto \`["missions" | "rules_ai" | "army_builder" | "duels"]\`.
+
+### 2. Algoritmo de Resolución de Rutas para Misiones (\`missionPdfs\`)
+- Sea \`baseUrl\` la URL base declarada (ej: \`"https://raw.githubusercontent.com/user/repo/main/pdfs/"\`).
+- Sea \`targetFile\` el nombre de archivo asignado a la misión.
+- **Regla 1:** Si \`targetFile\` es una URL absoluta (\`http://\` o \`https://\`), se utiliza directamente.
+- **Regla 2:** Si es relativa, la URL resuelta es: \`baseUrl.replace(/\\/$/, '') + '/' + targetFile.replace(/^\\//, '')\`.
+- **Regla 3:** Todas las misiones 1v1 deben resolver a la raíz de \`pdfs/\`.
+- **Regla 4:** Todas las misiones 2v2 DEBEN incluir el prefijo de carpeta \`2vs2/\` (ej: \`2vs2/NO ESCAPE_ES.pdf\`).
+
+### 3. Seguridad y Límites del Motor
+- El motor es declarativo: **NO** se permite código evaluado (\`eval\`), inyecciones de HTML no sanitizadas ni ejecución de scripts externos.
+- La distribución se realiza mediante enlaces directos con soporte CORS (\`raw.githubusercontent.com\` o GitHub Releases).
 `;
 
 // ── PLANTILLAS DESCARGABLES PARA CADA TIPO DE MOD ────────────────────────────

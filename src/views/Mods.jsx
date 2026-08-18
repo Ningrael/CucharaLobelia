@@ -31,6 +31,7 @@ import {
   TEMPLATE_MOD_3_ARMY_BUILDER,
   TEMPLATE_MOD_4_DUELS
 } from '../data/creatorGuide';
+import { generateCreatorGuidePdf } from '../utils/pdfGenerator';
 import Modal from '../components/Modal';
 
 export default function Mods({ user, profile, lang = 'es' }) {
@@ -113,6 +114,16 @@ export default function Mods({ user, profile, lang = 'es' }) {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  };
+
+  const handleDownloadPdfGuide = () => {
+    try {
+      const doc = generateCreatorGuidePdf();
+      doc.save('MANUAL_OFICIAL_CREADORES_MODS_LOBELIA.pdf');
+    } catch (err) {
+      console.error(err);
+      showAlert('Error', 'No se pudo generar el archivo PDF: ' + err.message);
+    }
   };
 
   const handleDownloadGuide = () => {
@@ -836,7 +847,30 @@ export default function Mods({ user, profile, lang = 'es' }) {
                 <span style={{ fontSize: '1.2rem' }}>📖</span>
                 <strong style={{ fontSize: '0.88rem' }}>{lang === 'es' ? 'Ver Manual Oficial' : 'View Official Guide'}</strong>
                 <span style={{ fontSize: '0.72rem', color: '#ccc' }}>
-                  {lang === 'es' ? 'Abre la guía completa con ejemplos y especificaciones.' : 'Open full guide with examples and specifications.'}
+                  {lang === 'es' ? 'Abre la guía visual completa con diagramas de carpetas y sección para IA.' : 'Open full guide with folder diagrams and AI section.'}
+                </span>
+              </button>
+
+              {/* Botón Descargar PDF */}
+              <button
+                onClick={handleDownloadPdfGuide}
+                style={{
+                  background: 'linear-gradient(135deg, rgba(231, 76, 60, 0.15) 0%, rgba(231, 76, 60, 0.05) 100%)',
+                  border: '1px solid #e74c3c',
+                  color: '#ff7979',
+                  borderRadius: '10px',
+                  padding: '14px',
+                  textAlign: 'left',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '4px'
+                }}
+              >
+                <span style={{ fontSize: '1.2rem' }}>📕</span>
+                <strong style={{ fontSize: '0.88rem' }}>{lang === 'es' ? 'Descargar Manual (PDF)' : 'Download Guide (PDF)'}</strong>
+                <span style={{ fontSize: '0.72rem', color: '#ccc' }}>
+                  {lang === 'es' ? 'Documento PDF oficial maquetado con estilo de La Cuchara de Lobelia.' : 'Official branded PDF document ready to print or share.'}
                 </span>
               </button>
 
@@ -859,7 +893,7 @@ export default function Mods({ user, profile, lang = 'es' }) {
                 <span style={{ fontSize: '1.2rem' }}>📥</span>
                 <strong style={{ fontSize: '0.88rem' }}>{lang === 'es' ? 'Descargar Guía (.MD)' : 'Download Guide (.MD)'}</strong>
                 <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                  {lang === 'es' ? 'Descarga el manual completo en formato Markdown.' : 'Download complete manual in Markdown.'}
+                  {lang === 'es' ? 'Descarga el manual completo en texto Markdown.' : 'Download complete manual in Markdown text.'}
                 </span>
               </button>
 
@@ -1202,7 +1236,25 @@ export default function Mods({ user, profile, lang = 'es' }) {
           title={lang === 'es' ? "Manual Oficial para Creadores de Mods" : "Official Mod Creator Guide"}
         >
           <div style={{ maxHeight: '70vh', overflowY: 'auto', padding: '10px 4px', fontSize: '0.86rem', lineHeight: '1.6', color: '#ddd' }}>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginBottom: '14px' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginBottom: '14px', flexWrap: 'wrap' }}>
+              <button
+                onClick={handleDownloadPdfGuide}
+                style={{
+                  background: 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '6px',
+                  padding: '7px 16px',
+                  fontWeight: 'bold',
+                  fontSize: '0.78rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                📕 {lang === 'es' ? 'Descargar en PDF (Oficial)' : 'Download PDF (Official)'}
+              </button>
               <button
                 onClick={handleDownloadGuide}
                 style={{
@@ -1210,10 +1262,13 @@ export default function Mods({ user, profile, lang = 'es' }) {
                   color: '#111',
                   border: 'none',
                   borderRadius: '6px',
-                  padding: '6px 14px',
+                  padding: '7px 16px',
                   fontWeight: 'bold',
                   fontSize: '0.78rem',
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
                 }}
               >
                 📥 {lang === 'es' ? 'Descargar como .MD' : 'Download as .MD'}
