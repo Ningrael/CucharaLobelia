@@ -13,8 +13,6 @@ Bienvenido a la guía oficial para creadores de la comunidad de **La Cuchara de 
 
 ## 🧩 Los 4 Tipos de Mods en La Cuchara de Lobelia
 
-Un mod puede especializarse en una sola funcionalidad o combinar varias:
-
 1. **🗺️ TIPO 1: Mod de Misiones & Visor de PDFs** (Escenarios 1v1 y 2v2, mapas de despliegue y objetivos).
 2. **🧙‍♂️ TIPO 2: Mod de Árbitro IA** (Base de conocimiento indexada, FAQs y citas exactas de manuales).
 3. **⚔️ TIPO 3: Mod de Army Builder** (Facciones, miniaturas, atributos, puntos y opciones de equipo).
@@ -22,15 +20,99 @@ Un mod puede especializarse en una sola funcionalidad o combinar varias:
 
 ---
 
-## 🗺️ GUÍA PASO A PASO: Cómo Crear y Publicar un Mod de Misiones (Tipo 1)
-
-Esta sección te enseñará desde cero a preparar tu archivo de mod, alojarlo de forma gratuita en GitHub y publicarlo en el Workshop para que cualquier jugador del mundo pueda instalarlo con **1 solo clic**.
+## 🗺️ GUÍA EXHAUSTIVA: Cómo Crear y Publicar un Mod de Misiones (Tipo 1)
 
 ---
 
-### 📝 PASO 1: Estructura del Archivo JSON (\`mod-misiones.json\`)
+### 📂 1. Estructura Exacta de Carpetas y Ubicación de los PDFs
 
-Crea un archivo llamado \`mod-misiones.json\` en tu ordenador con la siguiente estructura:
+Para que el visor de La Cuchara de Lobelia encuentre cada PDF sin errores, debes organizar tus carpetas en tu ordenador y en tu repositorio de GitHub exactamente así:
+
+\`\`\`text
+📁 mi-repositorio-misiones/
+│
+├── 📄 mod-misiones.json          <-- Archivo de configuración en la RAÍZ
+├── 📄 README.md                  <-- Archivo descriptivo inicial
+│
+└── 📁 pdfs/                      <-- CARPETA PRINCIPAL DE DOCUMENTOS
+    ├── 📄 DOMINATION_ES.pdf      <-- Misiones 1v1 sueltas dentro de pdfs/
+    ├── 📄 DOMINATION_EN.pdf
+    ├── 📄 TO THE DEATH!_ES.pdf
+    ├── 📄 TO THE DEATH!_EN.pdf
+    ├── 📄 HOLD GROUND_ES.pdf
+    ├── 📄 HOLD GROUND_EN.pdf
+    ├── ... (resto de las 24 misiones 1v1)
+    │
+    └── 📁 2vs2/                  <-- SUBCARPETA OBLIGATORIA PARA MISIONES 2vs2
+        ├── 📄 NO ESCAPE_ES.pdf
+        ├── 📄 NO ESCAPE_EN.pdf
+        ├── 📄 TOTAL CONQUEST_ES.pdf
+        ├── 📄 TOTAL CONQUEST_EN.pdf
+        ├── 📄 TAKE & HOLD_ES.pdf
+        ├── 📄 TAKE & HOLD_EN.pdf
+        ├── 📄 CLASH OF CHAMPIONS_ES.pdf
+        ├── 📄 CLASH OF CHAMPIONS_EN.pdf
+        ├── 📄 CORNERED_ES.pdf
+        ├── 📄 CORNERED_EN.pdf
+        ├── 📄 DUEL OF WITS_ES.pdf
+        └── 📄 DUEL OF WITS_EN.pdf
+\`\`\`
+
+> ⚠️ **REGLA DE ORO DE CARPETAS:**
+> * Los PDFs de las **24 misiones 1v1** van **sueltos** directamente dentro de la carpeta \`pdfs/\`.
+> * Los PDFs de las **6 misiones 2vs2** van dentro de la **subcarpeta** \`pdfs/2vs2/\`.
+
+---
+
+### 🏷️ 2. Tabla Oficial de Nombres de Archivo y Claves
+
+Tu archivo \`mod-misiones.json\` debe enlazar cada escenario usando las siguientes claves exactas:
+
+#### ⚔️ Misiones 1 vs 1 (24 Escenarios en \`pdfs/\`):
+
+| Clave en JSON (\`missions1v1\`) | Archivo Español (\`fileEs\`) | Archivo Inglés (\`fileEn\`) |
+| :--- | :--- | :--- |
+| \`"Domination"\` | \`DOMINATION_ES.pdf\` | \`DOMINATION_EN.pdf\` |
+| \`"To the Death!"\` | \`TO THE DEATH!_ES.pdf\` | \`TO THE DEATH!_EN.pdf\` |
+| \`"Hold Ground"\` | \`HOLD GROUND_ES.pdf\` | \`HOLD GROUND_EN.pdf\` |
+| \`"Destroy the Supplies"\` | \`DESTROY THE SUPPLIES_ES.pdf\` | \`DESTROY THE SUPPLIES_EN.pdf\` |
+| \`"Reconnoitre"\` | \`RECONNOITRE_ES.pdf\` | \`RECONNOITRE_EN.pdf\` |
+| \`"Fog of War"\` | \`FOG OF WAR_ES.pdf\` | \`FOG OF WAR_EN.pdf\` |
+| \`"Capture & Control"\` | \`CAPTURE & CONTROL_ES.pdf\` | \`CAPTURE & CONTROL_EN.pdf\` |
+| \`"Breakthrough"\` | \`BREAKTHROUGH_ES.pdf\` | \`BREAKTHROUGH_EN.pdf\` |
+| \`"Stake a Claim"\` | \`STAKE A CLAIM_ES.pdf\` | \`STAKE A CLAIM_EN.pdf\` |
+| \`"Lords of Battle"\` | \`LORDS OF BATTLE_ES.pdf\` | \`LORDS OF BATTLE_EN.pdf\` |
+| \`"Assassination"\` | \`ASSASSINATION_ES.pdf\` | \`ASSASSINATION_EN.pdf\` |
+| \`"Contest of Champions"\` | \`CONTEST OF CHAMPIONS_ES.pdf\` | \`CONTEST OF CHAMPIONS_EN.pdf\` |
+| \`"Heirloom of Ages Past"\` | \`HEIRLOOM OF AGES PAST_ES.pdf\` | \`HEIRLOOM OF AGES PAST_EN.pdf\` |
+| \`"Sites of Power"\` | \`SITES OF POWER_ES.pdf\` | \`SITES OF POWER_EN.pdf\` |
+| \`"Command the Battlefield"\`| \`COMMAND THE BATTLEFIELD_ES.pdf\` | \`COMMAND THE BATTLEFIELD_EN.pdf\` |
+| \`"Retrieval"\` | \`RETRIEVAL_ES.pdf\` | \`RETRIEVAL_EN.pdf\` |
+| \`"Seize the Prizes"\` | \`SEIZE THE PRIZES_ES.pdf\` | \`SEIZE THE PRIZES_EN.pdf\` |
+| \`"Treasure Hoard"\` | \`TREASURE HOARD_ES.pdf\` | \`TREASURE HOARD_EN.pdf\` |
+| \`"Storm the Camp"\` | \`STORM THE CAMP_ES.pdf\` | \`STORM THE CAMP_EN.pdf\` |
+| \`"Divide & Conquer"\` | \`DIVIDE & CONQUER_ES.pdf\` | \`DIVIDE & CONQUER_EN.pdf\` |
+| \`"Escort the Wounded"\` | \`ESCORT THE WOUNDED_ES.pdf\` | \`ESCORT THE WOUNDED_EN.pdf\` |
+| \`"Clash by Moonlight"\` | \`CLASH BY MOONLIGHT_ES.pdf\` | \`CLASH BY MOONLIGHT_EN.pdf\` |
+| \`"Lead from the Front"\` | \`LEAD FROM THE FRONT_ES.pdf\` | \`LEAD FROM THE FRONT_EN.pdf\` |
+| \`"Convergence"\` | \`CONVERGENCE_ES.pdf\` | \`CONVERGENCE_EN.pdf\` |
+
+#### 🛡️ Misiones 2 vs 2 (6 Escenarios en \`pdfs/2vs2/\`):
+
+| Clave en JSON (\`missions2v2\`) | Archivo Español (\`fileEs\`) | Archivo Inglés (\`fileEn\`) |
+| :--- | :--- | :--- |
+| \`"No Escape"\` | \`2vs2/NO ESCAPE_ES.pdf\` | \`2vs2/NO ESCAPE_EN.pdf\` |
+| \`"Total Conquest"\` | \`2vs2/TOTAL CONQUEST_ES.pdf\` | \`2vs2/TOTAL CONQUEST_EN.pdf\` |
+| \`"Take & Hold"\` | \`2vs2/TAKE & HOLD_ES.pdf\` | \`2vs2/TAKE & HOLD_EN.pdf\` |
+| \`"Clash of Champions"\` | \`2vs2/CLASH OF CHAMPIONS_ES.pdf\` | \`2vs2/CLASH OF CHAMPIONS_EN.pdf\` |
+| \`"Cornered"\` | \`2vs2/CORNERED_ES.pdf\` | \`2vs2/CORNERED_EN.pdf\` |
+| \`"Duel of Wits"\` | \`2vs2/DUEL OF WITS_ES.pdf\` | \`2vs2/DUEL OF WITS_EN.pdf\` |
+
+---
+
+### 📄 3. Estructura Completa del Archivo JSON
+
+Crea el archivo \`mod-misiones.json\` en la raíz de tu carpeta:
 
 \`\`\`json
 {
@@ -83,78 +165,44 @@ Crea un archivo llamado \`mod-misiones.json\` en tu ordenador con la siguiente e
 }
 \`\`\`
 
-> 💡 **Consejo:** Puedes descargar una plantilla lista para usar haciendo clic en el botón **\`[Plantilla Tipo 1: Misiones & PDFs]\`** en esta misma pestaña.
+---
+
+### 🌐 4. Subida y Alojamiento en GitHub
+
+1. **Crear Repositorio Público:**
+   * Entra a [GitHub.com](https://github.com) y crea un nuevo repositorio público (ejemplo: \`mesbg-missions-mod\`).
+   * Añade el archivo inicial \`README.md\`.
+
+2. **Subir el JSON a la Raíz:**
+   * Pulsa en **\`Add file\`** ➔ **\`Upload files\`**.
+   * Arrastra tu archivo \`mod-misiones.json\` y haz clic en **\`Commit changes\`**.
+
+3. **Subir la Carpeta \`pdfs/\`:**
+   * Puedes subir la carpeta \`pdfs/\` al repositorio, o crear un **Release** adjuntando el paquete comprimido \`.zip\`.
 
 ---
 
-### 🌐 PASO 2: Alojamiento Gratuito en GitHub
+### 🚀 5. Enlace Universal y Envío a La Cuchara de Lobelia
 
-Para que tu mod pueda descargarse de forma universal y sin bloqueos de navegador (CORS), lo alojaremos en **GitHub**:
-
-1. **Crear el Repositorio:**
-   * Entra en [GitHub.com](https://github.com) con tu cuenta.
-   * Crea un nuevo repositorio público (ejemplo: \`mesbg-missions-mod\`).
-   * Asegúrate de marcarlo como **Public** y crear el archivo **README.md** inicial.
-
-2. **Subir el archivo JSON:**
-   * En la página principal de tu repositorio, haz clic en **\`Add file\`** ➔ **\`Upload files\`**.
-   * Arrastra tu archivo \`mod-misiones.json\` (solo pesa unos 4 KB).
-   * Pulsa el botón verde **\`Commit changes\`**.
-
-3. **Subir la carpeta de PDFs:**
-   * Puedes subir tus archivos PDF en una carpeta llamada \`pdfs/\` dentro del mismo repositorio, o crear un **Release** adjuntando el paquete \`.zip\`.
-
----
-
-### 🔗 PASO 3: Obtener tu Enlace de Instalación en 1 Clic
-
-Una vez subido tu archivo JSON al repositorio, tu enlace directo universal tiene el siguiente formato:
-
-👉 **\`https://raw.githubusercontent.com/TU_USUARIO/TU_REPOSITORIO/main/mod-misiones.json\`**
-
-*(Ejemplo real: \`https://raw.githubusercontent.com/agentsmithmatiasbot-dev/mesbg-missions-tolkienstein/main/mod-misiones-tolkienstein.json\`)*
-
----
-
-### 📤 PASO 4: Enviar tu Mod a la Workshop de La Cuchara de Lobelia
-
-1. En la aplicación, ve a la sección **Mods (🧩)** ➔ Pestaña **📤 Envía tu Mod**.
-2. Rellena el formulario:
-   * **Nombre del Mod:** El título visible para la comunidad.
-   * **Autor / Creador:** Tu nombre o seudónimo.
-   * **Enlace Directo de Descarga:** Pega tu enlace de GitHub (\`https://raw.githubusercontent.com/...\` o enlace del Release).
-   * **Capacidades que incluye:** Marca la casilla **\`[x] 🗺️ Misiones (PDFs)\`**.
-   * **Descripción:** Explica brevemente qué escenarios incluye.
-3. Haz clic en **\`[🚀 Enviar a Moderación]\`**.
-
----
-
-### ✅ PASO 5: Aprobación y Publicación
-
-1. El equipo de administración revisará la solicitud desde el **🛡️ Panel SuperAdmin** y pulsará **\`[✅ Aprobar y Publicar]\`**.
-2. ¡Listo! Tu mod aparecerá inmediatamente en la pestaña **🛍️ Workshop**.
-3. Cualquier jugador podrá pulsar **\`[⬇️ Instalar con 1 Clic]\`**:
-   * El navegador descargará el JSON y lo guardará en el almacenamiento local (**IndexedDB**) de su dispositivo.
-   * Al entrar en la sección **Misiones** o en las partidas de la **Liga**, todos los PDFs y mapas se abrirán de forma nativa e instantánea.
+1. Tu enlace universal para que cualquier jugador instale tu mod con 1 clic es:
+   👉 **\`https://raw.githubusercontent.com/TU_USUARIO/TU_REPOSITORIO/main/mod-misiones.json\`**
+2. Entra a **La Cuchara de Lobelia** ➔ Pestaña **📤 Envía tu Mod**.
+3. Pega tu enlace, indica el nombre y autor, y marca **\`[x] 🗺️ Misiones (PDFs)\`**.
+4. ¡Una vez aprobado, aparecerá en el **Workshop público** disponible para toda la comunidad!
 
 ---
 
 ## 🧙‍♂️ TIPO 2: Mod de Árbitro IA (Resumen)
-
-Permite que Lobelia responda dudas de reglamento con citas exactas de páginas:
 * Capacidad: \`"capabilities": ["rules_ai"]\`
-* Contenido: Array \`rulesKnowledge\` con artículos, resúmenes de reglas y etiquetas de búsqueda.
+* Contiene: Array \`rulesKnowledge\` con artículos estructurados, resúmenes y citas de libros/páginas.
 
 ## ⚔️ TIPO 3: Mod de Army Builder (Resumen)
-
-Permite desbloquear facciones y miniaturas para el creador de listas:
 * Capacidad: \`"capabilities": ["army_builder"]\`
-* Contenido: Array \`factions\` con atributos (\`M\`, \`F\`, \`S\`, \`D\`, \`A\`, \`W\`, \`C\`, \`Might/Will/Fate\`), equipo y reglas especiales.
+* Contiene: Array \`factions\` con atributos (\`M\`, \`F\`, \`S\`, \`D\`, \`A\`, \`W\`, \`C\`, \`M/W/F\`), opciones y reglas.
 
-## 🎲 TIPO 4: Mod de Duelos & Live Tracker (Resumen)
-
-Permite calcular desmoronamiento y realizar tiradas de combate en tiempo real:
+## 🎲 TIPO 4: Mod de Duelos & Tracker (Resumen)
 * Capacidad: \`"capabilities": ["duels"]\`
+* Contiene: Tablas de desmoronamiento (50%/25%) y reglas de combate en vivo.
 `;
 
 // ── PLANTILLAS DESCARGABLES PARA CADA TIPO DE MOD ────────────────────────────
