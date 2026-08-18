@@ -364,50 +364,38 @@ export async function installModFromUrl(uid, downloadUrl) {
   try {
     let json = null;
 
-    // Si es una URL de GitHub Release (https://github.com/owner/repo/releases/download/tag/filename)
-    const ghReleaseMatch = downloadUrl.match(/github\.com\/([^\/]+)\/([^\/]+)\/releases\/download\/([^\/]+)\/(.+)$/);
-    if (ghReleaseMatch) {
-      const [, owner, repo, tag, filename] = ghReleaseMatch;
+    // Estrategias de URLs con CORS habilitado
+    const urlsToTry = [downloadUrl];
 
-      // 1. Intentar vía API de GitHub Assets (Con soporte nativo de CORS)
-      try {
-        const apiUrl = `https://api.github.com/repos/${owner}/${repo}/releases/tags/${tag}`;
-        const apiRes = await fetch(apiUrl);
-        if (apiRes.ok) {
-          const releaseData = await apiRes.json();
-          const asset = releaseData.assets?.find(a => a.name === filename);
-          if (asset && asset.url) {
-            const assetRes = await fetch(asset.url, {
-              headers: { 'Accept': 'application/octet-stream' }
-            });
-            if (assetRes.ok) {
-              json = await assetRes.json();
-            }
-          }
-        }
-      } catch (err) {
-        console.warn('[ModManager] Fallo descarga vía GitHub Release API, intentando raw...', err);
-      }
+    const ghMatch = downloadUrl.match(/github\.com\/([^\/]+)\/([^\/]+)(?:\/releases\/download\/([^\/]+)|\/blob\/([^\/]+)|\/raw\/([^\/]+))?\/(.+)$/);
+    if (ghMatch) {
+      const owner = ghMatch[1];
+      const repo = ghMatch[2];
+      const tagOrBranch = ghMatch[3] || ghMatch[4] || ghMatch[5] || 'main';
+      const filename = ghMatch[6];
 
-      // 2. Intentar vía raw.githubusercontent.com
-      if (!json) {
-        try {
-          const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${tag}/${filename}`;
-          const rawRes = await fetch(rawUrl);
-          if (rawRes.ok) {
-            json = await rawRes.json();
-          }
-        } catch (_) {}
-      }
+      urlsToTry.unshift(
+        `https://raw.githubusercontent.com/${owner}/${repo}/main/${filename}`,
+        `https://raw.githubusercontent.com/${owner}/${repo}/${tagOrBranch}/${filename}`,
+        `https://cdn.jsdelivr.net/gh/${owner}/${repo}@main/${filename}`,
+        `https://cdn.jsdelivr.net/gh/${owner}/${repo}@${tagOrBranch}/${filename}`
+      );
     }
 
-    // 3. Fallback directo a la URL proporcionada
+    for (const url of urlsToTry) {
+      try {
+        const res = await fetch(url);
+        if (res.ok) {
+          json = await res.json();
+          if (json && (json.modId || json.modName)) {
+            break;
+          }
+        }
+      } catch (_) {}
+    }
+
     if (!json) {
-      const res = await fetch(downloadUrl);
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}: No se pudo descargar el mod.`);
-      }
-      json = await res.json();
+      throw new Error('No se pudo descargar el archivo JSON del mod. Verifica que el archivo exista y sea público.');
     }
 
     return await installMod(uid, json, downloadUrl);
