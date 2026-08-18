@@ -24,6 +24,12 @@ import {
   MOD_LAYERS,
   SUPERADMIN_EMAILS
 } from '../utils/modManager';
+import {
+  CREATOR_GUIDE_MD,
+  TEMPLATE_MISSIONS_IA,
+  TEMPLATE_ARMY_BUILDER
+} from '../data/creatorGuide';
+import Modal from '../components/Modal';
 
 export default function Mods({ user, profile, lang = 'es' }) {
   const [activeTab, setActiveTab] = useState('registry'); // 'registry' | 'layers' | 'docs' | 'submit' | 'admin'
@@ -33,6 +39,9 @@ export default function Mods({ user, profile, lang = 'es' }) {
   const [loading, setLoading] = useState(true);
   const [actionStatus, setActionStatus] = useState(null); // { type: 'success'|'error'|'info', message }
   const [downloadingModId, setDownloadingModId] = useState(null);
+
+  // Modal de Manual de Creador
+  const [isGuideModalOpen, setIsGuideModalOpen] = useState(false);
 
   // Validador en vivo en pestaña Docs
   const [validatorInput, setValidatorInput] = useState('');
@@ -90,6 +99,31 @@ export default function Mods({ user, profile, lang = 'es' }) {
   useEffect(() => {
     reloadData();
   }, [reloadData]);
+
+  // ── Helper para descargar archivos desde el navegador ──────────────────────
+  const downloadTextFile = (filename, content, mimeType = 'application/json') => {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleDownloadGuide = () => {
+    downloadTextFile('MANUAL_CREACION_MODS_LOBELIA.md', CREATOR_GUIDE_MD, 'text/markdown');
+  };
+
+  const handleDownloadTemplateMissionsIa = () => {
+    downloadTextFile('plantilla_mod_misiones_ia.json', JSON.stringify(TEMPLATE_MISSIONS_IA, null, 2), 'application/json');
+  };
+
+  const handleDownloadTemplateArmyBuilder = () => {
+    downloadTextFile('plantilla_mod_facciones_listas.json', JSON.stringify(TEMPLATE_ARMY_BUILDER, null, 2), 'application/json');
+  };
 
   // ── Acciones de Instalación / Desinstalación ────────────────────────────────
   const handleInstall1Click = async (mod) => {
@@ -301,7 +335,7 @@ export default function Mods({ user, profile, lang = 'es' }) {
       {/* ── PESTAÑAS DE NAVEGACIÓN ── */}
       <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '8px', marginBottom: '20px' }}>
         {[
-          { id: 'registry', icon: '🛍️', label: lang === 'es' ? 'Workshop (1-Clic)' : 'Workshop' },
+          { id: 'registry', icon: '🛍️', label: lang === 'es' ? 'Workshop' : 'Workshop' },
           { id: 'layers', icon: '🎛️', label: lang === 'es' ? 'Configuración por Capas' : 'Layer Manager' },
           { id: 'docs', icon: '📖', label: lang === 'es' ? 'Guía Creadores & Validador' : 'Docs & Validator' },
           { id: 'submit', icon: '📤', label: lang === 'es' ? 'Envía tu Mod' : 'Submit Mod' },
@@ -333,7 +367,7 @@ export default function Mods({ user, profile, lang = 'es' }) {
       </div>
 
       {/* ═════════════════════════════════════════════════════════════════════════ */}
-      {/* PESTAÑA 1: WORKSHOP & MODSTORE (1-CLIC)                                    */}
+      {/* PESTAÑA 1: WORKSHOP & MODSTORE                                            */}
       {/* ═════════════════════════════════════════════════════════════════════════ */}
       {activeTab === 'registry' && (
         <div>
@@ -381,124 +415,203 @@ export default function Mods({ user, profile, lang = 'es' }) {
             </label>
           </div>
 
+          {/* Mods Instalados en este Dispositivo */}
+          {installedMods.length > 0 && (
+            <div style={{ marginBottom: '24px' }}>
+              <h3 style={{ color: '#2ecc71', fontSize: '0.95rem', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span>💾</span> {lang === 'es' ? 'Mods Instalados en este Dispositivo (IndexedDB)' : 'Mods Installed on this Device'}
+              </h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '12px' }}>
+                {installedMods.map(m => (
+                  <div
+                    key={m.modId}
+                    style={{
+                      background: 'rgba(46, 204, 113, 0.05)',
+                      border: '1px solid rgba(46, 204, 113, 0.4)',
+                      borderRadius: '10px',
+                      padding: '12px 14px',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center'
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontWeight: 'bold', color: '#fff', fontSize: '0.88rem' }}>{m.modName}</div>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Autor: {m.modAuthor} • v{m.modVersion}</div>
+                    </div>
+                    <button
+                      onClick={() => handleUninstall(m.modId)}
+                      style={{
+                        background: 'rgba(231, 76, 60, 0.15)',
+                        border: '1px solid rgba(231, 76, 60, 0.4)',
+                        color: '#ff8888',
+                        borderRadius: '6px',
+                        padding: '5px 10px',
+                        fontSize: '0.72rem',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      🗑️ {lang === 'es' ? 'Desinstalar' : 'Uninstall'}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Listado de Mods de la Workshop */}
           <h3 style={{ color: 'var(--gold-primary)', fontSize: '1rem', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span>⭐</span> {lang === 'es' ? 'Mods Destacados de la Comunidad (1-Clic)' : 'Featured Community Mods (1-Click)'}
+            <span>⭐</span> {lang === 'es' ? 'Catálogo Público de la Comunidad' : 'Public Community Workshop'}
           </h3>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '14px' }}>
-            {publicMods.map((mod) => {
-              const isInstalled = installedMods.some((m) => m.modId === mod.modId);
-              const isDownloading = downloadingModId === mod.modId;
+          {publicMods.length === 0 ? (
+            <div
+              style={{
+                textAlign: 'center',
+                padding: '40px 20px',
+                background: 'rgba(255,255,255,0.02)',
+                borderRadius: '12px',
+                border: '1px dashed rgba(255,255,255,0.1)',
+                marginTop: '12px'
+              }}
+            >
+              <div style={{ fontSize: '2.5rem', marginBottom: '10px' }}>📦</div>
+              <h4 style={{ color: 'var(--gold-primary)', margin: '0 0 6px 0', fontSize: '1.05rem' }}>
+                {lang === 'es' ? 'El Workshop Comunitario está listo' : 'The Community Workshop is Ready'}
+              </h4>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', maxWidth: '460px', margin: '0 auto 16px auto', lineHeight: '1.5' }}>
+                {lang === 'es'
+                  ? 'Actualmente no hay mods publicados en el catálogo central de la web. Puedes importar tu mod localmente arriba con el botón dorado o consultar la Guía de Creadores para publicar el tuyo.'
+                  : 'There are currently no public mods in the central catalog. You can load a local file above or check the Creator Guide to publish your own.'}
+              </p>
+              <button
+                onClick={() => setActiveTab('docs')}
+                style={{
+                  background: 'rgba(203, 161, 53, 0.15)',
+                  border: '1px solid rgba(203, 161, 53, 0.4)',
+                  color: 'var(--gold-primary)',
+                  padding: '8px 18px',
+                  borderRadius: '6px',
+                  fontWeight: 'bold',
+                  fontSize: '0.78rem',
+                  cursor: 'pointer'
+                }}
+              >
+                📖 {lang === 'es' ? 'Ver Guía de Creadores' : 'View Creator Guide'}
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '14px' }}>
+              {publicMods.map((mod) => {
+                const isInstalled = installedMods.some((m) => m.modId === mod.modId);
+                const isDownloading = downloadingModId === mod.modId;
 
-              return (
-                <div
-                  key={mod.modId}
-                  style={{
-                    background: 'var(--card-bg)',
-                    border: isInstalled ? '1px solid rgba(46, 204, 113, 0.6)' : 'var(--border-glass)',
-                    borderRadius: '12px',
-                    padding: '16px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'space-between',
-                    boxShadow: '0 4px 14px rgba(0,0,0,0.3)',
-                    position: 'relative'
-                  }}
-                >
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px', gap: '8px' }}>
-                      <h4 style={{ margin: 0, color: 'var(--gold-primary)', fontSize: '0.98rem', fontFamily: 'var(--font-title)' }}>
-                        {mod.modName}
-                      </h4>
+                return (
+                  <div
+                    key={mod.modId}
+                    style={{
+                      background: 'var(--card-bg)',
+                      border: isInstalled ? '1px solid rgba(46, 204, 113, 0.6)' : 'var(--border-glass)',
+                      borderRadius: '12px',
+                      padding: '16px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      boxShadow: '0 4px 14px rgba(0,0,0,0.3)'
+                    }}
+                  >
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px', gap: '8px' }}>
+                        <h4 style={{ margin: 0, color: 'var(--gold-primary)', fontSize: '0.98rem', fontFamily: 'var(--font-title)' }}>
+                          {mod.modName}
+                        </h4>
+                        {isInstalled ? (
+                          <span style={{ background: '#2ecc71', color: '#111', fontSize: '0.66rem', fontWeight: 'bold', padding: '2px 8px', borderRadius: '4px' }}>
+                            ✓ {lang === 'es' ? 'INSTALADO' : 'INSTALLED'}
+                          </span>
+                        ) : (
+                          <span style={{ background: 'rgba(203, 161, 53, 0.15)', color: 'var(--gold-primary)', border: '1px solid rgba(203, 161, 53, 0.4)', fontSize: '0.65rem', fontWeight: 'bold', padding: '2px 6px', borderRadius: '4px' }}>
+                            v{mod.version || '1.0.0'}
+                          </span>
+                        )}
+                      </div>
+
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '8px' }}>
+                        {lang === 'es' ? 'Autor:' : 'Author:'} <strong style={{ color: '#fff' }}>{mod.modAuthor}</strong>
+                      </div>
+
+                      <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: '1.45', margin: '0 0 12px 0' }}>
+                        {mod.modDescription || mod.description}
+                      </p>
+
+                      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '14px' }}>
+                        {(mod.capabilities || []).map((cap) => (
+                          <span
+                            key={cap}
+                            style={{
+                              background: 'rgba(255,255,255,0.06)',
+                              border: '1px solid rgba(255,255,255,0.1)',
+                              borderRadius: '4px',
+                              padding: '2px 6px',
+                              fontSize: '0.66rem',
+                              color: '#e2e8f0'
+                            }}
+                          >
+                            {cap === 'missions' && '🗺️ Misiones (PDFs)'}
+                            {cap === 'rules_ai' && '🧙‍♂️ Árbitro IA'}
+                            {cap === 'army_builder' && '⚔️ Listas'}
+                            {cap === 'duels' && '🎲 Duelos'}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '12px', display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                       {isInstalled ? (
-                        <span style={{ background: '#2ecc71', color: '#111', fontSize: '0.66rem', fontWeight: 'bold', padding: '2px 8px', borderRadius: '4px' }}>
-                          ✓ {lang === 'es' ? 'INSTALADO' : 'INSTALLED'}
-                        </span>
-                      ) : (
-                        <span style={{ background: 'rgba(203, 161, 53, 0.15)', color: 'var(--gold-primary)', border: '1px solid rgba(203, 161, 53, 0.4)', fontSize: '0.65rem', fontWeight: 'bold', padding: '2px 6px', borderRadius: '4px' }}>
-                          v{mod.version || '1.0.0'}
-                        </span>
-                      )}
-                    </div>
-
-                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '8px' }}>
-                      {lang === 'es' ? 'Autor:' : 'Author:'} <strong style={{ color: '#fff' }}>{mod.modAuthor}</strong>
-                    </div>
-
-                    <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: '1.45', margin: '0 0 12px 0' }}>
-                      {mod.modDescription || mod.description}
-                    </p>
-
-                    {/* Capacidades / Badges */}
-                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '14px' }}>
-                      {(mod.capabilities || []).map((cap) => (
-                        <span
-                          key={cap}
+                        <button
+                          onClick={() => handleUninstall(mod.modId)}
                           style={{
-                            background: 'rgba(255,255,255,0.06)',
-                            border: '1px solid rgba(255,255,255,0.1)',
-                            borderRadius: '4px',
-                            padding: '2px 6px',
-                            fontSize: '0.66rem',
-                            color: '#e2e8f0'
+                            background: 'rgba(231, 76, 60, 0.1)',
+                            border: '1px solid rgba(231, 76, 60, 0.3)',
+                            color: '#ff8888',
+                            borderRadius: '6px',
+                            padding: '6px 12px',
+                            fontSize: '0.74rem',
+                            fontWeight: 'bold',
+                            cursor: 'pointer'
                           }}
                         >
-                          {cap === 'missions' && '🗺️ Misiones (PDFs)'}
-                          {cap === 'rules_ai' && '🧙‍♂️ Árbitro IA'}
-                          {cap === 'army_builder' && '⚔️ Listas'}
-                          {cap === 'duels' && '🎲 Duelos'}
-                        </span>
-                      ))}
+                          🗑️ {lang === 'es' ? 'Desinstalar' : 'Uninstall'}
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleInstall1Click(mod)}
+                          disabled={isDownloading}
+                          style={{
+                            background: 'linear-gradient(135deg, #27ae60 0%, #1e8449 100%)',
+                            border: 'none',
+                            color: '#fff',
+                            borderRadius: '8px',
+                            padding: '7px 16px',
+                            fontSize: '0.78rem',
+                            fontWeight: 'bold',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            boxShadow: '0 2px 8px rgba(39, 174, 96, 0.3)'
+                          }}
+                        >
+                          <span>{isDownloading ? '⏳' : '⬇️'}</span>
+                          <span>{isDownloading ? (lang === 'es' ? 'Instalando...' : 'Installing...') : (lang === 'es' ? 'Instalar con 1 Clic' : 'Install in 1-Click')}</span>
+                        </button>
+                      )}
                     </div>
                   </div>
-
-                  {/* Botones de acción */}
-                  <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '12px', display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                    {isInstalled ? (
-                      <button
-                        onClick={() => handleUninstall(mod.modId)}
-                        style={{
-                          background: 'rgba(231, 76, 60, 0.1)',
-                          border: '1px solid rgba(231, 76, 60, 0.3)',
-                          color: '#ff8888',
-                          borderRadius: '6px',
-                          padding: '6px 12px',
-                          fontSize: '0.74rem',
-                          fontWeight: 'bold',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        🗑️ {lang === 'es' ? 'Desinstalar' : 'Uninstall'}
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => handleInstall1Click(mod)}
-                        disabled={isDownloading}
-                        style={{
-                          background: 'linear-gradient(135deg, #27ae60 0%, #1e8449 100%)',
-                          border: 'none',
-                          color: '#fff',
-                          borderRadius: '8px',
-                          padding: '7px 16px',
-                          fontSize: '0.78rem',
-                          fontWeight: 'bold',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          boxShadow: '0 2px 8px rgba(39, 174, 96, 0.3)'
-                        }}
-                      >
-                        <span>{isDownloading ? '⏳' : '⬇️'}</span>
-                        <span>{isDownloading ? (lang === 'es' ? 'Instalando...' : 'Installing...') : (lang === 'es' ? 'Instalar con 1 Clic' : 'Install in 1-Click')}</span>
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 
@@ -585,38 +698,114 @@ export default function Mods({ user, profile, lang = 'es' }) {
       )}
 
       {/* ═════════════════════════════════════════════════════════════════════════ */}
-      {/* PESTAÑA 3: DOCUMENTACIÓN & VALIDADOR (CREADORES)                           */}
+      {/* PESTAÑA 3: DOCUMENTACIÓN & VALIDADOR (RECURSOS CREADORES)                  */}
       {/* ═════════════════════════════════════════════════════════════════════════ */}
       {activeTab === 'docs' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           
-          {/* Guía en 3 Pasos */}
+          {/* Panel de Recursos y Descargas */}
           <div style={{ background: 'var(--card-bg)', border: 'var(--border-glass)', borderRadius: '14px', padding: '20px' }}>
-            <h3 style={{ color: 'var(--gold-primary)', fontSize: '1.1rem', margin: '0 0 10px 0' }}>
-              📚 {lang === 'es' ? 'Cómo Crear y Publicar un Mod en 3 Pasos' : 'How to Create & Publish a Mod in 3 Steps'}
+            <h3 style={{ color: 'var(--gold-primary)', fontSize: '1.1rem', margin: '0 0 6px 0' }}>
+              📚 {lang === 'es' ? 'Centro de Recursos para Creadores de Mods' : 'Mod Creator Resource Center'}
             </h3>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '18px' }}>
+              {lang === 'es'
+                ? 'Aprende a construir tu propio mod de Misiones, Árbitro IA o Listas de ejército sin necesidad de programar.'
+                : 'Learn how to build your own Missions, AI Referee, or Army List mod without coding experience.'}
+            </p>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '0.82rem', color: '#ccc', lineHeight: '1.5' }}>
-              <div style={{ background: 'rgba(255,255,255,0.03)', padding: '10px 14px', borderRadius: '8px', borderLeft: '3px solid var(--gold-primary)' }}>
-                <strong style={{ color: '#fff' }}>Paso 1: Construye tu archivo JSON o Paquete</strong>
-                <p style={{ margin: '4px 0 0 0', fontSize: '0.76rem', color: '#aaa' }}>
-                  Define las cabeceras obligatorias (<code>modId</code>, <code>modName</code>, <code>modAuthor</code>, <code>gameSystem</code>, <code>schemaVersion: "1.0"</code>) y agrega tus bloques de misiones (<code>missionPdfs</code>), reglas IA (<code>rulesKnowledge</code>) o facciones.
-                </p>
-              </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '12px' }}>
+              {/* Botón Ver Manual */}
+              <button
+                onClick={() => setIsGuideModalOpen(true)}
+                style={{
+                  background: 'linear-gradient(135deg, rgba(203, 161, 53, 0.15) 0%, rgba(203, 161, 53, 0.05) 100%)',
+                  border: '1px solid var(--gold-primary)',
+                  color: 'var(--gold-primary)',
+                  borderRadius: '10px',
+                  padding: '14px',
+                  textAlign: 'left',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '4px'
+                }}
+              >
+                <span style={{ fontSize: '1.2rem' }}>📖</span>
+                <strong style={{ fontSize: '0.88rem' }}>{lang === 'es' ? 'Ver Manual Oficial' : 'View Official Guide'}</strong>
+                <span style={{ fontSize: '0.72rem', color: '#ccc' }}>
+                  {lang === 'es' ? 'Abre la guía completa con ejemplos y especificaciones.' : 'Open full guide with examples and specifications.'}
+                </span>
+              </button>
 
-              <div style={{ background: 'rgba(255,255,255,0.03)', padding: '10px 14px', borderRadius: '8px', borderLeft: '3px solid #3498db' }}>
-                <strong style={{ color: '#fff' }}>Paso 2: Alójalo en GitHub Releases (Estándar Oficial)</strong>
-                <p style={{ margin: '4px 0 0 0', fontSize: '0.76rem', color: '#aaa' }}>
-                  Sube tu archivo a un Release público en GitHub (o enlace público directo sin anuncios). Esto garantiza descarga rápida en 1-clic y control de versiones transparente.
-                </p>
-              </div>
+              {/* Botón Descargar Markdown */}
+              <button
+                onClick={handleDownloadGuide}
+                style={{
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  color: '#fff',
+                  borderRadius: '10px',
+                  padding: '14px',
+                  textAlign: 'left',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '4px'
+                }}
+              >
+                <span style={{ fontSize: '1.2rem' }}>📥</span>
+                <strong style={{ fontSize: '0.88rem' }}>{lang === 'es' ? 'Descargar Guía (.MD)' : 'Download Guide (.MD)'}</strong>
+                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                  {lang === 'es' ? 'Descarga el manual completo en formato Markdown.' : 'Download complete manual in Markdown.'}
+                </span>
+              </button>
 
-              <div style={{ background: 'rgba(255,255,255,0.03)', padding: '10px 14px', borderRadius: '8px', borderLeft: '3px solid #2ecc71' }}>
-                <strong style={{ color: '#fff' }}>Paso 3: Envía el enlace a la Workshop</strong>
-                <p style={{ margin: '4px 0 0 0', fontSize: '0.76rem', color: '#aaa' }}>
-                  En la pestaña <em>"Envía tu Mod"</em>, pega tu enlace directo. Tras una rápida revisión por el equipo de moderación para asegurar que no contiene código malicioso, se publicará en el catálogo público para toda la comunidad.
-                </p>
-              </div>
+              {/* Botón Plantilla Misiones + IA */}
+              <button
+                onClick={handleDownloadTemplateMissionsIa}
+                style={{
+                  background: 'rgba(52, 152, 219, 0.08)',
+                  border: '1px solid rgba(52, 152, 219, 0.3)',
+                  color: '#3498db',
+                  borderRadius: '10px',
+                  padding: '14px',
+                  textAlign: 'left',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '4px'
+                }}
+              >
+                <span style={{ fontSize: '1.2rem' }}>🗺️</span>
+                <strong style={{ fontSize: '0.88rem' }}>{lang === 'es' ? 'Plantilla Misiones & IA' : 'Missions & AI Template'}</strong>
+                <span style={{ fontSize: '0.72rem', color: '#ccc' }}>
+                  {lang === 'es' ? 'Descarga un archivo JSON listo para rellenar.' : 'Download ready-to-fill JSON template.'}
+                </span>
+              </button>
+
+              {/* Botón Plantilla Army Builder */}
+              <button
+                onClick={handleDownloadTemplateArmyBuilder}
+                style={{
+                  background: 'rgba(46, 204, 113, 0.08)',
+                  border: '1px solid rgba(46, 204, 113, 0.3)',
+                  color: '#2ecc71',
+                  borderRadius: '10px',
+                  padding: '14px',
+                  textAlign: 'left',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '4px'
+                }}
+              >
+                <span style={{ fontSize: '1.2rem' }}>⚔️</span>
+                <strong style={{ fontSize: '0.88rem' }}>{lang === 'es' ? 'Plantilla Army Builder' : 'Army Builder Template'}</strong>
+                <span style={{ fontSize: '0.72rem', color: '#ccc' }}>
+                  {lang === 'es' ? 'Descarga un ejemplo de facciones y miniaturas.' : 'Download sample factions & miniatures.'}
+                </span>
+              </button>
             </div>
           </div>
 
@@ -626,7 +815,7 @@ export default function Mods({ user, profile, lang = 'es' }) {
               🔍 {lang === 'es' ? 'Validador de JSON en Vivo (Sandbox)' : 'Live JSON Validator (Sandbox)'}
             </h3>
             <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '12px' }}>
-              {lang === 'es' ? 'Pega el código de tu mod para verificar al instante si cumple con el Schema v1.0.' : 'Paste your mod code to instantly verify Schema v1.0 compliance.'}
+              {lang === 'es' ? 'Pega el código de tu mod para verificar al instante si cumple con el Schema v1.0 antes de subirlo.' : 'Paste your mod code to instantly verify Schema v1.0 compliance before uploading.'}
             </p>
 
             <textarea
@@ -851,6 +1040,39 @@ export default function Mods({ user, profile, lang = 'es' }) {
             </div>
           )}
         </div>
+      )}
+
+      {/* ── MODAL: MANUAL OFICIAL DE CREADORES ── */}
+      {isGuideModalOpen && (
+        <Modal
+          isOpen={true}
+          size="large"
+          onClose={() => setIsGuideModalOpen(false)}
+          title={lang === 'es' ? "Manual Oficial para Creadores de Mods" : "Official Mod Creator Guide"}
+        >
+          <div style={{ maxHeight: '70vh', overflowY: 'auto', padding: '10px 4px', fontSize: '0.86rem', lineHeight: '1.6', color: '#ddd' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginBottom: '14px' }}>
+              <button
+                onClick={handleDownloadGuide}
+                style={{
+                  background: 'var(--gold-primary)',
+                  color: '#111',
+                  border: 'none',
+                  borderRadius: '6px',
+                  padding: '6px 14px',
+                  fontWeight: 'bold',
+                  fontSize: '0.78rem',
+                  cursor: 'pointer'
+                }}
+              >
+                📥 {lang === 'es' ? 'Descargar como .MD' : 'Download as .MD'}
+              </button>
+            </div>
+            <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit', background: 'rgba(0,0,0,0.3)', padding: '16px', borderRadius: '8px', border: 'var(--border-glass)', margin: 0 }}>
+              {CREATOR_GUIDE_MD}
+            </pre>
+          </div>
+        </Modal>
       )}
 
       {/* ── INFO LEGAL ── */}

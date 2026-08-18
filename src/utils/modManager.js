@@ -46,37 +46,8 @@ const REQUIRED_MOD_FIELDS = [
   'schemaVersion'
 ];
 
-// ── CATÁLOGO PÚBLICO DE WORKSHOP VERIFICADO (1-CLIC) ──────────────────────────
-export const PUBLIC_MOD_REGISTRY = [
-  {
-    modId: 'mod-misiones-ia-tolkienstein',
-    modName: 'Mod Misiones & Árbitro IA',
-    modAuthor: 'Dr Tolkienstein',
-    modDescription:
-      'Paquete comunitario que incluye el visor de PDFs para las 24 misiones 1v1 y 6 misiones 2v2 (español e inglés), junto con la base de conocimiento oficial indexada para el Árbitro IA.',
-    gameSystem: 'MESBG',
-    version: '1.0.0',
-    capabilities: ['missions', 'rules_ai'],
-    isVerified: true,
-    downloadUrl: `${(import.meta.env.BASE_URL || '/').replace(/\/$/, '')}/mods/mod-misiones-ia-tolkienstein.json`,
-    stats: { missions: 30, rulesPages: 872 },
-    tags: ['misiones', 'ia', 'reglas', 'escenarios', 'oficial', 'recomendado']
-  },
-  {
-    modId: 'mod-integral-tolkienstein',
-    modName: 'Mod Integral: Misiones, Listas, IA y Duelos',
-    modAuthor: 'Dr Tolkienstein',
-    modDescription:
-      'Paquete integral con perfiles de ejército (Minas Tirith, Rohan, Isengard, Mordor), visor de PDFs de misiones 1v1/2v2, base de conocimiento del árbitro IA y reglas de duelos.',
-    gameSystem: 'MESBG',
-    version: '1.0.0',
-    capabilities: ['army_builder', 'missions', 'rules_ai', 'duels'],
-    isVerified: true,
-    downloadUrl: `${(import.meta.env.BASE_URL || '/').replace(/\/$/, '')}/mods/mod-integral-tolkienstein.json`,
-    stats: { factions: 4, models: 15, missions: 30, rulesPages: 872 },
-    tags: ['integral', 'completo', 'listas', 'misiones', 'ia', 'duelos']
-  }
-];
+// ── CATÁLOGO PÚBLICO DE WORKSHOP (100% DINÁMICO DESDE FIRESTORE) ────────────────
+export const PUBLIC_MOD_REGISTRY = [];
 
 // ── SANITIZACIÓN DE SEGURIDAD CONTRA INYECCIONES Y XSS ────────────────────────
 export function sanitizeString(str) {
