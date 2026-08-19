@@ -274,6 +274,17 @@ const MESBG_TRANSLATIONS = {
   'banner': 'estandarte repetir dado 1 combate 3 pulgadas'
 };
 
+function normalizeQuery(q) {
+  let text = (q || '').toLowerCase();
+  text = text.replace(/\b1\b/g, '1 uno one');
+  text = text.replace(/\b2\b/g, '2 dos two');
+  text = text.replace(/\b3\b/g, '3 tres three');
+  text = text.replace(/\b4\b/g, '4 cuatro four');
+  text = text.replace(/\b5\b/g, '5 cinco five');
+  text = text.replace(/\b6\b/g, '6 seis six');
+  return text;
+}
+
 /**
  * Construye el Canon Inteligente Completo de Reglas para Grounding sin recortes erróneos.
  * Incluye SIEMPRE el 100% de las Reglas Base (Combate, Lanzas, Movimiento, etc.),
@@ -284,7 +295,7 @@ function buildGroundedContext(queryText) {
     return '';
   }
 
-  const queryLower = (queryText || '').toLowerCase();
+  const queryLower = normalizeQuery(queryText);
   
   // 1. REGLAMENTO PRINCIPAL: Siempre incluido al 100% (Núcleo de Combate, Apoyo, Disparo, Magia, etc.)
   const coreRules = rulesKnowledge.filter(doc => doc.category === 'Reglamento Principal');
@@ -302,7 +313,7 @@ function buildGroundedContext(queryText) {
     const bookLower = (doc.book || '').toLowerCase();
 
     if (queryLower.includes('saruman') && (contentLower.includes('saruman') || contentLower.includes('palantir') || contentLower.includes('isengard'))) return true;
-    if ((queryLower.includes('five arm') || queryLower.includes('cinco ej')) && (contentLower.includes('five armies') || contentLower.includes('stand together') || doc.page == 106 || doc.page == 105)) return true;
+    if ((queryLower.includes('five') || queryLower.includes('cinco')) && (contentLower.includes('five armies') || contentLower.includes('stand together') || doc.page == 106 || doc.page == 105)) return true;
     if ((queryLower.includes('mumak') || queryLower.includes('mûmak') || queryLower.includes('harad')) && (contentLower.includes('mumak') || contentLower.includes('harad') || contentLower.includes('war beast') || doc.page >= 192)) return true;
     if (queryLower.includes('rohan') && (contentLower.includes('rohan') || contentLower.includes('theoden') || contentLower.includes('riders of theoden'))) return true;
     if ((queryLower.includes('mordor') || queryLower.includes('nazgul') || queryLower.includes('nazgûl')) && (contentLower.includes('mordor') || contentLower.includes('witch-king'))) return true;
