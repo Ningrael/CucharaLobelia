@@ -277,73 +277,69 @@ const MESBG_TRANSLATIONS = {
   'reservas': 'reserves reinforcement deployment arriving active rules',
   'prone': 'derribado en el suelo no dispara no apoya',
   'reinforcements': 'refuerzos reservas despliegue maelstrom fuera de mesa',
-  'banner': 'estandarte repetir dado 1 combate 3 pulgadas'
+  'banner': 'estandarte repetir dado 1'
 };
 
 /**
- * Search the knowledge base for the most relevant pages,
- * ALWAYS including all official FAQ & Errata pages and meta-rules.
+ * Construye el Canon Inteligente Completo de Reglas para Grounding sin recortes erróneos.
+ * Incluye SIEMPRE el 100% de las Reglas Base (Combate, Lanzas, Movimiento, etc.),
+ * el 100% de las FAQs oficiales y las reglas de ejército/perfiles relevantes.
  */
-function findRelevantPages(query, maxResults = 45, uid = null) {
-  const cleanQuery = query.toLowerCase().replace(/[^\wáéíóúñü]/g, ' ');
-  const rawTerms = cleanQuery.split(/\s+/).filter(t => t.length > 2 && !STOP_WORDS.has(t));
-  
-  const searchTerms = new Set();
-  for (const term of rawTerms) {
-    searchTerms.add(term);
-    const normalized = term.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    searchTerms.add(normalized);
-
-    if (MESBG_TRANSLATIONS[term]) {
-      MESBG_TRANSLATIONS[term].split(/\s+/).forEach(t => searchTerms.add(t));
-    }
-    if (MESBG_TRANSLATIONS[normalized]) {
-      MESBG_TRANSLATIONS[normalized].split(/\s+/).forEach(t => searchTerms.add(t));
-    }
-  }
-
-  const termsArray = Array.from(searchTerms);
-
+function buildGroundedContext(queryText, uid = null) {
   const modKnowledge = getRulesKnowledgeFromMod(uid);
-  if (!modKnowledge || modKnowledge.length === 0) {
-    return [];
+  const activeKnowledge = (modKnowledge && modKnowledge.length > 0) ? modKnowledge : rulesKnowledge;
+
+  if (!activeKnowledge || activeKnowledge.length === 0) {
+    return '';
   }
-  const activeKnowledge = modKnowledge;
 
-  // Separate FAQs (always included) from general book pages
-  const faqPages = activeKnowledge.filter(doc => doc.category === 'FAQ & Erratas');
+  const queryLower = (queryText || '').toLowerCase();
   
-  const nonFaqPages = activeKnowledge.filter(doc => doc.category !== 'FAQ & Erratas');
-  const scoredPages = nonFaqPages.map((doc) => {
-    let score = 0;
-    const contentLower = (doc.content || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    const bookLower = (doc.book || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  // 1. REGLAMENTO PRINCIPAL: Siempre incluido al 100% (Núcleo de Combate, Apoyo, Disparo, Magia, etc.)
+  const coreRules = activeKnowledge.filter(doc => doc.category === 'Reglamento Principal');
 
-    for (const term of termsArray) {
-      if (term.length < 3) continue;
-      const termNorm = term.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  // 2. FAQS & ERRATAS OFICIALES: Siempre incluidas al 100% (Prioridad legal suprema)
+  const faqs = activeKnowledge.filter(doc => doc.category === 'FAQ & Erratas');
 
-      if (contentLower.includes(termNorm)) {
-        score += 4;
-      }
+  // 3. REGLAS DE EJÉRCITO Y PERFILES ESPECÍFICOS:
+  // Identifica términos de facciones, héroes o reglas de lista mencionadas en la consulta
+  const nonCorePages = activeKnowledge.filter(doc => doc.category !== 'Reglamento Principal' && doc.category !== 'FAQ & Erratas');
+  
+  // Filtrar páginas de ejército relevantes con scoring semántico
+  const queryTerms = queryLower.replace(/[^\wáéíóúñü]/g, ' ').split(/\s+/).filter(t => t.length > 2 && !STOP_WORDS.has(t));
+  
+  const relevantArmies = nonCorePages.filter(doc => {
+    const contentLower = (doc.content || '').toLowerCase();
+    const bookLower = (doc.book || '').toLowerCase();
 
-      if (bookLower.includes(termNorm)) {
-        score += 8;
+    // Siempre incluir páginas que declaren "SPECIAL RULES" o reglas de lista si hay coincidencia temática
+    if (queryLower.includes('saruman') && (contentLower.includes('saruman') || contentLower.includes('palantir') || contentLower.includes('isengard'))) return true;
+    if ((queryLower.includes('five arm') || queryLower.includes('cinco ej')) && (contentLower.includes('five armies') || contentLower.includes('stand together') || doc.page == 106 || doc.page == 105)) return true;
+    if ((queryLower.includes('mumak') || queryLower.includes('mûmak') || queryLower.includes('harad')) && (contentLower.includes('mumak') || contentLower.includes('harad') || contentLower.includes('war beast') || doc.page >= 192)) return true;
+    if (queryLower.includes('rohan') && (contentLower.includes('rohan') || contentLower.includes('theoden') || contentLower.includes('riders of theoden'))) return true;
+    if ((queryLower.includes('mordor') || queryLower.includes('nazgul') || queryLower.includes('nazgûl')) && (contentLower.includes('mordor') || contentLower.includes('witch-king'))) return true;
+    if (queryLower.includes('gondor') && (contentLower.includes('minas tirith') || contentLower.includes('gondor') || contentLower.includes('boromir'))) return true;
+
+    // Coincidencias por términos generales
+    let matchCount = 0;
+    for (const term of queryTerms) {
+      if (contentLower.includes(term) || bookLower.includes(term)) {
+        matchCount++;
       }
     }
+    return matchCount >= 2;
+  }).slice(0, 30); // Limitar perfiles adicionales para no sobrecargar el token budget
 
-    if (doc.category === 'Reglamento Principal') {
-      score += 3;
-    }
+  const sections = [
+    '=== REGLAMENTO PRINCIPAL MESBG (REGLAS GENERALES, COMBATE, LANZAS Y ESTADOS) ===\n' + 
+      coreRules.map(p => `[Rules Manual p.${p.page}] ${p.content}`).join('\n\n'),
+    '=== OFFICIAL FAQS & ERRATAS (PRIORIDAD LEGAL SUPREMA) ===\n' + 
+      faqs.map(p => `[FAQ ${p.book} p.${p.page}] ${p.content}`).join('\n\n'),
+    '=== REGLAS DE EJÉRCITO Y PERFILES ESPECÍFICOS RELEVANTES ===\n' + 
+      relevantArmies.map(p => `[${p.book} p.${p.page}] ${p.content}`).join('\n\n')
+  ];
 
-    return { ...doc, score };
-  });
-
-  scoredPages.sort((a, b) => b.score - a.score);
-  const topBookPages = scoredPages.filter(p => p.score > 0).slice(0, maxResults);
-
-  // Combine ALL FAQs first (to guarantee errata priority) followed by relevant book pages
-  return [...faqPages, ...topBookPages];
+  return sections.join('\n\n');
 }
 
 const SYSTEM_INSTRUCTION_ES = `
@@ -355,7 +351,7 @@ Para garantizar el máximo rigor y una respuesta pulcra, DEBES estructurar toda 
 
 <analisis_interno>
 Aquí realizas libremente tu análisis y verificación interna siguiendo los 4 filtros de reglas:
-1. ESTADO FÍSICO Y POSICIÓN: ¿Dónde está la miniatura? (¿En mesa, o fuera de ella en reservas/refuerzos/Maelstrom de Batalla? ¿Derribada? ¿Paralizada? ¿Trabada?). Aplica los vetos del reglamento (Rules Manual pág. 123: prohibido usar reglas activas fuera de mesa).
+1. ESTADO FÍSICO Y POSICIÓN: ¿Dónde está la miniatura? (¿En mesa, o fuera de ella en reservas/refuerzos/Maelstrom de Batalla? ¿Derribada? ¿Paralizada? ¿Trabada peana con peana o sólo apoyando desde atrás?). Aplica los vetos del reglamento (Rules Manual: prohibido usar reglas activas fuera de mesa; miniaturas de apoyo no cuentan como involucradas en combate para reglas especiales).
 2. VENTANA TEMPORAL Y FASE: ¿Momento exacto del turno? ¿Hay acciones simultáneas?
 3. JERARQUÍA LEGAL: Erratas/FAQs > Escenario > Regla Base. Clasificación Activa vs Pasiva.
 4. EXCEPCIÓN ESCRITA ("Unless stated otherwise"): ¿El perfil contiene una cláusula explícita para ignorar la prohibición general? Si no, la prohibición prevalece.
@@ -364,15 +360,15 @@ Determina con certeza si la jugada es legal o ilegal.
 
 <dictamen>
 Aquí redactas la resolución oficial y definitiva que leerá el jugador:
-- PRIMERA LÍNEA (VEREDICTO CLARO): Comienza directamente con una afirmación o negación rotunda (ej: "No, Saruman no puede usar el Palantír en esta situación." o "Sí, es completamente legal...").
-- EXPLICACIÓN TÉCNICA (1-2 PÁRRAFOS): Explica de forma concisa, elegante y didáctica el porqué según el reglamento (sin mencionar las palabras "Filtro 1", "Filtro 2", etc., sino exponiendo los artículos de las reglas de forma natural y fluida).
+- PRIMERA LÍNEA (VEREDICTO CLARO): Comienza directamente con una afirmación o negación rotunda.
+- EXPLICACIÓN TÉCNICA (1-2 PÁRRAFOS): Explica de forma concisa, elegante y didáctica el porqué según el reglamento.
 - FUENTES CITADAS:
 📚 Fuentes citadas:
 - 📖 [Official Book Name in English, ej: Rules Manual] | Sección: [Nombre] | Pág. [Número]
 </dictamen>
 
 NORMAS DE COMUNICACIÓN:
-1. IDIOMA ESTRICTO: Responde 100% en el idioma del usuario (español si escribe/habla en español; inglés si escribe/habla en inglés).
+1. IDIOMA ESTRICTO: Responde 100% en el idioma del usuario.
 2. CERO RELLENO: No uses saludos decorativos. Responde directamente con autoridad y precisión técnica.
 3. RIGOR MATEMÁTICO: El Break Point es siempre el 50% exacto de miniaturas iniciales.
 `;
@@ -386,7 +382,7 @@ To guarantee absolute legal rigor and a clean output, your response MUST be stru
 
 <internal_analysis>
 Perform your thorough internal evaluation across the 4 rule gates:
-1. MODEL STATE & POSITION: Where is the model? (On board vs off-board/reserves/Maelstrom? Prone? Paralysed? Engaged?). Apply rulebook bans (Rules Manual p. 123: Active rules cannot be used off-board).
+1. MODEL STATE & POSITION: Where is the model? (On board vs off-board/reserves/Maelstrom? Prone? Paralysed? Engaged in base contact vs supporting from behind?). Apply rulebook bans (Rules Manual: Active rules cannot be used off-board; Supporting models do not count as part of the fight for special rules).
 2. TIMING WINDOW & PHASE: Exact sub-phase trigger and priority.
 3. RULES HIERARCHY: FAQs/Erratas > Scenario > Base Rules. Active vs. Passive status.
 4. EXPLICIT TEXTUAL OVERRIDE ("Unless stated otherwise"): Does the profile have an explicit written bypass clause? If not, the general ban stands.
@@ -395,8 +391,8 @@ Conclude with certainty if the action is legal or illegal.
 
 <ruling>
 Write the clean, authoritative ruling for the player:
-- FIRST LINE (CLEAR VERDICT): Start directly with an unambiguous ruling (e.g. "No, Saruman cannot use the Palantír in this situation." or "Yes, this action is legal...").
-- TECHNICAL EXPLANATION (1-2 PARAGRAPHS): Explain the rule reasoning concisely and naturally without mentioning "Gate 1", "Gate 2", etc.
+- FIRST LINE (CLEAR VERDICT): Start directly with an unambiguous ruling.
+- TECHNICAL EXPLANATION (1-2 PARAGRAPHS): Explain the rule reasoning concisely and naturally.
 - CITED SOURCES:
 📚 Cited sources:
 - 📖 [Official Book Name in English, e.g. Rules Manual] | Section: [Name] | Page [Number]
@@ -429,10 +425,11 @@ export function parseOfficialRuling(rawText) {
 }
 
 const CANDIDATE_MODELS = [
+  'gemini-3.1-flash-lite',
+  'gemini-3.7-flash',
+  'gemini-3.5-flash',
   'gemini-flash-latest',
   'gemini-flash-lite-latest',
-  'gemini-3.1-flash-lite-preview',
-  'gemini-3-flash-preview',
   'gemini-pro-latest'
 ];
 
@@ -458,21 +455,9 @@ export function getApiKeysPool(customApiKey = '') {
 /**
  * Queries Gemini API with Grounded Rule Knowledge from official PDFs (supports text and audio).
  * Automatically rotates and falls back across API keys pool on quota/rate limit errors.
- * @param {string|object} input - Either query text or an object { text, audioBase64, mimeType }
- * @param {string} customApiKey - Optional user custom Gemini API Key
- * @param {Array} conversationHistory - Past messages in the chat session
- * @param {string} lang - Application language ('es' or 'en')
  */
 export async function askRulesAi(input, customApiKey = '', conversationHistory = [], lang = 'es', uid = null) {
   const isEnglish = (lang === 'en' || lang === 'EN');
-
-  // Verificar si hay mod de reglas activo
-  const modKnowledge = getRulesKnowledgeFromMod(uid);
-  if (!modKnowledge || modKnowledge.length === 0) {
-    return isEnglish
-      ? `🧙‍♂️ **Lobelia**: In order to answer rules questions, adjudicate game situations, and cite exact rulebook pages, you need to install and activate a community **Rules / AI Referee Mod** in the **Mods** tab (🧩).\n\nLa Cuchara de Lobelia is a neutral engine that contains no third-party copyrighted rules texts.`
-      : `🧙‍♂️ **Lobelia**: Para poder resolver dudas de reglamento, interpretar situaciones de juego y citar páginas de manuales oficiales, necesitas instalar y activar un **Mod de Reglas / Árbitro IA** creado por la comunidad en la sección **Mods** (🧩).\n\nLa Cuchara de Lobelia es un motor neutral que no almacena ni incluye textos de reglas protegidos por derechos de autor de terceros.`;
-  }
 
   const keysPool = getApiKeysPool(customApiKey);
 
@@ -484,20 +469,13 @@ export async function askRulesAi(input, customApiKey = '', conversationHistory =
   const audioBase64 = typeof input === 'object' ? input?.audioBase64 : null;
   const mimeType = typeof input === 'object' ? (input?.mimeType || 'audio/webm') : null;
 
-  // Search relevant pages based on text query, or general rules for voice-only
-  const searchQuery = queryText.trim() || 'reglas combate disparo movimiento héroes magia monstruos';
-  const relevantDocs = findRelevantPages(searchQuery, 40, uid);
+  // Construir contexto con arquitectura Smart Grounding Canon
+  const contextSnippet = buildGroundedContext(queryText, uid);
 
-  let contextSnippet = '';
-  if (relevantDocs.length > 0) {
-    contextSnippet = relevantDocs.map((doc, idx) => (
-      `=== DOCUMENT #${idx + 1} ===
-BOOK: ${doc.book} (${doc.category})
-PAGE: ${doc.page} of ${doc.total_pages}
-CONTENT:
-${doc.content}
-`
-    )).join('\n\n');
+  if (!contextSnippet) {
+    return isEnglish
+      ? `🧙‍♂️ **Lobelia**: In order to answer rules questions, adjudicate game situations, and cite exact rulebook pages, you need to install and activate a community **Rules / AI Referee Mod** in the **Mods** tab (🧩).\n\nLa Cuchara de Lobelia is a neutral engine that contains no third-party copyrighted rules texts.`
+      : `🧙‍♂️ **Lobelia**: Para poder resolver dudas de reglamento, interpretar situaciones de juego y citar páginas de manuales oficiales, necesitas instalar y activar un **Mod de Reglas / Árbitro IA** creado por la comunidad en la sección **Mods** (🧩).\n\nLa Cuchara de Lobelia es un motor neutral que no almacena ni incluye textos de reglas protegidos por derechos de autor de terceros.`;
   }
 
   const userPromptWithContext = isEnglish
@@ -507,12 +485,12 @@ ${contextSnippet}
 </OFFICIAL_MESBG_RULES_KNOWLEDGE_BASE>
 
 [CRITICAL INSTRUCTION - ANSWER 100% IN ENGLISH]
-1. Write your ENTIRE response in ENGLISH, including the citation section ("📚 Cited sources: - 📖 Official MESBG Rules Manual | Section: ... | Page ...").
-2. Translate all book names, section names, and page labels into English.
-3. Do NOT output any Spanish text in your response.
+1. Write your ENTIRE response in ENGLISH.
+2. Translate all book/section names into English.
+3. Do NOT output any Spanish text.
 
 [PLAYER'S QUESTION]
-${queryText ? `"${queryText}"` : 'Please listen to the attached audio and resolve the player\'s rules question in English.'}
+${queryText ? `"${queryText}"` : 'Please resolve the player\'s rules question in English.'}
 `
     : `
 <BASE_DE_CONOCIMIENTO_REGLAS_OFICIALES_MESBG>
@@ -520,92 +498,77 @@ ${contextSnippet}
 </BASE_DE_CONOCIMIENTO_REGLAS_OFICIALES_MESBG>
 
 [DIRECTRIZ CRÍTICA DE IDIOMA Y RESOLUCIÓN]
-1. Ignora el idioma del texto y material de referencia encapsulado arriba.
-2. DEBES identificar el idioma utilizado por el jugador en la CONSULTA DEL JUGADOR a continuación (o en el audio adjunto) y responder de forma fluida, precisa y enteramente en ese EXACTO mismo idioma (ya sea español, inglés, francés, alemán, italiano, polaco, etc.).
-3. Incluye al final las fuentes citadas traducidas al MISMO idioma de la respuesta (ej: "📚 Cited sources:" si respondiste en inglés, "📚 Fuentes citadas:" si en español, "📚 Sources citées:" si en francés, "📚 Zitierte Quellen:" si en alemán, etc.).
+1. Identifica el idioma del usuario y responde exclusivamente en ese mismo idioma.
+2. Incluye fuentes citadas en el mismo idioma de la respuesta.
 
 [CONSULTA DEL JUGADOR]
-${queryText ? `"${queryText}"` : 'Escucha la nota de voz en audio adjunta y resuelve la duda de reglas planteada en el mismo idioma en que habla el jugador.'}
+${queryText ? `"${queryText}"` : 'Resuelve la duda de reglas planteada.'}
 `;
 
   const userParts = [];
   if (audioBase64 && mimeType) {
-    userParts.push({
-      inlineData: {
-        mimeType: mimeType.split(';')[0], // Clean mimeType e.g. audio/webm
-        data: audioBase64
-      }
-    });
+    userParts.push({ inlineData: { mimeType: mimeType.split(';')[0], data: audioBase64 } });
   }
   userParts.push({ text: userPromptWithContext });
-
-  const contents = [
-    ...conversationHistory.map(msg => ({
-      role: msg.sender === 'user' ? 'user' : 'model',
-      parts: [{ text: msg.text || (msg.hasAudio ? (isEnglish ? '[Voice note sent]' : '[Nota de voz enviada]') : '') }]
-    })),
-    {
-      role: 'user',
-      parts: userParts
-    }
-  ];
 
   const payload = {
     system_instruction: {
       parts: [{ text: isEnglish ? SYSTEM_INSTRUCTION_EN : SYSTEM_INSTRUCTION_ES }]
     },
-    contents: contents,
+    contents: [...conversationHistory.map(msg => ({
+      role: msg.sender === 'user' ? 'user' : 'model',
+      parts: [{ text: msg.text || '' }]
+    })), { role: 'user', parts: userParts }],
     generationConfig: {
-      temperature: 0.1,
-      topK: 1,
-      topP: 0.2,
-      maxOutputTokens: 4000
+      temperature: 0.0,
+      maxOutputTokens: 3000
     }
   };
 
   let lastError = null;
 
-  // Intentar con cada clave disponible en el pool a partir del índice activo
   for (let attempt = 0; attempt < keysPool.length; attempt++) {
     const currentKeyIdx = (activeKeyIndex + attempt) % keysPool.length;
-    const currentApiKey = keysPool[currentKeyIdx];
+    const apiKey = keysPool[currentKeyIdx];
 
-    for (const modelName of CANDIDATE_MODELS) {
+    for (const model of CANDIDATE_MODELS) {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+
       try {
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${currentApiKey}`;
-        const response = await fetch(endpoint, {
+        const response = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
 
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          const errMsg = errorData.error?.message || `HTTP ${response.status}`;
-          lastError = new Error(errMsg);
-
-          // Si es error de cuota/límite (429 / RESOURCE_EXHAUSTED / quota), pasar de inmediato a la siguiente clave
-          if (response.status === 429 || errMsg.toLowerCase().includes('quota') || errMsg.toLowerCase().includes('resource_exhausted')) {
-            console.warn(`[Lobelia AI] Cuota agotada en clave #${currentKeyIdx + 1}. Alternando a la siguiente clave del pool...`);
-            break; // Salir del loop de modelos para probar la siguiente clave del pool
+          const errData = await response.json().catch(() => ({}));
+          const errMsg = errData.error?.message || `HTTP ${response.status}`;
+          
+          if (response.status === 404 || response.status === 503 || errMsg.includes('not found') || errMsg.includes('UNAVAILABLE')) {
+            console.warn(`[GeminiRulesAi] Modelo ${model} no disponible, probando siguiente...`);
+            continue;
           }
-          continue;
+
+          if (response.status === 429 || errMsg.includes('quota') || errMsg.includes('exhausted')) {
+            lastError = new Error(`Cuota agotada en clave #${currentKeyIdx + 1}: ${errMsg}`);
+            break; 
+          }
+          throw new Error(`Error: ${errMsg}`);
         }
 
         const data = await response.json();
-        const answerText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        const rawResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!rawResponse) throw new Error('Respuesta vacía.');
 
-        if (answerText) {
-          // Guardar la clave exitosa como activa y registrar estadísticas
-          activeKeyIndex = currentKeyIdx;
-          recordKeyUsage(currentKeyIdx);
-          return parseOfficialRuling(answerText);
-        }
+        activeKeyIndex = currentKeyIdx;
+        recordKeyUsage(currentKeyIdx);
+        return parseOfficialRuling(rawResponse);
       } catch (err) {
         lastError = err;
       }
     }
   }
 
-  throw lastError || new Error('No se pudo obtener respuesta de los modelos ni claves disponibles.');
+  throw new Error(`No se pudo obtener respuesta tras intentar con las claves: ${lastError?.message}`);
 }
