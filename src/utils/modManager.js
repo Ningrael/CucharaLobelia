@@ -626,30 +626,12 @@ export async function rejectModSubmission(submissionId, reason = '', adminUser =
   }
 }
 
-export const OFFICIAL_WORKSHOP_MODS = [
-  {
-    modId: 'dr_tolkienstein_rules_referee',
-    modName: 'Dr. Tolkienstein: Árbitro de Reglas & Canon Supremo',
-    modVersion: '1.0.0',
-    modAuthor: 'Dr. Tolkienstein',
-    gameSystem: 'MESBG',
-    schemaVersion: '1.0',
-    description: 'Mod oficial de Árbitro IA y Base de Conocimiento Canónica de MESBG creada por Dr. Tolkienstein. Proporciona al motor de Lobelia el 100% del conocimiento de reglas (Rules Manual, Armies of The Lord of the Rings, Armies of The Hobbit, Matched Play Guide y Erratas/FAQs oficiales).',
-    capabilities: ['rules_ai'],
-    downloadUrl: `${(import.meta.env.BASE_URL || '/').replace(/\/$/, '')}/mods/dr_tolkienstein_rules_referee.json`,
-    isOfficial: true,
-    publishedAt: '2026-08-19'
-  }
-];
-
 export async function getPublicModsRegistry() {
-  const publicList = [...OFFICIAL_WORKSHOP_MODS];
-  const seenModIds = new Set(publicList.map(m => m.modId));
-
-  if (!db) return publicList;
-
+  if (!db) return [];
   try {
     const snap = await getDocs(collection(db, 'players'));
+    const publicList = [];
+    const seenModIds = new Set();
 
     snap.forEach(docSnap => {
       const data = docSnap.data();
@@ -666,7 +648,7 @@ export async function getPublicModsRegistry() {
   } catch (err) {
     console.warn('[ModManager] Error fetching public mods from Firestore:', err);
   }
-  return publicList;
+  return [];
 }
 
 /**
