@@ -123,6 +123,10 @@ export default function Mods({ user, profile, lang = 'es' }) {
     downloadTextFile('plantilla_mod_1_misiones.json', JSON.stringify(TEMPLATE_MOD_1_MISSIONS, null, 2), 'application/json');
   };
 
+  const handleDownloadTemplateRulesAi = () => {
+    downloadTextFile('plantilla_mod_2_arbitro_ia.json', JSON.stringify(TEMPLATE_MOD_2_RULES_AI, null, 2), 'application/json');
+  };
+
   // ── Acciones de Instalación / Desinstalación ────────────────────────────────
   const handleInstall1Click = async (mod) => {
     setDownloadingModId(mod.modId);
@@ -875,6 +879,29 @@ export default function Mods({ user, profile, lang = 'es' }) {
                 <strong style={{ fontSize: '0.88rem' }}>{lang === 'es' ? 'Descargar Plantilla Misiones y PDFs' : 'Download Missions & PDFs Template'}</strong>
                 <span style={{ fontSize: '0.72rem', color: '#ccc' }}>
                   {lang === 'es' ? 'Descarga la plantilla .JSON con las 24 misiones 1v1 y 6 misiones 2v2.' : 'Download .JSON template with all 24 1v1 and 6 2v2 missions.'}
+                </span>
+              </button>
+
+              {/* Botón Descargar Plantilla Árbitro IA */}
+              <button
+                onClick={handleDownloadTemplateRulesAi}
+                style={{
+                  background: 'rgba(155, 89, 182, 0.08)',
+                  border: '1px solid rgba(155, 89, 182, 0.4)',
+                  color: '#9b59b6',
+                  borderRadius: '10px',
+                  padding: '14px',
+                  textAlign: 'left',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '4px'
+                }}
+              >
+                <span style={{ fontSize: '1.2rem' }}>🧙‍♂️</span>
+                <strong style={{ fontSize: '0.88rem' }}>{lang === 'es' ? 'Descargar Plantilla Mod de Árbitro IA' : 'Download AI Referee Mod Template'}</strong>
+                <span style={{ fontSize: '0.72rem', color: '#ccc' }}>
+                  {lang === 'es' ? 'Descarga la plantilla .JSON para crear un mod de Árbitro IA con tu propio prompt y reglas.' : 'Download .JSON template to create an AI Referee mod with custom prompt & rules.'}
                 </span>
               </button>
             </div>

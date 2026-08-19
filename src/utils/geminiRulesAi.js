@@ -1,7 +1,7 @@
 import rulesKnowledge from '../data/rules_knowledge.json';
 import { db } from './firebase';
 import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
-import { getRulesKnowledgeFromMod } from './modManager';
+import { getRulesKnowledgeFromMod, getAiPromptFromMod } from './modManager';
 
 const DEFAULT_MAX_DAILY_QUERIES = 30;
 let cachedMaxDailyQueries = (() => {
@@ -525,9 +525,15 @@ ${queryText ? `"${queryText}"` : 'Resuelve la duda de reglas planteada.'}
   }
   userParts.push({ text: userPromptWithContext });
 
+  const modCustomPrompt = getAiPromptFromMod(uid);
+  const baseSystemPrompt = isEnglish ? SYSTEM_INSTRUCTION_EN : SYSTEM_INSTRUCTION_ES;
+  const finalSystemPrompt = modCustomPrompt
+    ? `${baseSystemPrompt}\n\n[DIRECTIVA DE PERSONALIDAD Y ÁRBITRO DEL MOD ACTIVO]\n${modCustomPrompt}`
+    : baseSystemPrompt;
+
   const payload = {
     system_instruction: {
-      parts: [{ text: isEnglish ? SYSTEM_INSTRUCTION_EN : SYSTEM_INSTRUCTION_ES }]
+      parts: [{ text: finalSystemPrompt }]
     },
     contents: [...conversationHistory.map(msg => ({
       role: msg.sender === 'user' ? 'user' : 'model',
@@ -535,7 +541,7 @@ ${queryText ? `"${queryText}"` : 'Resuelve la duda de reglas planteada.'}
     })), { role: 'user', parts: userParts }],
     generationConfig: {
       temperature: 0.0,
-      maxOutputTokens: 3000
+      maxOutputTokens: 4000
     }
   };
 
