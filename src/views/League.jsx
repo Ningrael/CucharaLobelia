@@ -534,9 +534,83 @@ export default function League({ lang, translations, user, profile, isAdmin: isG
         });
       }
 
-      // (auto-init de liga de prueba eliminado)
+      // Auto-heal / Auto-recover Liga del Tessen if it is missing from createdLeagues
+      if (!activeLeaguesList['liga_1780992431832']) {
+        const hasTessenPlayers = Array.from(cachedPlayersSnap.docs).some(d => d.data()?.leagues?.['liga_1780992431832']);
+        if (hasTessenPlayers) {
+          console.log("Auto-recovering Liga del Tessen from enrolled players...");
+          const recoveredLeague = {
+            name: 'Liga del Tessen',
+            status: 'active',
+            registrationDeadline: '',
+            location: 'Tessen',
+            description: 'Liga oficial de la comunidad Tessen de MESBG.',
+            rulesLink: '',
+            creatorUid: 'xXhjkWRjh0hVBjcYr2qAAFRvGL82',
+            creatorName: 'Matias Alejandro Sosa',
+            totalRounds: 5,
+            missions: ['Fog of War', 'Domination', 'Hold Ground', 'Destroy the Supplies', 'To the Death!'],
+            playerStatuses: {
+              'FocJZZfHDIhnLiFV4RvtEcZOUZR2': 'approved',
+              'JFvFUa9QttTtem8QIwcDHcJ8Pz42': 'approved',
+              'ZUxeH7Z4opTJnJavFAzSdt9onHL2': 'approved',
+              'faPYn4R5eqPceO1KZ5vBLGHijZx2': 'approved',
+              'hgz5ODiI7UaMZ7493o3ukryBSRh2': 'approved',
+              'mMvhWt7WYBfU6oo2So8ncl28GBs1': 'approved',
+              'xXhjkWRjh0hVBjcYr2qAAFRvGL82': 'approved'
+            },
+            rounds: {
+              '0': [
+                { player1: 'xXhjkWRjh0hVBjcYr2qAAFRvGL82', player2: 'ZUxeH7Z4opTJnJavFAzSdt9onHL2' },
+                { player1: 'FocJZZfHDIhnLiFV4RvtEcZOUZR2', player2: 'faPYn4R5eqPceO1KZ5vBLGHijZx2' },
+                { player1: 'hgz5ODiI7UaMZ7493o3ukryBSRh2', player2: 'JFvFUa9QttTtem8QIwcDHcJ8Pz42' },
+                { player1: 'mMvhWt7WYBfU6oo2So8ncl28GBs1', player2: 'BYE' }
+              ],
+              '1': [
+                { player1: 'xXhjkWRjh0hVBjcYr2qAAFRvGL82', player2: 'faPYn4R5eqPceO1KZ5vBLGHijZx2' },
+                { player1: 'ZUxeH7Z4opTJnJavFAzSdt9onHL2', player2: 'hgz5ODiI7UaMZ7493o3ukryBSRh2' },
+                { player1: 'FocJZZfHDIhnLiFV4RvtEcZOUZR2', player2: 'mMvhWt7WYBfU6oo2So8ncl28GBs1' },
+                { player1: 'JFvFUa9QttTtem8QIwcDHcJ8Pz42', player2: 'BYE' }
+              ],
+              '2': [
+                { player1: 'xXhjkWRjh0hVBjcYr2qAAFRvGL82', player2: 'JFvFUa9QttTtem8QIwcDHcJ8Pz42' },
+                { player1: 'ZUxeH7Z4opTJnJavFAzSdt9onHL2', player2: 'mMvhWt7WYBfU6oo2So8ncl28GBs1' },
+                { player1: 'hgz5ODiI7UaMZ7493o3ukryBSRh2', player2: 'FocJZZfHDIhnLiFV4RvtEcZOUZR2' },
+                { player1: 'faPYn4R5eqPceO1KZ5vBLGHijZx2', player2: 'BYE' }
+              ],
+              '3': [
+                { player1: 'FocJZZfHDIhnLiFV4RvtEcZOUZR2', player2: 'mMvhWt7WYBfU6oo2So8ncl28GBs1' },
+                { player1: 'xXhjkWRjh0hVBjcYr2qAAFRvGL82', player2: 'hgz5ODiI7UaMZ7493o3ukryBSRh2' },
+                { player1: 'ZUxeH7Z4opTJnJavFAzSdt9onHL2', player2: 'JFvFUa9QttTtem8QIwcDHcJ8Pz42' },
+                { player1: 'faPYn4R5eqPceO1KZ5vBLGHijZx2', player2: 'BYE' }
+              ],
+              '4': [
+                { player1: 'FocJZZfHDIhnLiFV4RvtEcZOUZR2', player2: 'xXhjkWRjh0hVBjcYr2qAAFRvGL82' },
+                { player1: 'ZUxeH7Z4opTJnJavFAzSdt9onHL2', player2: 'faPYn4R5eqPceO1KZ5vBLGHijZx2' },
+                { player1: 'hgz5ODiI7UaMZ7493o3ukryBSRh2', player2: 'mMvhWt7WYBfU6oo2So8ncl28GBs1' },
+                { player1: 'JFvFUa9QttTtem8QIwcDHcJ8Pz42', player2: 'BYE' }
+              ]
+            }
+          };
+
+          activeLeaguesList['liga_1780992431832'] = recoveredLeague;
+
+          // If the logged in user is admin/creator, persist back to Firestore
+          if (user && (user.uid === 'xXhjkWRjh0hVBjcYr2qAAFRvGL82' || isCurrentAdmin)) {
+            setDoc(doc(db, "players", "xXhjkWRjh0hVBjcYr2qAAFRvGL82"), {
+              createdLeagues: {
+                'liga_1780992431832': recoveredLeague
+              }
+            }, { merge: true }).catch(err => console.warn("Could not persist recovered league to creator doc:", err));
+          }
+        }
+      }
 
       setLeaguesList(activeLeaguesList);
+
+      if (!selectedLeagueId && Object.keys(activeLeaguesList).length > 0) {
+        setSelectedLeagueId(Object.keys(activeLeaguesList)[0]);
+      }
     } catch (e) {
       console.warn("Failed to load league config from players:", e.message);
       setLeagueConfigError(e.message);
