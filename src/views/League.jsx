@@ -607,10 +607,6 @@ export default function League({ lang, translations, user, profile, isAdmin: isG
       }
 
       setLeaguesList(activeLeaguesList);
-
-      if (!selectedLeagueId && Object.keys(activeLeaguesList).length > 0) {
-        setSelectedLeagueId(Object.keys(activeLeaguesList)[0]);
-      }
     } catch (e) {
       console.warn("Failed to load league config from players:", e.message);
       setLeagueConfigError(e.message);
