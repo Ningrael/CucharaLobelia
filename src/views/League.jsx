@@ -1237,13 +1237,32 @@ export default function League({ lang, translations, user, profile, isAdmin: isG
   };
 
   // Generador de Ronda Regular
-  const handlePreparePairings = () => {
+  const handlePreparePairingsLightVsDark = () => {
     const approved = players.filter(p => p.status === 'approved' && p.participates !== false);
     if (approved.length < 2) {
-      alert("Se necesitan mínimo 2 jugadores aprobados.");
+      alert(lang === 'es' ? "Se necesitan mínimo 2 jugadores aprobados." : "At least 2 approved players are required.");
       return;
     }
-    setIsPrioritizeModalOpen(true);
+    showConfirm(
+      lang === 'es' 
+        ? "Está a punto de generar rondas respetando enfrentamientos Luz vs Oscuridad. ¿Está seguro?" 
+        : "You are about to generate rounds respecting Light vs Darkness match-ups. Are you sure?",
+      () => runPairingGeneration(true)
+    );
+  };
+
+  const handlePreparePairingsCivilWar = () => {
+    const approved = players.filter(p => p.status === 'approved' && p.participates !== false);
+    if (approved.length < 2) {
+      alert(lang === 'es' ? "Se necesitan mínimo 2 jugadores aprobados." : "At least 2 approved players are required.");
+      return;
+    }
+    showConfirm(
+      lang === 'es' 
+        ? "Está a punto de generar rondas sin tener en cuenta bandos Luz/Oscuridad. ¿Está seguro?" 
+        : "You are about to generate rounds without considering Light/Darkness sides (Civil War). Are you sure?",
+      () => runPairingGeneration(false)
+    );
   };
 
   const runPairingGeneration = (prioritize) => {
@@ -3890,7 +3909,34 @@ export default function League({ lang, translations, user, profile, isAdmin: isG
                 >
                   {[1,2,3,4,5,6].map(n => <option key={n} value={n}>{n} Rondas</option>)}
                 </select>
-                <button className="btn btn-primary" onClick={handlePreparePairings} disabled={isGenerating}>🎲 Generar Rondas (Luz vs Oscu)</button>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '10px' }}>
+                  <button 
+                    className="btn btn-primary" 
+                    onClick={handlePreparePairingsLightVsDark} 
+                    disabled={isGenerating}
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '0.82rem', padding: '10px 8px' }}
+                  >
+                    ☀️ vs 👁️ {lang === 'es' ? 'Generar Rondas (Luz vs Oscuridad)' : 'Generate Rounds (Light vs Darkness)'}
+                  </button>
+                  <button 
+                    className="btn btn-secondary" 
+                    onClick={handlePreparePairingsCivilWar} 
+                    disabled={isGenerating}
+                    style={{ 
+                      background: 'rgba(239, 68, 68, 0.15)', 
+                      border: '1px solid rgba(239, 68, 68, 0.4)', 
+                      color: '#fca5a5', 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center', 
+                      gap: '6px',
+                      fontSize: '0.82rem',
+                      padding: '10px 8px'
+                    }}
+                  >
+                    ⚔️ {lang === 'es' ? 'Generar Rondas (Guerra Civil)' : 'Generate Rounds (Civil War)'}
+                  </button>
+                </div>
                 
                 {draftFixture && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginTop: '10px', padding: '10px', background: 'rgba(255,255,255,0.01)', border: '1px solid rgba(203,161,53,0.2)', borderRadius: '8px' }}>
