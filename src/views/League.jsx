@@ -250,144 +250,129 @@ const buildFullBracketStructure = (r1Matches, size) => {
 
 // --- FIXTURE REGULAR ENGINE ---
 
+// --- FIXTURE REGULAR ENGINE ---
+
 const generateFixture = (plist, totalRounds, prioritizeAlignment) => {
-  let playersList = [...plist];
-  if (playersList.length % 2 !== 0) {
-    playersList.push({ uid: 'BYE', name: 'DESCANSO (BYE)', alignment: 'none', faction: 'Ninguna' });
-  }
+  const playersList = plist.map(p => ({ ...p }));
+  
+  if (prioritizeAlignment) {
+    let lights = playersList.filter(p => p.alignment === 'luz');
+    let darks = playersList.filter(p => p.alignment === 'oscuridad');
+    const neutrals = playersList.filter(p => p.alignment !== 'luz' && p.alignment !== 'oscuridad');
 
-  // Contar alineaciones reales (excluyendo BYE)
-  const L = playersList.filter(p => p.uid !== 'BYE' && p.alignment === 'luz').length;
-  const D = playersList.filter(p => p.uid !== 'BYE' && p.alignment === 'oscuridad').length;
-  const minRoundCost = prioritizeAlignment ? Math.floor(Math.abs(L - D) / 2) : Infinity;
+    // Distribuir neutrales equitativamente si los hubiera
+    neutrals.forEach((n) => {
+      if (lights.length <= darks.length) {
+        lights.push(n);
+      } else {
+        darks.push(n);
+      }
+    });
 
-  let attempts = 0;
-  let success = false;
-  let tempFixture = [];
-  const history = new Set();
+    // Si el total es impar, añadir BYE al bando mayoritario para balancear
+    if ((lights.length + darks.length) % 2 !== 0) {
+      if (lights.length > darks.length) {
+        darks.push({ uid: 'BYE', name: 'DESCANSO (BYE)', alignment: 'oscuridad', faction: 'Ninguna' });
+      } else {
+        lights.push({ uid: 'BYE', name: 'DESCANSO (BYE)', alignment: 'luz', faction: 'Ninguna' });
+      }
+    }
 
-  while (attempts < 1000 && !success) {
-    history.clear();
-    tempFixture = [];
-    let fixtureSuccess = true;
+    // Mezcla aleatoria inicial para variedad de emparejamientos
+    lights.sort(() => Math.random() - 0.5);
+    darks.sort(() => Math.random() - 0.5);
 
-    for (let r = 1; r <= totalRounds; r++) {
+    const minSide = Math.min(lights.length, darks.length);
+    const rounds = [];
+
+    for (let r = 0; r < totalRounds; r++) {
       const roundMatches = [];
-      const pairedInRound = new Set();
-      let roundCost = 0;
+      const usedL = new Set();
+      const usedD = new Set();
 
-      let available = playersList.filter(p => !pairedInRound.has(p.uid));
-      available.sort(() => Math.random() - 0.5);
+      // 1. Cruces directos Luz vs Oscuridad con rotación circular por ronda
+      for (let i = 0; i < minSide; i++) {
+        const lPlayer = lights[i];
+        const dIndex = (i + r) % darks.length;
+        const dPlayer = darks[dIndex];
+        
+        roundMatches.push({
+          player1: lPlayer.uid,
+          player2: dPlayer.uid
+        });
+        usedL.add(lPlayer.uid);
+        usedD.add(dPlayer.uid);
+      }
 
-      let roundSuccess = true;
-      while (available.length > 1) {
-        const p1 = available[0];
-        pairedInRound.add(p1.uid);
+      // 2. Jugadores sobrantes en el bando mayoritario juegan espejos rotativos
+      const excessL = lights.filter(p => !usedL.has(p.uid));
+      const excessD = darks.filter(p => !usedD.has(p.uid));
 
-        let p2Idx = -1;
-        // Prioridad 1: Alineaciones opuestas (Luz vs Oscuridad, no repeats, no BYE)
-        if (prioritizeAlignment) {
-          for (let i = 1; i < available.length; i++) {
-            const cand = available[i];
-            const key = [p1.uid, cand.uid].sort().join('-');
-            if (p1.alignment !== cand.alignment && p1.alignment !== 'none' && cand.alignment !== 'none' && !history.has(key)) {
-              p2Idx = i;
-              break;
-            }
+      if (excessL.length > 1) {
+        for (let i = 0; i < excessL.length; i += 2) {
+          if (i + 1 < excessL.length) {
+            roundMatches.push({
+              player1: excessL[(i + r) % excessL.length].uid,
+              player2: excessL[(i + 1 + r) % excessL.length].uid
+            });
           }
         }
+      }
 
-        // Prioridad 2: Alineación opuesta pero con BYE (no repeats)
-        if (prioritizeAlignment && p2Idx === -1) {
-          for (let i = 1; i < available.length; i++) {
-            const cand = available[i];
-            const key = [p1.uid, cand.uid].sort().join('-');
-            if ((p1.alignment === 'none' || cand.alignment === 'none') && !history.has(key)) {
-              p2Idx = i;
-              break;
-            }
+      if (excessD.length > 1) {
+        for (let i = 0; i < excessD.length; i += 2) {
+          if (i + 1 < excessD.length) {
+            roundMatches.push({
+              player1: excessD[(i + r) % excessD.length].uid,
+              player2: excessD[(i + 1 + r) % excessD.length].uid
+            });
           }
         }
+      }
 
-        // Prioridad 3: Cualquier oponente (si no priorizamos, o fallback para mirror matches, no repeats)
-        if (p2Idx === -1) {
-          for (let i = 1; i < available.length; i++) {
-            const cand = available[i];
-            const key = [p1.uid, cand.uid].sort().join('-');
-            if (!history.has(key)) {
-              p2Idx = i;
-              if (prioritizeAlignment) {
-                roundCost++;
-              }
-              break;
-            }
-          }
-        }
+      rounds.push(roundMatches);
+    }
 
-        if (p2Idx === -1) {
-          roundSuccess = false;
-          break;
-        }
+    return rounds;
+  } else {
+    // GUERRA CIVIL (Round-Robin Método Polígono / Tablas de Berger con rotación y ciclos)
+    let pool = [...playersList];
+    if (pool.length % 2 !== 0) {
+      pool.push({ uid: 'BYE', name: 'DESCANSO (BYE)', alignment: 'none', faction: 'Ninguna' });
+    }
 
-        const p2 = available[p2Idx];
-        pairedInRound.add(p2.uid);
+    pool.sort(() => Math.random() - 0.5);
+    const n = pool.length;
+    const roundsInCycle = n - 1;
+    const half = n / 2;
+    const baseRounds = [];
 
+    let rotating = [...pool];
+    for (let r = 0; r < roundsInCycle; r++) {
+      const roundMatches = [];
+      for (let i = 0; i < half; i++) {
+        const p1 = rotating[i];
+        const p2 = rotating[n - 1 - i];
         roundMatches.push({
           player1: p1.uid,
           player2: p2.uid
         });
-
-        const key = [p1.uid, p2.uid].sort().join('-');
-        history.add(key);
-
-        available = playersList.filter(p => !pairedInRound.has(p.uid));
       }
+      baseRounds.push(roundMatches);
 
-      if (!roundSuccess || available.length > 0 || roundCost > minRoundCost) {
-        fixtureSuccess = false;
-        break;
-      }
-
-      tempFixture.push(roundMatches);
+      // Rotar todos los elementos excepto el primero (método clásico Berger)
+      const fixed = rotating[0];
+      const rest = rotating.slice(1);
+      rest.unshift(rest.pop());
+      rotating = [fixed, ...rest];
     }
 
-    if (fixtureSuccess) {
-      success = true;
-      break;
+    const finalRounds = [];
+    for (let r = 0; r < totalRounds; r++) {
+      finalRounds.push(baseRounds[r % roundsInCycle]);
     }
-    attempts++;
+    return finalRounds;
   }
-
-  if (success) {
-    return tempFixture;
-  }
-
-  // Fallback simple si no encuentra tras 1000 intentos
-  const fallbackFixture = [];
-  for (let r = 1; r <= totalRounds; r++) {
-    const roundMatches = [];
-    const paired = new Set();
-    for (let i = 0; i < playersList.length; i++) {
-      if (paired.has(playersList[i].uid)) continue;
-      let partner = null;
-      for (let j = i + 1; j < playersList.length; j++) {
-        if (!paired.has(playersList[j].uid)) {
-          partner = playersList[j];
-          break;
-        }
-      }
-      if (partner) {
-        paired.add(playersList[i].uid);
-        paired.add(partner.uid);
-        roundMatches.push({
-          player1: playersList[i].uid,
-          player2: partner.uid
-        });
-      }
-    }
-    fallbackFixture.push(roundMatches);
-  }
-  return fallbackFixture;
 };
 
 // --- COMPONENTE PRINCIPAL ---
