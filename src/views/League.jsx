@@ -105,56 +105,111 @@ const advanceWinner = (bracketData, rIdx, mIdx, winnerUid) => {
   return updated;
 };
 
-// Generar emparejamientos de Ronda 1 de Playoffs (Formato de torneo tradicional: 1º vs Último, 2º vs Penúltimo, etc.)
-const generateBracketRound1 = (selectedPlayers) => {
+// Generar emparejamientos de Ronda 1 de Playoffs (Formato de torneo tradicional o Luz vs Oscuridad)
+const generateBracketRound1 = (selectedPlayers, prioritizeAlignment = false) => {
   const size = Math.max(2, Math.pow(2, Math.ceil(Math.log2(selectedPlayers.length))));
-  
-  // Rellenar con BYEs al final del arreglo
-  const padded = [...selectedPlayers];
-  while (padded.length < size) {
-    padded.push({ uid: 'BYE', name: 'DESCANSO (BYE)', alignment: 'none', faction: 'Ninguna' });
-  }
-
-  // Generar el orden de siembra (seed order) para un cuadro de eliminación directa clásico
-  // Por ejemplo, para size=8: [1, 8, 4, 5, 2, 7, 3, 6]
-  let seedOrder = [1, 2];
-  while (seedOrder.length < size) {
-    const nextOrder = [];
-    const currentSize = seedOrder.length * 2;
-    for (let i = 0; i < seedOrder.length; i++) {
-      nextOrder.push(seedOrder[i]);
-      nextOrder.push(currentSize + 1 - seedOrder[i]);
-    }
-    seedOrder = nextOrder;
-  }
-
-  const matches = [];
   const numMatches = size / 2;
-  for (let mIdx = 0; mIdx < numMatches; mIdx++) {
-    const p1Seed = seedOrder[2 * mIdx];
-    const p2Seed = seedOrder[2 * mIdx + 1];
+  const matches = [];
 
-    // Los índices en padded son 0-indexed, por lo que restamos 1 a las semillas
-    const p1 = padded[p1Seed - 1];
-    const p2 = padded[p2Seed - 1];
+  if (prioritizeAlignment) {
+    const lights = selectedPlayers.filter(p => p.alignment === 'luz');
+    const darks = selectedPlayers.filter(p => p.alignment === 'oscuridad');
+    const neutrals = selectedPlayers.filter(p => p.alignment !== 'luz' && p.alignment !== 'oscuridad');
 
-    const isBye = p1.uid === 'BYE' || p2.uid === 'BYE';
-    let winner = "";
-    if (isBye) {
-      winner = p1.uid === 'BYE' ? p2.uid : p1.uid;
+    const pairedLight = [];
+    const pairedDark = [];
+    
+    // Emparejar Luz vs Oscuridad por orden de siembra (Top seed Luz vs Lowest seed Oscu)
+    const matchCount = Math.min(lights.length, darks.length);
+    for (let i = 0; i < matchCount; i++) {
+      pairedLight.push(lights[i]);
+      pairedDark.push(darks[darks.length - 1 - i]);
     }
 
-    matches.push({
-      player1: p1.uid,
-      player2: p2.uid,
-      verified: isBye,
-      reportedBy: isBye ? "system" : "",
-      reportedVpP1: isBye ? (p1.uid !== 'BYE' ? 1 : 0) : 0,
-      reportedVpP2: isBye ? (p2.uid !== 'BYE' ? 1 : 0) : 0,
-      reportedKilledLeaderP1: false,
-      reportedKilledLeaderP2: false,
-      winner: winner
-    });
+    // Jugadores sobrantes (excedente del mismo bando o neutrales)
+    const leftovers = [
+      ...lights.slice(matchCount),
+      ...darks.slice(0, darks.length - matchCount),
+      ...neutrals
+    ];
+
+    const allP1 = [...pairedLight];
+    const allP2 = [...pairedDark];
+
+    while (leftovers.length > 0) {
+      const p1 = leftovers.shift();
+      const p2 = leftovers.length > 0 ? leftovers.pop() : { uid: 'BYE', name: 'DESCANSO (BYE)', alignment: 'none', faction: 'Ninguna' };
+      allP1.push(p1);
+      allP2.push(p2);
+    }
+
+    while (allP1.length < numMatches) {
+      allP1.push({ uid: 'BYE', name: 'DESCANSO (BYE)', alignment: 'none', faction: 'Ninguna' });
+      allP2.push({ uid: 'BYE', name: 'DESCANSO (BYE)', alignment: 'none', faction: 'Ninguna' });
+    }
+
+    for (let mIdx = 0; mIdx < numMatches; mIdx++) {
+      const p1 = allP1[mIdx];
+      const p2 = allP2[mIdx];
+      const isBye = p1.uid === 'BYE' || p2.uid === 'BYE';
+      let winner = "";
+      if (isBye) {
+        winner = p1.uid === 'BYE' ? p2.uid : p1.uid;
+      }
+      matches.push({
+        player1: p1.uid,
+        player2: p2.uid,
+        verified: isBye,
+        reportedBy: isBye ? "system" : "",
+        reportedVpP1: isBye ? (p1.uid !== 'BYE' ? 1 : 0) : 0,
+        reportedVpP2: isBye ? (p2.uid !== 'BYE' ? 1 : 0) : 0,
+        reportedKilledLeaderP1: false,
+        reportedKilledLeaderP2: false,
+        winner: winner
+      });
+    }
+  } else {
+    // Formato tradicional por Siembra / Guerra Civil (1º vs Último, 2º vs Penúltimo, etc.)
+    const padded = [...selectedPlayers];
+    while (padded.length < size) {
+      padded.push({ uid: 'BYE', name: 'DESCANSO (BYE)', alignment: 'none', faction: 'Ninguna' });
+    }
+
+    let seedOrder = [1, 2];
+    while (seedOrder.length < size) {
+      const nextOrder = [];
+      const currentSize = seedOrder.length * 2;
+      for (let i = 0; i < seedOrder.length; i++) {
+        nextOrder.push(seedOrder[i]);
+        nextOrder.push(currentSize + 1 - seedOrder[i]);
+      }
+      seedOrder = nextOrder;
+    }
+
+    for (let mIdx = 0; mIdx < numMatches; mIdx++) {
+      const p1Seed = seedOrder[2 * mIdx];
+      const p2Seed = seedOrder[2 * mIdx + 1];
+      const p1 = padded[p1Seed - 1];
+      const p2 = padded[p2Seed - 1];
+
+      const isBye = p1.uid === 'BYE' || p2.uid === 'BYE';
+      let winner = "";
+      if (isBye) {
+        winner = p1.uid === 'BYE' ? p2.uid : p1.uid;
+      }
+
+      matches.push({
+        player1: p1.uid,
+        player2: p2.uid,
+        verified: isBye,
+        reportedBy: isBye ? "system" : "",
+        reportedVpP1: isBye ? (p1.uid !== 'BYE' ? 1 : 0) : 0,
+        reportedVpP2: isBye ? (p2.uid !== 'BYE' ? 1 : 0) : 0,
+        reportedKilledLeaderP1: false,
+        reportedKilledLeaderP2: false,
+        winner: winner
+      });
+    }
   }
 
   return { matches, size };
@@ -1442,15 +1497,41 @@ export default function League({ lang, translations, user, profile, isAdmin: isG
   // --- ADMINISTRACIÓN DE PLAYOFFS (LLAVES) ---
 
   // Inicializar Borrador de Bracket
-  const handlePrepareBracketDraft = () => {
+  // Inicializar Borrador de Bracket
+  const handlePrepareBracketDraftLightVsDark = () => {
     if (selectedPlayoffPlayers.length < 2) {
-      alert("Selecciona al menos 2 jugadores aprobados para la llave.");
+      alert(lang === 'es' ? "Selecciona al menos 2 jugadores aprobados para la llave." : "Select at least 2 approved players for the bracket.");
       return;
     }
-    const selectedProfiles = standings.filter(p => selectedPlayoffPlayers.includes(p.uid));
-    const r1 = generateBracketRound1(selectedProfiles);
-    const structure = buildFullBracketStructure(r1.matches, r1.size);
-    setDraftBracket(structure);
+    showConfirm(
+      lang === 'es'
+        ? "Está a punto de generar el borrador de la llave respetando enfrentamientos Luz vs Oscuridad. ¿Está seguro?"
+        : "You are about to generate the bracket draft respecting Light vs Darkness match-ups. Are you sure?",
+      () => {
+        const selectedProfiles = standings.filter(p => selectedPlayoffPlayers.includes(p.uid));
+        const r1 = generateBracketRound1(selectedProfiles, true);
+        const structure = buildFullBracketStructure(r1.matches, r1.size);
+        setDraftBracket(structure);
+      }
+    );
+  };
+
+  const handlePrepareBracketDraftCivilWar = () => {
+    if (selectedPlayoffPlayers.length < 2) {
+      alert(lang === 'es' ? "Selecciona al menos 2 jugadores aprobados para la llave." : "Select at least 2 approved players for the bracket.");
+      return;
+    }
+    showConfirm(
+      lang === 'es'
+        ? "Está a punto de generar el borrador de la llave sin tener en cuenta bandos Luz/Oscuridad. ¿Está seguro?"
+        : "You are about to generate the bracket draft without considering Light/Darkness sides (Civil War). Are you sure?",
+      () => {
+        const selectedProfiles = standings.filter(p => selectedPlayoffPlayers.includes(p.uid));
+        const r1 = generateBracketRound1(selectedProfiles, false);
+        const structure = buildFullBracketStructure(r1.matches, r1.size);
+        setDraftBracket(structure);
+      }
+    );
   };
 
   // Swap en borrador de bracket
@@ -4135,9 +4216,32 @@ export default function League({ lang, translations, user, profile, isAdmin: isG
                 </div>
               </div>
 
-              <button className="btn btn-primary" onClick={handlePrepareBracketDraft}>
-                🎲 Generar Borrador de Llave (Luz vs Oscu)
-              </button>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '10px' }}>
+                  <button 
+                    className="btn btn-primary" 
+                    onClick={handlePrepareBracketDraftLightVsDark}
+                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '0.82rem', padding: '10px 8px' }}
+                  >
+                    ☀️ vs 👁️ {lang === 'es' ? 'Generar Borrador (Luz vs Oscuridad)' : 'Generate Draft (Light vs Darkness)'}
+                  </button>
+                  <button 
+                    className="btn btn-secondary" 
+                    onClick={handlePrepareBracketDraftCivilWar}
+                    style={{ 
+                      background: 'rgba(239, 68, 68, 0.15)', 
+                      border: '1px solid rgba(239, 68, 68, 0.4)', 
+                      color: '#fca5a5', 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center', 
+                      gap: '6px',
+                      fontSize: '0.82rem',
+                      padding: '10px 8px'
+                    }}
+                  >
+                    ⚔️ {lang === 'es' ? 'Generar Borrador (Guerra Civil)' : 'Generate Draft (Civil War)'}
+                  </button>
+                </div>
 
               {draftBracket && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginTop: '10px', padding: '10px', background: 'rgba(255,255,255,0.01)', border: '1px solid rgba(203,161,53,0.2)', borderRadius: '8px' }}>
