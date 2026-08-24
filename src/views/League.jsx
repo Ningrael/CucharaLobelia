@@ -462,6 +462,16 @@ export default function League({ lang, translations, user, profile, isAdmin: isG
   const [editPlayerParticipates, setEditPlayerParticipates] = useState(true);
   const [isPlayerSaving, setIsPlayerSaving] = useState(false);
 
+  // Modal Admin Añadir Jugador Manualmente
+  const [isAddPlayerModalOpen, setIsAddPlayerModalOpen] = useState(false);
+  const [addPlayerSearch, setAddPlayerSearch] = useState('');
+  const [selectedUserToAdd, setSelectedUserToAdd] = useState(null);
+  const [addUserAlignment, setAddUserAlignment] = useState('luz');
+  const [addUserFaction, setAddUserFaction] = useState('');
+  const [allAvailableUsers, setAllAvailableUsers] = useState([]);
+  const [isLoadingAllUsers, setIsLoadingAllUsers] = useState(false);
+  const [isAddingPlayer, setIsAddingPlayer] = useState(false);
+
   // Modal para Visor de PDF (Misiones)
   const [selectedMissionPdf, setSelectedMissionPdf] = useState(null);
   const [activePdfUrl, setActivePdfUrl] = useState(null);
@@ -539,6 +549,10 @@ export default function League({ lang, translations, user, profile, isAdmin: isG
   const [leagueConfigError, setLeagueConfigError] = useState(null);
 
   const joinFactionsList = joinAlignment === 'luz' 
+    ? { normal: LIGHT_FACTIONS, legend: LIGHT_FACTIONS_LEGEND } 
+    : { normal: DARK_FACTIONS, legend: DARK_FACTIONS_LEGEND };
+
+  const addPlayerFactionsList = addUserAlignment === 'luz' 
     ? { normal: LIGHT_FACTIONS, legend: LIGHT_FACTIONS_LEGEND } 
     : { normal: DARK_FACTIONS, legend: DARK_FACTIONS_LEGEND };
 
@@ -1289,6 +1303,93 @@ export default function League({ lang, translations, user, profile, isAdmin: isG
       alert("Error al guardar cambios: " + e.message);
     }
     setIsPlayerSaving(false);
+  };
+
+  // Abrir Modal de Añadir Jugador Manualmente (Admin)
+  const handleOpenAddPlayerModal = async () => {
+    setIsAddPlayerModalOpen(true);
+    setAddPlayerSearch('');
+    setSelectedUserToAdd(null);
+    setAddUserAlignment('luz');
+    setAddUserFaction('');
+    setIsLoadingAllUsers(true);
+
+    try {
+      const snap = await getDocs(collection(db, "players"));
+      const users = [];
+      const currentApprovedUids = new Set(players.filter(p => p.status === 'approved').map(p => p.uid));
+
+      snap.forEach(d => {
+        const data = d.data();
+        if (!currentApprovedUids.has(d.id)) {
+          users.push({
+            uid: d.id,
+            name: data.name || data.username || d.id,
+            username: data.username || '',
+            email: data.email || '',
+            phone: data.phone || '',
+            faction: data.faction || '',
+            alignment: data.alignment || 'luz'
+          });
+        }
+      });
+      users.sort((a, b) => a.name.localeCompare(b.name));
+      setAllAvailableUsers(users);
+    } catch (e) {
+      console.error("Error fetching all users:", e);
+      alert(lang === 'es' ? "Error al cargar la lista de usuarios: " + e.message : "Error loading users list: " + e.message);
+    }
+    setIsLoadingAllUsers(false);
+  };
+
+  // Confirmar añadir jugador
+  const handleConfirmAddPlayer = async (e) => {
+    e.preventDefault();
+    if (!selectedUserToAdd) {
+      alert(lang === 'es' ? "Selecciona un usuario de la lista." : "Select a user from the list.");
+      return;
+    }
+    if (!addUserFaction) {
+      alert(lang === 'es' ? "Elige una facción para el jugador." : "Choose a faction for the player.");
+      return;
+    }
+
+    setIsAddingPlayer(true);
+    try {
+      const playerUid = selectedUserToAdd.uid;
+      const leagueData = {
+        status: 'approved',
+        alignment: addUserAlignment,
+        faction: addUserFaction,
+        participates: true
+      };
+
+      // 1. Guardar en el documento del jugador
+      await updateDoc(doc(db, "players", playerUid), {
+        [`leagues.${selectedLeagueId}`]: leagueData
+      });
+
+      // 2. Guardar en el documento del creador de la liga para redundancia / status
+      if (configData?.creatorUid) {
+        await updateDoc(doc(db, "players", configData.creatorUid), {
+          [`createdLeagues.${selectedLeagueId}.playerStatuses.${playerUid}`]: 'approved',
+          [`createdLeagues.${selectedLeagueId}.playerOverrides.${playerUid}`]: {
+            alignment: addUserAlignment,
+            faction: addUserFaction,
+            participates: true
+          }
+        });
+      }
+
+      alert(lang === 'es' ? `¡${selectedUserToAdd.name} ha sido añadido y aprobado en la liga con éxito!` : `Player ${selectedUserToAdd.name} successfully added and approved in the league!`);
+      setIsAddPlayerModalOpen(false);
+      setSelectedUserToAdd(null);
+      loadLeagueData();
+    } catch (err) {
+      console.error("Error adding player manually:", err);
+      alert((lang === 'es' ? "Error al añadir jugador: " : "Error adding player: ") + err.message);
+    }
+    setIsAddingPlayer(false);
   };
 
   // Generador de Ronda Regular
@@ -3925,9 +4026,18 @@ export default function League({ lang, translations, user, profile, isAdmin: isG
 
           {/* Listado de Aprobados */}
           <div className="glass-card" style={{ padding: '16px' }}>
-            <h3 style={{ fontSize: '1rem', color: 'var(--gold-primary)', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '6px', marginBottom: '12px' }}>
-              Jugadores Aprobados ({players.filter(p => p.status === 'approved').length})
-            </h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '8px', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+              <h3 style={{ fontSize: '1rem', color: 'var(--gold-primary)', margin: 0 }}>
+                Jugadores Aprobados ({players.filter(p => p.status === 'approved').length})
+              </h3>
+              <button 
+                className="btn btn-primary btn-small" 
+                onClick={handleOpenAddPlayerModal}
+                style={{ fontSize: '0.75rem', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--gold-primary)', color: '#000', fontWeight: 'bold' }}
+              >
+                ➕ {lang === 'es' ? 'Añadir Jugador' : 'Add Player'}
+              </button>
+            </div>
             <div style={{ width: '100%', overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem' }}>
                 <thead>
@@ -4780,34 +4890,184 @@ export default function League({ lang, translations, user, profile, isAdmin: isG
         </form>
       </Modal>
 
+      {/* --- MODAL G: AÑADIR JUGADOR MANUALMENTE (ADMIN) --- */}
       <Modal
-        isOpen={isPrioritizeModalOpen}
-        onClose={() => setIsPrioritizeModalOpen(false)}
-        title={lang === 'es' ? 'Generar Fixture Regular' : 'Generate Regular Fixture'}
+        isOpen={isAddPlayerModalOpen}
+        onClose={() => { setIsAddPlayerModalOpen(false); setSelectedUserToAdd(null); }}
+        title={lang === 'es' ? "➕ Añadir Jugador a la Liga (Admin)" : "➕ Manually Add Player (Admin)"}
       >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '10px 0' }}>
-          <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
+        <form onSubmit={handleConfirmAddPlayer} style={{ display: 'flex', flexDirection: 'column', gap: '14px', width: '100%' }}>
+          <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: 0, lineHeight: '1.4' }}>
             {lang === 'es' 
-              ? '¿Deseas priorizar emparejamientos entre bandos opuestos (Luz contra Oscuridad) para evitar enfrentamientos espejo?' 
-              : 'Do you want to prioritize pairings between opposing sides (Light vs Darkness) to avoid mirror matches?'}
+              ? 'Busca cualquier usuario registrado en la plataforma para inscribirlo y aprobarlo directamente en esta liga (incluso si las inscripciones están cerradas).' 
+              : 'Search any registered user to directly enroll and approve them in this league (even if registrations are closed).'}
           </p>
-          <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+
+          {/* Buscador de usuario */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <label style={{ fontSize: '0.8rem', color: 'var(--gold-primary)', fontWeight: 'bold' }}>
+              {lang === 'es' ? '1. Buscar Usuario Registrado:' : '1. Search Registered User:'}
+            </label>
+            <input 
+              type="text" 
+              placeholder={lang === 'es' ? "Escribe nombre, @usuario o email..." : "Type name, @username or email..."}
+              value={addPlayerSearch} 
+              onChange={(e) => setAddPlayerSearch(e.target.value)}
+              style={{ background: '#111', border: 'var(--border-glass)', color: '#fff', padding: '10px 12px', borderRadius: '6px', fontSize: '0.88rem' }}
+            />
+          </div>
+
+          {/* Lista de usuarios filtrados */}
+          <div style={{ 
+            maxHeight: '160px', 
+            overflowY: 'auto', 
+            background: 'rgba(0,0,0,0.3)', 
+            border: '1px solid rgba(255,255,255,0.06)', 
+            borderRadius: '6px', 
+            padding: '6px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '4px'
+          }}>
+            {isLoadingAllUsers ? (
+              <div style={{ textAlign: 'center', padding: '12px', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                {lang === 'es' ? 'Cargando directorio de usuarios...' : 'Loading users directory...'}
+              </div>
+            ) : allAvailableUsers.filter(u => {
+              const q = addPlayerSearch.toLowerCase().trim();
+              if (!q) return true;
+              return u.name.toLowerCase().includes(q) || u.username.toLowerCase().includes(q) || u.email.toLowerCase().includes(q);
+            }).length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '12px', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                {lang === 'es' ? 'No se encontraron usuarios disponibles.' : 'No available users found.'}
+              </div>
+            ) : (
+              allAvailableUsers.filter(u => {
+                const q = addPlayerSearch.toLowerCase().trim();
+                if (!q) return true;
+                return u.name.toLowerCase().includes(q) || u.username.toLowerCase().includes(q) || u.email.toLowerCase().includes(q);
+              }).map(u => {
+                const isSelected = selectedUserToAdd?.uid === u.uid;
+                return (
+                  <div 
+                    key={u.uid}
+                    onClick={() => {
+                      setSelectedUserToAdd(u);
+                      setAddUserAlignment(u.alignment === 'oscuridad' ? 'oscuridad' : 'luz');
+                      setAddUserFaction(u.faction || '');
+                    }}
+                    style={{
+                      padding: '8px 10px',
+                      borderRadius: '4px',
+                      background: isSelected ? 'rgba(203, 161, 53, 0.25)' : 'rgba(255,255,255,0.02)',
+                      border: isSelected ? '1px solid var(--gold-primary)' : '1px solid transparent',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center'
+                    }}
+                    className="table-row-hover"
+                  >
+                    <div>
+                      <strong style={{ fontSize: '0.84rem', color: isSelected ? 'var(--gold-primary)' : '#fff' }}>{u.name}</strong>
+                      <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginLeft: '6px' }}>@{u.username}</span>
+                    </div>
+                    {isSelected && <span style={{ color: 'var(--gold-primary)', fontSize: '0.85rem' }}>✔ Seleccionado</span>}
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {selectedUserToAdd && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', background: 'rgba(203, 161, 53, 0.05)', border: '1px solid rgba(203, 161, 53, 0.2)', padding: '12px', borderRadius: '8px', marginTop: '4px' }}>
+              <div style={{ fontSize: '0.82rem', color: '#fff' }}>
+                👤 {lang === 'es' ? 'Configurar inscripción para:' : 'Configure registration for:'} <strong>{selectedUserToAdd.name}</strong> (@{selectedUserToAdd.username})
+              </div>
+
+              {/* Bando */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                  {lang === 'es' ? 'Bando / Alineación:' : 'Side / Alignment:'}
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                  <button 
+                    type="button"
+                    onClick={() => { setAddUserAlignment('luz'); setAddUserFaction(''); }}
+                    style={{
+                      padding: '8px',
+                      borderRadius: '4px',
+                      background: addUserAlignment === 'luz' ? 'var(--gold-primary)' : '#111',
+                      color: addUserAlignment === 'luz' ? '#000' : '#fff',
+                      fontWeight: 'bold',
+                      border: 'var(--border-glass)',
+                      cursor: 'pointer',
+                      fontSize: '0.8rem'
+                    }}
+                  >
+                    ☀️ {lang === 'es' ? 'Luz' : 'Light'}
+                  </button>
+                  <button 
+                    type="button"
+                    onClick={() => { setAddUserAlignment('oscuridad'); setAddUserFaction(''); }}
+                    style={{
+                      padding: '8px',
+                      borderRadius: '4px',
+                      background: addUserAlignment === 'oscuridad' ? 'var(--danger-color)' : '#111',
+                      color: '#fff',
+                      fontWeight: 'bold',
+                      border: 'var(--border-glass)',
+                      cursor: 'pointer',
+                      fontSize: '0.8rem'
+                    }}
+                  >
+                    👁️ {lang === 'es' ? 'Oscuridad' : 'Darkness'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Facción */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                  {lang === 'es' ? 'Facción / Ejército:' : 'Faction / Army:'}
+                </label>
+                <select 
+                  value={addUserFaction} 
+                  onChange={(e) => setAddUserFaction(e.target.value)}
+                  style={{ background: '#111', border: 'var(--border-glass)', color: '#fff', padding: '8px', borderRadius: '4px', fontSize: '0.82rem' }}
+                  required
+                >
+                  <option value="">{lang === 'es' ? '-- Selecciona una Facción --' : '-- Select a Faction --'}</option>
+                  <optgroup label={addUserAlignment === 'luz' ? (lang === 'es' ? "Listas de Luz (Normal)" : "Light Lists (Normal)") : (lang === 'es' ? "Listas de Oscuridad (Normal)" : "Darkness Lists (Normal)")}>
+                    {addPlayerFactionsList.normal.map(f => <option key={f} value={f}>{f}</option>)}
+                  </optgroup>
+                  <optgroup label={addUserAlignment === 'luz' ? (lang === 'es' ? "Listas de Luz (Legend)" : "Light Lists (Legend)") : (lang === 'es' ? "Listas de Oscuridad (Legend)" : "Darkness Lists (Legend)")}>
+                    {addPlayerFactionsList.legend.map(f => <option key={f} value={f}>{f}</option>)}
+                  </optgroup>
+                </select>
+              </div>
+            </div>
+          )}
+
+          <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
             <button 
+              type="submit" 
               className="btn btn-primary" 
-              onClick={() => runPairingGeneration(true)}
+              disabled={isAddingPlayer || !selectedUserToAdd}
               style={{ flex: 1 }}
             >
-              {lang === 'es' ? 'Sí, priorizar Luz/Oscu' : 'Yes, prioritize Light/Dark'}
+              {isAddingPlayer ? (lang === 'es' ? 'Añadiendo...' : 'Adding...') : (lang === 'es' ? 'Confirmar y Añadir a la Liga' : 'Confirm & Add to League')}
             </button>
             <button 
+              type="button" 
               className="btn btn-secondary" 
-              onClick={() => runPairingGeneration(false)}
-              style={{ flex: 1, background: 'rgba(255,255,255,0.06)', color: '#fff', border: 'var(--border-glass)' }}
+              onClick={() => { setIsAddPlayerModalOpen(false); setSelectedUserToAdd(null); }}
+              style={{ background: 'rgba(255,255,255,0.06)', color: '#fff', border: 'var(--border-glass)' }}
             >
-              {lang === 'es' ? 'No, emparejar libre' : 'No, pair freely'}
+              {lang === 'es' ? 'Cancelar' : 'Cancel'}
             </button>
           </div>
-        </div>
+        </form>
       </Modal>
 
       {/* --- MODAL DE PERFIL DE JUGADOR --- */}
