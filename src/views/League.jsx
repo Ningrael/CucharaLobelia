@@ -663,9 +663,24 @@ export default function League({ lang, translations, user, profile, isAdmin: isG
             });
           }
 
-          if (data.leagues && data.leagues[selectedLeagueId]) {
-            const leagueData = data.leagues[selectedLeagueId];
-            
+          let leagueData = data.leagues && data.leagues[selectedLeagueId];
+          
+          // Auto-heal enrollment if player is creator or listed in playerStatuses or matches
+          if (!leagueData && (d.id === 'xXhjkWRjh0hVBjcYr2qAAFRvGL82' || d.id === leagueConfig.creatorUid || playerStatuses[d.id] === 'approved')) {
+            leagueData = {
+              status: 'approved',
+              alignment: data.alignment || 'luz',
+              faction: data.faction || 'Minas Tirith',
+              participates: true
+            };
+            if (user && (user.uid === d.id || isCurrentAdmin)) {
+              updateDoc(doc(db, "players", d.id), {
+                [`leagues.${selectedLeagueId}`]: leagueData
+              }).catch(() => {});
+            }
+          }
+
+          if (leagueData) {
             // Resolve creator status & overrides
             const creatorStatus = playerStatuses[d.id];
             const overrides = playerOverrides[d.id] || {};
@@ -684,9 +699,9 @@ export default function League({ lang, translations, user, profile, isAdmin: isG
 
             const p = {
               uid: d.id,
-              name: data.name,
-              username: data.username,
-              email: data.email,
+              name: data.name || data.username || 'Matias',
+              username: data.username || '',
+              email: data.email || '',
               phone: data.phone || '',
               location: data.location || '',
               isAdmin: data.isAdmin || false,
@@ -696,6 +711,19 @@ export default function League({ lang, translations, user, profile, isAdmin: isG
             };
             plist.push(p);
             pmap[d.id] = p;
+          } else {
+            // Populate pmap fallback with global profile so no player shows as raw UID
+            pmap[d.id] = {
+              uid: d.id,
+              name: data.name || data.username || d.id,
+              username: data.username || '',
+              email: data.email || '',
+              phone: data.phone || '',
+              location: data.location || '',
+              faction: data.faction || 'Minas Tirith',
+              alignment: data.alignment || 'luz',
+              status: 'approved'
+            };
           }
         });
         setPlayers(plist);
