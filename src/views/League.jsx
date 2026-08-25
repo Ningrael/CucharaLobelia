@@ -2591,7 +2591,13 @@ export default function League({ lang, translations, user, profile, isAdmin: isG
                         </span>
                         <span className="league-card-meta-separator">•</span>
                         <span>
-                          📅 {lang === 'es' ? 'Límite:' : 'Deadline:'} <span style={{ color: '#fff', fontWeight: '500' }}>{new Date(league.registrationDeadline + 'T00:00:00').toLocaleDateString()}</span>
+                          📅 {lang === 'es' ? 'Límite:' : 'Deadline:'} <span style={{ color: '#fff', fontWeight: '500' }}>
+                            {league.registrationDeadline 
+                              ? (isNaN(new Date(league.registrationDeadline + 'T00:00:00').getTime()) 
+                                  ? (lang === 'es' ? 'Sin fecha límite' : 'No deadline') 
+                                  : new Date(league.registrationDeadline + 'T00:00:00').toLocaleDateString())
+                              : (lang === 'es' ? 'Sin fecha límite' : 'No deadline')}
+                          </span>
                         </span>
                       </div>
                     </div>
